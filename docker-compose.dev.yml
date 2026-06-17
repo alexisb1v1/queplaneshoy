@@ -1,0 +1,19 @@
+services:
+  queplaneshoy-dev:
+    image: ghcr.io/alexisb1v1/queplaneshoy:dev
+    container_name: queplaneshoy-dev
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"   # Tamaño máximo de cada archivo de log (10 Megabytes)
+        max-file: "3"     # Mantener máximo 3 archivos históricos
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+    networks:
+      - centralafbv_dev
+
+networks:
+  centralafbv_dev:
+    external: true
