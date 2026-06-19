@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createDraftOrderUseCase } from "../../orders";
 
 interface TicketCategory {
   id: string;
@@ -90,8 +92,37 @@ interface EventDetailPageProps {
 }
 
 export default function EventDetailPage({ id }: EventDetailPageProps) {
+  const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoritesState, setFavoritesState] = useState<Record<number, boolean>>({});
+
+  // Estados para el modal de compra
+  const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [showQtyModal, setShowQtyModal] = useState(false);
+  const [qtySelected, setQtySelected] = useState(2);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+  const handleSelectZone = (zoneId: string) => {
+    setSelectedZone(zoneId);
+    setShowQtyModal(true);
+  };
+
+  const handleConfirmPurchase = () => {
+    if (!selectedZone) return;
+    setIsCreatingOrder(true);
+
+    createDraftOrderUseCase.execute(id, selectedZone, qtySelected).match(
+      (data) => {
+        setIsCreatingOrder(false);
+        setShowQtyModal(false);
+        router.push(`/checkout/${data.orderToken}`);
+      },
+      (error) => {
+        setIsCreatingOrder(false);
+        alert(error.message || "No se pudo crear la reserva. Intente de nuevo.");
+      }
+    );
+  };
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
@@ -217,7 +248,10 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 </div>
               </div>
               <p className="text-on-surface-variant qph-body-md text-xs mb-5">Incluye acceso prioritario, barra libre de refrescos y catering premium.</p>
-              <button className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black">
+              <button 
+                onClick={() => handleSelectZone("box")}
+                className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black"
+              >
                 Seleccionar
               </button>
             </div>
@@ -234,7 +268,10 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 </div>
               </div>
               <p className="text-on-surface-variant qph-body-md text-xs mb-5">Zona frente al escenario. Capacidad limitada para máxima comodidad.</p>
-              <button className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black">
+              <button 
+                onClick={() => handleSelectZone("platinum")}
+                className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black"
+              >
                 Seleccionar
               </button>
             </div>
@@ -254,7 +291,10 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 </div>
               </div>
               <p className="text-on-surface-variant qph-body-md text-xs mb-5">Asientos numerados en la grada central con vista panorámica total.</p>
-              <button className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black">
+              <button 
+                onClick={() => handleSelectZone("vip")}
+                className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black"
+              >
                 Seleccionar
               </button>
             </div>
@@ -271,7 +311,10 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 </div>
               </div>
               <p className="text-on-surface-variant qph-body-md text-xs mb-5">Acceso a pista general. Disfruta de la energía del público.</p>
-              <button className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black">
+              <button 
+                onClick={() => handleSelectZone("general")}
+                className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black"
+              >
                 Seleccionar
               </button>
             </div>
@@ -422,7 +465,10 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                             €{ticket.price}
                           </td>
                           <td className="p-6 text-right">
-                            <button className="bg-deep-slate text-white px-4 py-2 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition-all cursor-pointer hover:bg-black active:scale-95">
+                            <button 
+                              onClick={() => handleSelectZone(ticket.id)}
+                              className="bg-deep-slate text-white px-4 py-2 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition-all cursor-pointer hover:bg-black active:scale-95"
+                            >
                               Seleccionar
                             </button>
                           </td>
@@ -576,6 +622,72 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         </section>
 
       </div>
+
+      {/* Modal para selección de cantidad */}
+      {showQtyModal && (
+        <div className="fixed inset-0 bg-deep-slate/55 backdrop-blur-sm z-[99] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-outline-variant/20 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-deep-slate">Selecciona la cantidad</h3>
+              <button 
+                onClick={() => setShowQtyModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-gray text-on-surface-variant hover:text-deep-slate"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            
+            <p className="text-xs text-on-surface-variant mb-4">
+              Zona seleccionada: <span className="font-bold text-deep-slate">{
+                selectedZone === 'box' ? 'Box Experience' :
+                selectedZone === 'platinum' ? 'Platinum Front' :
+                selectedZone === 'vip' ? 'VIP Central' : 'Entrada General'
+              }</span>
+            </p>
+
+            <div className="flex items-center justify-between mb-8 p-3 bg-surface-gray rounded-xl">
+              <span className="text-sm font-semibold text-deep-slate pl-2">Cantidad</span>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  disabled={qtySelected <= 1}
+                  onClick={() => setQtySelected(qtySelected - 1)}
+                  className="w-8 h-8 rounded-lg bg-white border border-outline-variant/30 flex items-center justify-center font-bold text-deep-slate hover:bg-gray-100 disabled:opacity-50"
+                >
+                  -
+                </button>
+                <span className="font-extrabold text-lg w-4 text-center">{qtySelected}</span>
+                <button
+                  type="button"
+                  disabled={qtySelected >= 10}
+                  onClick={() => setQtySelected(qtySelected + 1)}
+                  className="w-8 h-8 rounded-lg bg-white border border-outline-variant/30 flex items-center justify-center font-bold text-deep-slate hover:bg-gray-100 disabled:opacity-50"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={handleConfirmPurchase}
+              disabled={isCreatingOrder}
+              className="w-full bg-electric-indigo text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/20 active:scale-[0.98] transition-all hover:bg-primary-container"
+            >
+              {isCreatingOrder ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[20px]">refresh</span>
+                  <span>Reservando...</span>
+                </>
+              ) : (
+                <>
+                  <span>Confirmar y Comprar</span>
+                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

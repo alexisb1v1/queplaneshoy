@@ -1,4 +1,4 @@
-import EventDetailPage from "../../features/events/ui/event-detail-page";
+import EventDetailPage from "../../../features/events/ui/event-detail-page";
 
 export default async function EventPage({
   params,
