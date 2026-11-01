@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 
 export function WatchlistSection() {
   return (
@@ -40,38 +41,44 @@ export function WatchlistSection() {
           {/* Lado Derecho: Tarjetas de muestra rotadas */}
           <div className="flex-1 grid grid-cols-2 gap-4 w-full">
             {/* Tarjeta 1 */}
-            <div className="bg-white p-4 rounded-2xl qph-soft-shadow rotate-3 hover:rotate-0 transition-transform duration-500 cursor-pointer">
+            <Link
+              href="/events/1"
+              className="bg-white p-4 rounded-2xl border border-surface-variant shadow-xs rotate-3 hover:rotate-0 transition-transform duration-500 cursor-pointer block group"
+            >
               <div className="w-full aspect-square rounded-xl overflow-hidden mb-3 relative">
                 <img
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuBr71UQlSs2FurLsTGl6gPOxEX9hPMWEvCnfbWa9DBE-cUs538DUDJOqNPrp58TlvmNywhioPq7t5zgFDtsHuWE1CaR7V00dAs7D9el7hAVDM4tkAzeIn0PsE5X6YDxY6_Bq4L6zeO0xj3VruNNUlS7xdsextrNrv0sZZibfkJdUzfS6VSn73BW3H1n_IxShci9L0Bdy-kTWkKaFQp4Fe8zsxvXK8SCd517vfmIyU2X_l2s0lNh_9KazuVBowqKJypvC64xoScIFOvS"
                   alt="Guitarra electrica en primer plano"
                 />
               </div>
-              <p className="qph-label-bold text-[12px] text-deep-slate truncate">
+              <p className="qph-label-bold text-[12px] text-deep-slate truncate group-hover:text-electric-indigo transition-colors">
                 Indie Rock Night
               </p>
               <p className="text-[10px] qph-label-bold text-outline uppercase tracking-wider">
                 Quedan 5 entradas
               </p>
-            </div>
+            </Link>
 
             {/* Tarjeta 2 */}
-            <div className="bg-white p-4 rounded-2xl qph-soft-shadow -rotate-2 hover:rotate-0 transition-transform duration-500 cursor-pointer mt-8">
+            <Link
+              href="/events/4"
+              className="bg-white p-4 rounded-2xl border border-surface-variant shadow-xs -rotate-2 hover:rotate-0 transition-transform duration-500 cursor-pointer mt-8 block group"
+            >
               <div className="w-full aspect-square rounded-xl overflow-hidden mb-3 relative">
                 <img
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXB93oW0na2DOhqsJ5TjBnMIU6EjJmDihjHS4kUCm4OrZO1Z81e_1Sbcl2IGm4ZsP-RdLGavzk4qQ07FsEhjFG5IHopKzVTljb2GcWy9n6kZwoAWZbn23Wrlb41K9HjYYlbE5VAF1Pdo7-2cjNRP4PdFhIvWlHY-YOEIq-Fp0dC2JzGTKeoBhCJGU0EUJBJmatpsEd-jh9fSAaLfaeh3bM4ODKnamCltzmb4A9D_zq87N8FausNfrFsek3Zefw8rzA5DXRBINUpHkS"
                   alt="Gente en festival al atardecer"
                 />
               </div>
-              <p className="qph-label-bold text-[12px] text-deep-slate truncate">
+              <p className="qph-label-bold text-[12px] text-deep-slate truncate group-hover:text-electric-indigo transition-colors">
                 Open Air Summer
               </p>
               <p className="text-[10px] qph-label-bold text-outline uppercase tracking-wider">
                 Próximo viernes
               </p>
-            </div>
+            </Link>
           </div>
 
         </div>

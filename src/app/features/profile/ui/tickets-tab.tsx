@@ -109,8 +109,31 @@ export default function TicketsTab() {
   }, []);
 
   const handleOpenTicket = (ticket: TicketItem) => {
-    setSelectedTicket(ticket);
-    setShowQRModal(true);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(
+        'current_print_ticket',
+        JSON.stringify({
+          orderNumber: `QPH-${ticket.id.toUpperCase().replace(/^T-/, '')}`,
+          orderRef: `REF-${ticket.id.toUpperCase()}`,
+          eventName: ticket.eventName,
+          eventSubtitle: `${ticket.category} · Entrada Oficial Nominal`,
+          eventDate: ticket.date,
+          eventTime: ticket.time,
+          eventVenue: ticket.location,
+          eventAddress: ticket.location,
+          tierName: ticket.zoneName,
+          tierZone: ticket.zoneName,
+          ticketCount: ticket.quantity || 1,
+          unitPrice: 65,
+          totalAmount: (ticket.quantity || 1) * 65,
+          holderName: 'ALEX RIVERA',
+          holderDni: '***4921X',
+          from: '/profile/tickets',
+          backLabel: 'Volver a Mis Entradas',
+        })
+      );
+    }
+    router.push(`/checkout/tickets?orderId=${encodeURIComponent(ticket.id)}&from=profile`);
   };
 
   const listToShow = activeTab === 'upcoming' ? tickets : pastTickets;
@@ -119,19 +142,19 @@ export default function TicketsTab() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
       
       {/* Header and Tab Switcher */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-outline-variant/10 pb-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-surface-variant/40 pb-5">
         <div>
-          <h1 className="text-3xl font-extrabold text-deep-slate tracking-tight">Mis Entradas</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-deep-slate tracking-tight">Mis Entradas</h1>
           <p className="text-on-surface-variant text-sm mt-1">Gestiona tus próximos eventos y revisa tu historial.</p>
         </div>
 
         {/* Custom Segmented Tabs */}
-        <div className="relative flex bg-gray-100 p-1 rounded-xl w-full md:w-auto self-start">
+        <div className="relative flex bg-surface-gray p-1 rounded-xl w-full md:w-auto self-start border border-surface-variant/50">
           <button
             onClick={() => setActiveTab('upcoming')}
             className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'upcoming'
-                ? 'bg-white text-electric-indigo shadow-sm'
+                ? 'bg-white text-electric-indigo shadow-xs'
                 : 'text-on-surface-variant hover:text-deep-slate'
             }`}
           >
@@ -141,7 +164,7 @@ export default function TicketsTab() {
             onClick={() => setActiveTab('past')}
             className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'past'
-                ? 'bg-white text-electric-indigo shadow-sm'
+                ? 'bg-white text-electric-indigo shadow-xs'
                 : 'text-on-surface-variant hover:text-deep-slate'
             }`}
           >
@@ -152,8 +175,8 @@ export default function TicketsTab() {
 
       {listToShow.length === 0 ? (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 bg-white border border-outline-variant/20 rounded-xl p-8 shadow-sm">
-          <div className="w-20 h-20 bg-surface-gray rounded-full flex items-center justify-center text-platinum-silver">
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 bg-white border border-surface-variant rounded-2xl p-8 shadow-xs">
+          <div className="w-20 h-20 bg-surface-gray rounded-full flex items-center justify-center text-platinum-silver border border-surface-variant/50">
             <span className="material-symbols-outlined text-[40px]">confirmation_number</span>
           </div>
           <div>
@@ -164,7 +187,7 @@ export default function TicketsTab() {
           </div>
           <button
             onClick={() => router.push('/')}
-            className="bg-electric-indigo text-white px-6 py-3 rounded-xl font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-md shadow-electric-indigo/10"
+            className="bg-electric-indigo text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-primary active:scale-95 transition-all shadow-md shadow-electric-indigo/20 cursor-pointer"
           >
             Explorar eventos
           </button>
@@ -175,7 +198,7 @@ export default function TicketsTab() {
           {listToShow.map((ticket) => (
             <div
               key={ticket.id}
-              className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md border border-outline-variant/10 flex flex-col group transition-all duration-300 hover:-translate-y-1"
+              className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md border border-surface-variant flex flex-col group transition-all duration-300 hover:-translate-y-1"
             >
               <div className="h-44 w-full overflow-hidden relative">
                 <img
@@ -194,40 +217,40 @@ export default function TicketsTab() {
                   <span className="font-bold text-[10px] text-electric-indigo uppercase tracking-wider">
                     {ticket.category}
                   </span>
-                  <h3 className="text-lg font-bold text-deep-slate mt-1 group-hover:text-electric-indigo transition-colors">
+                  <h3 className="text-lg font-bold text-deep-slate mt-1 group-hover:text-electric-indigo transition-colors leading-snug">
                     {ticket.eventName}
                   </h3>
                 </div>
                 
                 <div className="space-y-1.5 text-xs text-on-surface-variant font-semibold">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+                    <span className="material-symbols-outlined text-[16px] text-electric-indigo">calendar_today</span>
                     <span>{ticket.date}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">schedule</span>
+                    <span className="material-symbols-outlined text-[16px] text-electric-indigo">schedule</span>
                     <span>{ticket.time}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">location_on</span>
+                    <span className="material-symbols-outlined text-[16px] text-electric-indigo">location_on</span>
                     <span>{ticket.location}</span>
                   </div>
                 </div>
 
-                <div className="mt-auto pt-4 flex gap-2 border-t border-outline-variant/10">
+                <div className="mt-auto pt-4 flex gap-2 border-t border-surface-variant/40">
                   <button
                     onClick={() => handleOpenTicket(ticket)}
-                    className="flex-grow bg-electric-indigo text-white font-bold text-xs py-3 rounded-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+                    className="flex-grow bg-electric-indigo text-white font-bold text-xs py-3 rounded-xl hover:bg-primary active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-[16px]">qr_code</span>
+                    <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                     <span>Ver Entrada</span>
                   </button>
                   <button
-                    onClick={() => alert('Entrada descargada en PDF (simulado)')}
-                    className="p-3 border border-outline-variant/30 rounded-lg text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate transition-colors"
-                    title="Descargar PDF"
+                    onClick={() => handleOpenTicket(ticket)}
+                    className="p-3 border border-surface-variant rounded-xl text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate transition-colors cursor-pointer"
+                    title="Imprimir / Descargar PDF"
                   >
-                    <span className="material-symbols-outlined text-[16px]">download</span>
+                    <span className="material-symbols-outlined text-[18px]">print</span>
                   </button>
                 </div>
               </div>

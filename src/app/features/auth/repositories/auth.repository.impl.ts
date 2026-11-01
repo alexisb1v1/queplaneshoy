@@ -1,150 +1,246 @@
 import { ResultAsync, ok, err } from 'neverthrow';
-import { AuthRepository } from './auth.repository';
+import { AuthRepository, BecomeOrganizerParams } from './auth.repository';
 import { UserModel } from '../models/user.model';
 import { DomainError } from '../../../common/errors/domain-error';
-import { apiClient, ApiClientError } from '../../../common/services/api-client';
+import { apiClient } from '../../../common/services/api-client';
 
-const TOKEN_KEY = 'qph_auth_token';
+const USER_STORAGE_KEY = 'qph_user';
 
-// Usuario Mock de Fallback
-const MOCK_USER: UserModel = {
-  id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
-  email: 'alexis@queplaneshoy.com',
-  firstName: 'Alexis',
-  lastName: 'Bermúdez',
-  phone: '+51 987654321',
-  avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCnqXVnsmBrHy9Kd7cWWb0PaButWFj7ieVvda4KQ6Gzku7NMPcNGxi_Cq2UC1DSwk2r8_qL2ZzWM5Lq_9BFFEpeMNF11zZiUQtr4JjMsCuraW_kcZXdxL4ftivhWz3SLrtagNNngRrHMt2Gwg553z8hX80YVC9_BRRQrviCyXSypPSe4atADFZpigLRh7RNFotpC4cdb05tB9_JhjTFs4nsISy6vQFzA78k7jIKy4CTPzUqYunCJ3yBvoR8hOOwXModWn6WconFu2O9',
-  role: 'user',
-};
+interface AuthResponseDto {
+  token: string;
+  accessToken?: string;
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string | null;
+    role: string;
+    avatarUrl?: string;
+    isOrganizer?: boolean;
+    organizerName?: string | null;
+    organizerDocumentType?: string | null;
+    organizerDocumentNumber?: string | null;
+    organizerLogoUrl?: string | null;
+    emailVerifiedAt?: string | Date | null;
+    createdAt?: string | Date;
+  };
+  message?: string;
+}
+
+/**
+ * Normaliza los datos del usuario devueltos por la API hacia el modelo de dominio
+ */
+function mapAuthUserToModel(rawUser: AuthResponseDto['user']): UserModel {
+  const firstName = rawUser.firstName || (rawUser.name ? rawUser.name.split(' ')[0] : 'Usuario');
+  const lastName = rawUser.lastName || (rawUser.name ? rawUser.name.split(' ').slice(1).join(' ') : '');
+
+  return {
+    id: rawUser.id,
+    email: rawUser.email,
+    firstName,
+    lastName,
+    phone: rawUser.phone,
+    avatarUrl: rawUser.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCnqXVnsmBrHy9Kd7cWWb0PaButWFj7ieVvda4KQ6Gzku7NMPcNGxi_Cq2UC1DSwk2r8_qL2ZzWM5Lq_9BFFEpeMNF11zZiUQtr4JjMsCuraW_kcZXdxL4ftivhWz3SLrtagNNngRrHMt2Gwg553z8hX80YVC9_BRRQrviCyXSypPSe4atADFZpigLRh7RNFotpC4cdb05tB9_JhjTFs4nsISy6vQFzA78k7jIKy4CTPzUqYunCJ3yBvoR8hOOwXModWn6WconFu2O9',
+    role: rawUser.role || 'customer',
+    isOrganizer: rawUser.isOrganizer,
+    organizerName: rawUser.organizerName,
+    organizerDocumentType: rawUser.organizerDocumentType,
+    organizerDocumentNumber: rawUser.organizerDocumentNumber,
+    organizerLogoUrl: rawUser.organizerLogoUrl,
+    emailVerifiedAt: rawUser.emailVerifiedAt,
+    createdAt: rawUser.createdAt,
+  };
+}
 
 export class AuthRepositoryImpl implements AuthRepository {
+  /**
+   * Inicia sesión con correo y contraseña
+   */
   login(email: string, password: string): ResultAsync<{ token: string; user: UserModel }, DomainError> {
-    return ResultAsync.fromPromise(
-      apiClient.post<{ token: string; user: UserModel }>('/auth/login', { email, password }),
-      (error) => {
-        if (error instanceof ApiClientError) {
-          return new DomainError(error.message, 'API_ERROR', error);
+    return apiClient
+      .requestResult<AuthResponseDto>(
+        apiClient.post('/auth/login', {
+          email: email.trim().toLowerCase(),
+          password,
+        })
+      )
+      .map((res) => {
+        const userModel = mapAuthUserToModel(res.user);
+        apiClient.setToken(res.token);
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userModel));
         }
-        return new DomainError('Error de conexión con el servidor', 'NETWORK_ERROR', error);
-      }
-    ).orElse((error) => {
-      // Fallback local en desarrollo si la API da 404 o no conecta
-      console.warn('POST /auth/login falló o no existe. Usando Mock local de desarrollo.', error);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(TOKEN_KEY, 'mock-jwt-token-xyz123');
-        localStorage.setItem('qph_mock_user', JSON.stringify(MOCK_USER));
-      }
-      return ok({ token: 'mock-jwt-token-xyz123', user: MOCK_USER });
-    }).map((res) => {
-      if (typeof window !== 'undefined' && res.token !== 'mock-jwt-token-xyz123') {
-        localStorage.setItem(TOKEN_KEY, res.token);
-        localStorage.setItem('qph_mock_user', JSON.stringify(res.user));
-      }
-      return res;
-    });
+
+        return { token: res.token, user: userModel };
+      });
   }
 
+  /**
+   * Registra un nuevo usuario en la plataforma validando todos los campos requeridos
+   */
+  register(
+    fullName: string,
+    email: string,
+    phone: string,
+    password: string
+  ): ResultAsync<{ token: string; user: UserModel }, DomainError> {
+    const payload = {
+      name: fullName.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+      phone: phone.trim() ? phone.trim() : undefined,
+    };
+
+    return apiClient
+      .requestResult<AuthResponseDto>(
+        apiClient.post('/auth/register', payload)
+      )
+      .map((res) => {
+        const userModel = mapAuthUserToModel(res.user);
+        apiClient.setToken(res.token);
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userModel));
+        }
+
+        return { token: res.token, user: userModel };
+      });
+  }
+
+  /**
+   * Obtiene el perfil del usuario autenticado actual desde el backend
+   */
   getCurrentUser(): ResultAsync<UserModel, DomainError> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
-    
+    const token = apiClient.getToken();
+
     if (!token) {
       return ResultAsync.fromPromise(
         Promise.reject(new Error('No token found')),
-        () => new DomainError('No has iniciado sesión', 'UNAUTHORIZED')
+        () => new DomainError('No has iniciado sesión', 'AUTH_001')
       );
     }
 
-    return ResultAsync.fromPromise(
-      apiClient.get<UserModel>('/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      (error) => {
-        if (error instanceof ApiClientError) {
-          return new DomainError(error.message, 'API_ERROR', error);
+    return apiClient
+      .requestResult<AuthResponseDto['user']>(apiClient.get('/auth/me'))
+      .map((userDto) => {
+        const userModel = mapAuthUserToModel(userDto);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userModel));
         }
-        return new DomainError('Error de red al consultar perfil', 'NETWORK_ERROR', error);
-      }
-    ).orElse((error) => {
-      // Fallback local si el token es de mock o el endpoint no existe
-      if (token === 'mock-jwt-token-xyz123' || (error instanceof DomainError && error.originalError instanceof ApiClientError && error.originalError.status === 404)) {
-        const storedUser = typeof window !== 'undefined' ? localStorage.getItem('qph_mock_user') : null;
-        if (storedUser) {
-          try {
-            return ok(JSON.parse(storedUser) as UserModel);
-          } catch {
-            return ok(MOCK_USER);
+        return userModel;
+      })
+      .orElse((error) => {
+        // Si la sesión no es válida, limpiamos el token local
+        if (error.code === 'AUTH_001') {
+          apiClient.clearToken();
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(USER_STORAGE_KEY);
           }
         }
-        return ok(MOCK_USER);
-      }
-      return err(error);
-    });
+        return err(error);
+      });
   }
 
+  /**
+   * Cierra la sesión activa
+   */
   logout(): ResultAsync<void, DomainError> {
     return ResultAsync.fromPromise(
       Promise.resolve().then(() => {
+        apiClient.clearToken();
         if (typeof window !== 'undefined') {
-          localStorage.removeItem(TOKEN_KEY);
-          localStorage.removeItem('qph_mock_user');
+          localStorage.removeItem(USER_STORAGE_KEY);
         }
       }),
       (error) => new DomainError('Fallo al cerrar sesión', 'LOGOUT_ERROR', error)
     );
   }
 
+  /**
+   * Actualiza los datos de perfil del usuario
+   */
   updateProfile(data: Partial<UserModel>): ResultAsync<UserModel, DomainError> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
-
-    return ResultAsync.fromPromise(
-      apiClient.put<UserModel>('/auth/profile', data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      (error) => {
-        if (error instanceof ApiClientError) {
-          return new DomainError(error.message, 'API_ERROR', error);
-        }
-        return new DomainError('Error de red al actualizar perfil', 'NETWORK_ERROR', error);
-      }
-    ).orElse((error) => {
-      if (token === 'mock-jwt-token-xyz123' || (error instanceof DomainError && error.originalError instanceof ApiClientError && error.originalError.status === 404)) {
-        const storedUser = typeof window !== 'undefined' ? localStorage.getItem('qph_mock_user') : null;
-        const currentUser = storedUser ? JSON.parse(storedUser) : MOCK_USER;
-        const updatedUser = { ...currentUser, ...data };
+    return apiClient
+      .requestResult<AuthResponseDto['user']>(apiClient.put('/auth/profile', data))
+      .map((userDto) => {
+        const userModel = mapAuthUserToModel(userDto);
         if (typeof window !== 'undefined') {
-          localStorage.setItem('qph_mock_user', JSON.stringify(updatedUser));
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userModel));
         }
-        return ok(updatedUser as UserModel);
-      }
-      return err(error);
-    });
+        return userModel;
+      });
   }
 
+  /**
+   * Cambia la contraseña del usuario
+   */
   changePassword(oldPassword: string, newPassword: string): ResultAsync<void, DomainError> {
-    const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
+    return apiClient.requestResult<void>(
+      apiClient.post('/auth/change-password', { oldPassword, newPassword })
+    );
+  }
 
-    return ResultAsync.fromPromise(
-      apiClient.post<void>('/auth/change-password', { oldPassword, newPassword }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      (error) => {
-        if (error instanceof ApiClientError) {
-          return new DomainError(error.message, 'API_ERROR', error);
+  /**
+   * Verifica la dirección de correo electrónico utilizando el token firmado
+   */
+  verifyEmail(token: string): ResultAsync<{ message: string; user?: UserModel }, DomainError> {
+    return apiClient
+      .requestResult<{ message: string; token?: string; user?: AuthResponseDto['user'] }>(
+        apiClient.post('/auth/verify-email', { token: token.trim() })
+      )
+      .map((res) => {
+        let userModel: UserModel | undefined;
+        if (res.user) {
+          userModel = mapAuthUserToModel(res.user);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userModel));
+          }
         }
-        return new DomainError('Error de red al cambiar contraseña', 'NETWORK_ERROR', error);
-      }
-    ).orElse((error) => {
-      if (token === 'mock-jwt-token-xyz123' || (error instanceof DomainError && error.originalError instanceof ApiClientError && error.originalError.status === 404)) {
-        console.log('Contraseña cambiada en simulación local');
-        return ok(undefined);
-      }
-      return err(error);
-    });
+        if (res.token) {
+          apiClient.setToken(res.token);
+        }
+        return {
+          message: res.message || 'Correo verificado exitosamente',
+          user: userModel,
+        };
+      });
+  }
+
+  /**
+   * Solicita el reenvío del correo de verificación
+   */
+  resendVerification(email: string): ResultAsync<{ message: string }, DomainError> {
+    return apiClient
+      .requestResult<{ message: string }>(
+        apiClient.post('/auth/resend-verification', {
+          email: email.trim().toLowerCase(),
+        })
+      )
+      .map((res) => ({
+        message: res.message || 'Correo de verificación reenviado exitosamente',
+      }));
+  }
+
+  /**
+   * Activa el perfil de organizador para el usuario autenticado
+   */
+  becomeOrganizer(params: BecomeOrganizerParams): ResultAsync<{ token: string; user: UserModel }, DomainError> {
+    return apiClient
+      .requestResult<AuthResponseDto>(
+        apiClient.post('/auth/become-organizer', params)
+      )
+      .map((res) => {
+        const userModel = mapAuthUserToModel(res.user);
+        apiClient.setToken(res.token);
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userModel));
+        }
+
+        return { token: res.token, user: userModel };
+      });
   }
 }

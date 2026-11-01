@@ -86,19 +86,19 @@ export default function FavoritesTab() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
       
       {/* Header */}
-      <div className="border-b border-outline-variant/10 pb-4">
-        <h1 className="text-3xl font-extrabold text-deep-slate tracking-tight">Mis Favoritos</h1>
+      <div className="border-b border-surface-variant/40 pb-5">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-deep-slate tracking-tight">Mis Favoritos</h1>
         <p className="text-on-surface-variant text-sm mt-1">Guarda los eventos que no te quieres perder y encuéntralos aquí fácilmente.</p>
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <div className="relative group">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-platinum-silver transition-colors group-focus-within:text-electric-indigo">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-platinum-silver transition-colors group-focus-within:text-electric-indigo text-[20px]">
             search
           </span>
           <input
-            className="w-full pl-12 pr-4 py-3.5 bg-white rounded-xl border border-outline-variant/30 shadow-sm focus:ring-2 focus:ring-electric-indigo focus:border-electric-indigo transition-all font-semibold outline-none"
+            className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-surface-variant shadow-xs focus:ring-1 focus:ring-electric-indigo focus:border-electric-indigo transition-all font-medium text-sm text-deep-slate outline-none"
             placeholder="Buscar entre tus favoritos..."
             type="text"
             value={searchQuery}
@@ -107,15 +107,15 @@ export default function FavoritesTab() {
         </div>
 
         {/* Filter Categories */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-6 py-2 rounded-full font-bold text-xs transition-all whitespace-nowrap active:scale-95 border border-transparent ${
+              className={`px-5 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap active:scale-95 border ${
                 selectedCategory === cat
-                  ? 'bg-electric-indigo text-white shadow-md shadow-electric-indigo/20'
-                  : 'bg-white text-on-surface-variant hover:bg-gray-100 hover:text-deep-slate shadow-sm border-outline-variant/20'
+                  ? 'bg-electric-indigo text-white border-electric-indigo shadow-xs'
+                  : 'bg-white text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate border-surface-variant/70 shadow-xs'
               }`}
             >
               {cat}
@@ -126,8 +126,8 @@ export default function FavoritesTab() {
 
       {filteredEvents.length === 0 ? (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 bg-white border border-outline-variant/20 rounded-xl p-8 shadow-sm">
-          <div className="w-20 h-20 bg-surface-gray rounded-full flex items-center justify-center text-platinum-silver">
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 bg-white border border-surface-variant rounded-2xl p-8 shadow-xs">
+          <div className="w-20 h-20 bg-surface-gray rounded-full flex items-center justify-center text-platinum-silver border border-surface-variant/50">
             <span className="material-symbols-outlined text-[40px]">heart_broken</span>
           </div>
           <div>
@@ -138,7 +138,7 @@ export default function FavoritesTab() {
           </div>
           <button
             onClick={() => router.push('/')}
-            className="bg-electric-indigo text-white px-6 py-3 rounded-xl font-bold text-sm hover:brightness-110 active:scale-95 transition-all shadow-md shadow-electric-indigo/10"
+            className="bg-electric-indigo text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-primary active:scale-95 transition-all shadow-md shadow-electric-indigo/20 cursor-pointer"
           >
             Explorar eventos
           </button>
@@ -156,7 +156,7 @@ export default function FavoritesTab() {
                   transform: isRemoving ? 'scale(0.95)' : 'scale(1)',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
-                className="bg-white rounded-xl overflow-hidden border border-outline-variant/10 shadow-sm hover:shadow-md group flex flex-col hover:-translate-y-1"
+                className="bg-white rounded-2xl overflow-hidden border border-surface-variant shadow-xs hover:shadow-md group flex flex-col hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
                   <img
@@ -166,7 +166,7 @@ export default function FavoritesTab() {
                   />
                   <button
                     onClick={() => handleToggleFavorite(event.id)}
-                    className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-error shadow-md hover:scale-110 active:scale-95 transition-all"
+                    className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-error border border-surface-variant/40 shadow-xs hover:scale-110 active:scale-95 transition-all cursor-pointer"
                     title="Quitar de favoritos"
                   >
                     <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -195,18 +195,18 @@ export default function FavoritesTab() {
                   </div>
 
                   <div className="flex items-center gap-1.5 text-xs text-on-surface-variant font-semibold">
-                    <span className="material-symbols-outlined text-[16px]">location_on</span>
+                    <span className="material-symbols-outlined text-[16px] text-electric-indigo">location_on</span>
                     <span className="truncate">{event.location}</span>
                   </div>
 
-                  <div className="mt-auto pt-4 flex items-center justify-between border-t border-outline-variant/10">
+                  <div className="mt-auto pt-4 flex items-center justify-between border-t border-surface-variant/40">
                     <div className="flex flex-col">
                       <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Desde</span>
                       <span className="text-base font-extrabold text-electric-indigo mt-0.5">€{event.price.toFixed(2)}</span>
                     </div>
                     <button
-                      onClick={() => router.push(`/events/indigo-nights` /* URL de prueba */)}
-                      className="bg-electric-indigo text-white font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-primary transition-all shadow-md shadow-electric-indigo/10 active:scale-95"
+                      onClick={() => router.push(`/events/indigo-nights`)}
+                      className="bg-electric-indigo text-white font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-primary transition-all shadow-xs active:scale-95 cursor-pointer"
                     >
                       Comprar
                     </button>

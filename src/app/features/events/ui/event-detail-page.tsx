@@ -2,18 +2,10 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createDraftOrderUseCase } from "../../orders";
+import Link from "next/link";
+import { getMockEventById, TicketCategoryItem } from "../data/mock-events";
 
-interface TicketCategory {
-  id: string;
-  name: string;
-  badgeStyle: string;
-  title: string;
-  description: string;
-  price: number;
-}
-
-const TICKET_CATEGORIES: TicketCategory[] = [
+const DEFAULT_TICKET_CATEGORIES: TicketCategoryItem[] = [
   {
     id: "box",
     name: "BOX",
@@ -50,7 +42,7 @@ const TICKET_CATEGORIES: TicketCategory[] = [
 
 const RECOMMENDATIONS = [
   {
-    id: 1,
+    id: "1",
     category: "ELECTRÓNICA",
     title: "Electric Dreams Festival",
     date: "22 NOV",
@@ -59,7 +51,7 @@ const RECOMMENDATIONS = [
     imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAvDbqbGnlbfqUeC8z7aI3S9qHtQrEg0HBuv40tjwOWpwyto7jUUN4aK6zHkyjFpgrQuCmYbnML65LyCOmt4qfAeTI0iyr2BVCmLgaCJy5sBpz6YzL3uZFZIH-KYQuDSVFbpbW2Y6TUpo9uKWoJ2zKmlgzeVlfID8YoiQklT8co4xHrZ6sDZeLPqiY-dRNUsdzl8wQ2M9YvHfLR7G5WFio3W-SCX1AidCHyLkxiMeElBOJP2LgUnEYlNJevy2WQSrRm2T5c0o7zVSlx",
   },
   {
-    id: 2,
+    id: "2",
     category: "ROCK/POP",
     title: "Echoes of Summer",
     date: "05 DIC",
@@ -68,7 +60,7 @@ const RECOMMENDATIONS = [
     imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLV-vFt6Z3Q-_g_RCjM9g3p9FRMdW4TnoLTb2t_DGuHe1Bsjrd7vpYb-J8_gn-FA08Ovc7Xffqg7Su3kDeeigM8E-shO5j3HQerTWdJeRIak58m1ymICAC5dbB6na0lleW1NkOwk918T18gWTshTn0Zzl3ic7SdBx2Vzhs5heY5_umnw9T63JvIIiWvk63UsQKHL2DHezWpD-wjgw01UHRyiKCzTzGizacFSLDtCZyg-82AVyyzAVzhN6jdAaTMFIz5fOyGUmrZCro",
   },
   {
-    id: 3,
+    id: "3",
     category: "JAZZ",
     title: "Midnight Sessions: Jazz",
     date: "12 DIC",
@@ -77,7 +69,7 @@ const RECOMMENDATIONS = [
     imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAOSUZv2M7uclQknZJmXWjOneUBNz-ggqZyktu_-IRwTtUB21KMNz-RpU5FtXl1gcbww2VH2uzJWcFtWoYlnOs7KgVd_v_rHztJTKEqhNEAY0C_W4-ADUGz7tDfqDxACVZAs2r8MKr9XVj5by6TKAwaft2nFhUXzd-3uwtr9BCWIctRcn7n5OXbyYdWN6e_JVAuCiWVPMd2q27xOcZyLmats6ygJ4-hf71qJ97KPTEKrNVxLqC2lfCzSpIJkzYxBA7bw-k5Y_FOk5v7",
   },
   {
-    id: 4,
+    id: "4",
     category: "CLÁSICA",
     title: "Vivaldi Reimagined",
     date: "20 ENE",
@@ -93,58 +85,32 @@ interface EventDetailPageProps {
 
 export default function EventDetailPage({ id }: EventDetailPageProps) {
   const router = useRouter();
+  const event = getMockEventById(id);
+  const ticketCategories =
+    event.ticketCategories && event.ticketCategories.length > 0
+      ? event.ticketCategories
+      : DEFAULT_TICKET_CATEGORIES;
+
   const [isFavorite, setIsFavorite] = useState(false);
-  const [favoritesState, setFavoritesState] = useState<Record<number, boolean>>({});
-
-  // Estados para el modal de compra
-  const [selectedZone, setSelectedZone] = useState<string | null>(null);
-  const [showQtyModal, setShowQtyModal] = useState(false);
-  const [qtySelected, setQtySelected] = useState(2);
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-
-  const handleSelectZone = (zoneId: string) => {
-    setSelectedZone(zoneId);
-    setShowQtyModal(true);
-  };
-
-  const handleConfirmPurchase = () => {
-    if (!selectedZone) return;
-    setIsCreatingOrder(true);
-
-    createDraftOrderUseCase.execute(id, selectedZone, qtySelected).match(
-      (data) => {
-        setIsCreatingOrder(false);
-        setShowQtyModal(false);
-        router.push(`/checkout/${data.orderToken}`);
-      },
-      (error) => {
-        setIsCreatingOrder(false);
-        alert(error.message || "No se pudo crear la reserva. Intente de nuevo.");
-      }
-    );
-  };
+  const [favoritesState, setFavoritesState] = useState<Record<string, boolean>>({});
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
   };
 
-  const toggleRecommendationFavorite = (recId: number) => {
+  const toggleRecommendationFavorite = (recId: string) => {
     setFavoritesState((prev) => ({
       ...prev,
       [recId]: !prev[recId],
     }));
   };
 
-  const handleBuyTicketsClick = () => {
-    const section = document.getElementById("entradas-seccion");
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
-    }
+  const handleBuyTickets = () => {
+    router.push(`/checkout?eventId=${id}`);
   };
 
   return (
     <div className="flex-1 w-full bg-background">
-      
       {/* Ocultar header y bottom nav globales del layout en móvil para esta ruta */}
       <style>{`
         @media (max-width: 1023px) {
@@ -158,167 +124,153 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
       {/* VISTA MÓVIL (Stitch Style) */}
       {/* ========================================================================= */}
       <div className="block lg:hidden bg-background min-h-screen pb-32 text-on-surface">
-        
         {/* Top Navigation Bar contextual móvil */}
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white px-4 h-16 flex items-center justify-between border-b border-outline-variant/10 shadow-sm">
-          <button 
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-gray transition-all cursor-pointer active:scale-95" 
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white px-4 h-16 flex items-center justify-between border-b border-surface-variant shadow-xs">
+          <button
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-gray transition-all cursor-pointer active:scale-95"
             onClick={() => window.history.back()}
+            aria-label="Volver"
           >
             <span className="material-symbols-outlined text-on-surface text-[24px]">arrow_back</span>
           </button>
-          <div className="flex items-center gap-2">
-            <img 
-              alt="queplaneshoy logo" 
-              className="h-8 w-auto rounded-md object-contain" 
+          <Link href="/" className="flex items-center gap-2">
+            <img
+              alt="queplaneshoy logo"
+              className="h-8 w-auto rounded-md object-contain"
               src="/logo-qph.svg"
             />
             <span className="font-extrabold text-xl tracking-tight text-deep-slate">
               queplanes<span className="text-electric-indigo">hoy</span>
             </span>
-          </div>
-          <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-gray transition-all cursor-pointer active:scale-95">
+          </Link>
+          <button
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: event.title,
+                  url: window.location.href,
+                }).catch(() => {});
+              }
+            }}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-gray transition-all cursor-pointer active:scale-95"
+            aria-label="Compartir evento"
+          >
             <span className="material-symbols-outlined text-on-surface text-[24px]">share</span>
           </button>
         </nav>
 
         {/* Hero Section */}
         <div className="relative w-full h-[50vh] min-h-[400px] mt-16">
-          <img 
-            className="w-full h-full object-cover" 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTjePsGdlF2CWLwyL8QXZx_q9Xxq66u1etzSxVGNLhA3p7JGAkYYSh09G_S7qmqGPe9Oiuzo-YsPJJxvoaJuXNzlkhxlBkKsS7bdq4tMB7cjiynSO4WxksKipw08vcf01hnKzjSNhyndNJU53TQp-Dj1c0BSqZ8sUl19dD7awV9JW6M6g7KTWxE9RstGFjumD5D7kl8hZmlrFjz1DUNhWK3eN_YgZx370gH66su5jm7qlLC1W3TL0Fw4wPQbtaTt96DEZuwnYlD0HG" 
-            alt="Indigo Nights Live Concert"
+          <img
+            className="w-full h-full object-cover"
+            src={event.bannerUrl || event.imageUrl}
+            alt={event.altText || event.title}
           />
           <div className="absolute inset-0 qph-hero-gradient flex flex-col justify-end p-6 pb-12">
             <div className="flex gap-2 mb-4">
-              <span className="bg-electric-indigo text-white font-semibold text-[10px] tracking-wider uppercase px-3 py-1 rounded-full qph-label-bold">CONCIERTO</span>
-              <span className="bg-vip-gold text-white font-semibold text-[10px] tracking-wider px-3 py-1 rounded-full uppercase qph-label-bold">VIP DISPONIBLE</span>
+              <span className="bg-electric-indigo text-white font-semibold text-[10px] tracking-wider uppercase px-3 py-1 rounded-full qph-label-bold">
+                {event.category}
+              </span>
+              <span className="bg-vip-gold text-white font-semibold text-[10px] tracking-wider px-3 py-1 rounded-full uppercase qph-label-bold">
+                {event.ticketType}
+              </span>
             </div>
-            <h1 className="text-white qph-headline-lg text-[24px] mb-2 font-bold">Indigo Nights: Global Tour 2024</h1>
+            <h1 className="text-white qph-headline-lg text-[24px] mb-2 font-bold">
+              {event.title}
+            </h1>
             <div className="flex items-center text-platinum-silver qph-label-bold text-sm">
               <span className="material-symbols-outlined mr-2 text-[18px]">calendar_today</span>
-              <span>15 de Agosto, 2024 • 20:00</span>
+              <span>
+                {event.date}
+                {event.time ? ` • ${event.time}` : ""}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Event Key Info */}
         <div className="px-5 -mt-6 relative z-10">
-          <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col gap-4 border border-outline-variant/10">
+          <div className="bg-white rounded-2xl shadow-xs p-6 flex flex-col gap-4 border border-surface-variant">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-lg bg-surface-gray flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-surface-gray border border-surface-variant/40 flex items-center justify-center flex-shrink-0">
                 <span className="material-symbols-outlined text-electric-indigo text-[24px]">location_on</span>
               </div>
               <div>
-                <h3 className="qph-label-bold text-on-surface font-semibold text-sm">Estadio Metropolitano</h3>
-                <p className="text-on-surface-variant qph-body-md text-xs mt-0.5">Av. de la Castellana 144, Madrid</p>
-                <button 
-                  onClick={handleBuyTicketsClick}
+                <h3 className="qph-label-bold text-on-surface font-semibold text-sm">
+                  {event.venue}
+                </h3>
+                <p className="text-on-surface-variant qph-body-md text-xs mt-0.5">
+                  {event.address}
+                </p>
+                <button
+                  onClick={() => {
+                    const section = document.getElementById("entradas-seccion");
+                    if (section) section.scrollIntoView({ behavior: "smooth" });
+                  }}
                   className="text-electric-indigo qph-label-bold text-xs mt-1 block hover:underline cursor-pointer"
                 >
-                  Ver mapa
+                  Ver zonas y precios
                 </button>
               </div>
             </div>
-            <div className="h-px bg-outline-variant/20"></div>
+            <div className="h-px bg-surface-variant"></div>
             <div>
               <h3 className="qph-headline-md text-[18px] mb-2 font-semibold text-on-surface">Sobre el evento</h3>
               <p className="text-on-surface-variant qph-body-md text-xs leading-relaxed">
-                Prepárate para la experiencia audiovisual más impactante del año. Indigo Nights llega a Madrid con una producción sin precedentes, sonido inmersivo y los éxitos que han dominado las listas globales. Una noche donde la música y la tecnología se fusionan en un espectáculo inolvidable.
+                {event.description}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Ticket Categories (Móvil) */}
+        {/* Ticket Categories (Móvil) - Informativo */}
         <section className="mt-10 px-5" id="entradas-seccion">
-          <h2 className="qph-headline-md text-[20px] font-bold text-deep-slate mb-6 px-1">Entradas Disponibles</h2>
-          <div className="flex flex-col gap-5">
-            
-            {/* Box Category */}
-            <div className="bg-white border border-outline-variant/30 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <span className="text-tertiary-container qph-label-bold text-[10px] uppercase tracking-wider block font-semibold mb-0.5">Experiencia Premium</span>
-                  <h4 className="qph-headline-md text-[18px] font-bold text-deep-slate">Box Experience</h4>
-                </div>
-                <div className="text-right">
-                  <span className="text-on-surface-variant qph-label-bold text-[12px] block line-through">€350</span>
-                  <span className="text-electric-indigo qph-price-tag text-[20px] font-bold block mt-0.5">€299</span>
-                </div>
-              </div>
-              <p className="text-on-surface-variant qph-body-md text-xs mb-5">Incluye acceso prioritario, barra libre de refrescos y catering premium.</p>
-              <button 
-                onClick={() => handleSelectZone("box")}
-                className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black"
+          <div className="flex items-center justify-between mb-4 px-1">
+            <h2 className="qph-headline-md text-[20px] font-bold text-deep-slate">
+              Categorías y Precios
+            </h2>
+            <span className="text-[11px] font-label-bold text-on-surface-variant bg-white px-2.5 py-1 rounded-full border border-surface-variant">
+              {ticketCategories.length} zonas
+            </span>
+          </div>
+          <div className="flex flex-col gap-4">
+            {ticketCategories.map((ticket) => (
+              <div
+                key={ticket.id}
+                className="bg-white border border-surface-variant rounded-2xl p-5 shadow-xs flex flex-col gap-3"
               >
-                Seleccionar
-              </button>
-            </div>
-
-            {/* Platinum Category */}
-            <div className="bg-white border border-outline-variant/30 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <span className="text-platinum-silver qph-label-bold text-[10px] uppercase tracking-wider block font-semibold mb-0.5">Más Cercano</span>
-                  <h4 className="qph-headline-md text-[18px] font-bold text-deep-slate">Platinum Front</h4>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-electric-indigo qph-label-bold text-[10px] uppercase tracking-wider block font-semibold mb-0.5">
+                      {ticket.title}
+                    </span>
+                    <h4 className="qph-headline-md text-[18px] font-bold text-deep-slate">
+                      {ticket.name}
+                    </h4>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-on-surface-variant uppercase font-label-bold block">
+                      Por entrada
+                    </span>
+                    <span className="text-electric-indigo qph-price-tag text-[22px] font-extrabold block">
+                      €{ticket.price}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-electric-indigo qph-price-tag text-[20px] font-bold block">€185</span>
-                </div>
-              </div>
-              <p className="text-on-surface-variant qph-body-md text-xs mb-5">Zona frente al escenario. Capacidad limitada para máxima comodidad.</p>
-              <button 
-                onClick={() => handleSelectZone("platinum")}
-                className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black"
-              >
-                Seleccionar
-              </button>
-            </div>
-
-            {/* VIP Category */}
-            <div className="bg-white border-2 border-vip-gold/30 rounded-xl p-5 shadow-sm relative overflow-hidden hover:shadow-md transition-shadow">
-              <div className="absolute top-0 right-0 bg-vip-gold text-white px-3 py-1 rounded-bl-xl qph-label-bold text-[9px] uppercase font-bold">
-                Más Popular
-              </div>
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <span className="text-vip-gold qph-label-bold text-[10px] uppercase tracking-wider block font-semibold mb-0.5">Mejor Vista</span>
-                  <h4 className="qph-headline-md text-[18px] font-bold text-deep-slate">VIP Central</h4>
-                </div>
-                <div className="text-right">
-                  <span className="text-electric-indigo qph-price-tag text-[20px] font-bold block">€120</span>
+                <p className="text-on-surface-variant qph-body-md text-xs leading-relaxed">
+                  {ticket.description}
+                </p>
+                <div className="pt-2.5 border-t border-surface-variant/60 flex items-center justify-between text-[11px]">
+                  <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                    Acceso oficial
+                  </span>
+                  <span className="text-on-surface-variant font-medium">
+                    Cantidad a elegir en Checkout
+                  </span>
                 </div>
               </div>
-              <p className="text-on-surface-variant qph-body-md text-xs mb-5">Asientos numerados en la grada central con vista panorámica total.</p>
-              <button 
-                onClick={() => handleSelectZone("vip")}
-                className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black"
-              >
-                Seleccionar
-              </button>
-            </div>
-
-            {/* General Category */}
-            <div className="bg-white border border-outline-variant/30 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <span className="text-on-surface-variant qph-label-bold text-[10px] uppercase tracking-wider block font-semibold mb-0.5">Acceso Base</span>
-                  <h4 className="qph-headline-md text-[18px] font-bold text-deep-slate">Entrada General</h4>
-                </div>
-                <div className="text-right">
-                  <span className="text-electric-indigo qph-price-tag text-[20px] font-bold block">€65</span>
-                </div>
-              </div>
-              <p className="text-on-surface-variant qph-body-md text-xs mb-5">Acceso a pista general. Disfruta de la energía del público.</p>
-              <button 
-                onClick={() => handleSelectZone("general")}
-                className="w-full bg-deep-slate text-white py-3.5 rounded-lg qph-label-bold text-xs font-bold active:scale-95 transition-transform cursor-pointer hover:bg-black"
-              >
-                Seleccionar
-              </button>
-            </div>
-
+            ))}
           </div>
         </section>
 
@@ -332,51 +284,63 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         </div>
 
         {/* Persistant Purchase Bar (Mobile bottom sticky) */}
-        <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-outline-variant/10 p-4 pb-8 flex items-center justify-between gap-4 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)]">
+        <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-surface-variant p-4 pb-8 flex items-center justify-between gap-4 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)]">
           <div className="flex flex-col">
             <span className="qph-label-bold text-on-surface-variant uppercase text-[10px]">Desde</span>
-            <span className="qph-price-tag text-[20px] text-on-surface font-bold">€65,00</span>
+            <span className="qph-price-tag text-[20px] text-on-surface font-bold">€{event.price},00</span>
           </div>
-          <button 
-            onClick={handleBuyTicketsClick}
-            className="flex-grow bg-electric-indigo text-white h-14 rounded-xl qph-label-bold text-xs font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-electric-indigo/20 cursor-pointer"
+          <button
+            onClick={handleBuyTickets}
+            className="flex-grow bg-electric-indigo hover:bg-primary text-white h-14 rounded-xl qph-label-bold text-xs font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-electric-indigo/20 cursor-pointer"
           >
             <span>COMPRAR ENTRADAS</span>
             <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
           </button>
         </div>
-
       </div>
 
       {/* ========================================================================= */}
       {/* VISTA ESCRITORIO (Original) */}
       {/* ========================================================================= */}
       <div className="hidden lg:block bg-background min-h-screen pb-20">
-        
         {/* Hero Section Banner */}
         <section className="relative w-full h-[600px] overflow-hidden">
           <img
             className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZjYk3TO8LsC4cDf1CDTf2evzsjOS6hcm3RTp_GL1TBtPGZPAEkw2LB1K_2FYIUqesxpwBH81gi4CUf6J4KWMCkwf0zhoVYcQNGzDbx-WJi0BFIkE9WfrpitVLR8-0suyZSY4mtkIMrzdEz6eb0THqNwC8OTpElcOxzSrrVHEF492Kyu7Isjkj-cvF9-lRhLjWCwXTiQIIVTnNptiwwJ8IkAvbQPiNp21CY7O15XrFqyHc46IArePF-6JkLD6-a4tBYsj-SNCOfJad"
-            alt="Midnight Echoes Live Concert"
+            src={event.bannerUrl || event.imageUrl}
+            alt={event.altText || event.title}
           />
           <div className="absolute inset-0 qph-hero-gradient flex flex-col justify-end pb-16 px-8">
             <div className="max-w-container-max mx-auto w-full">
+              {/* Botón de retroceso */}
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-white/90 hover:text-white mb-6 transition-colors text-sm font-semibold w-fit bg-black/40 hover:bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10"
+              >
+                <span className="material-symbols-outlined text-sm">arrow_back</span>
+                <span>Volver a Eventos</span>
+              </Link>
+
               <div className="flex flex-col gap-3 text-white">
                 <span className="font-semibold text-[14px] uppercase tracking-widest text-electric-indigo bg-white/10 backdrop-blur-md w-fit px-3 py-1 rounded-full qph-label-bold">
-                  Tour Mundial 2024
+                  {event.tagline || event.category}
                 </span>
                 <h1 className="qph-display-xl text-white max-w-3xl leading-tight">
-                  Midnight Echoes: En Vivo
+                  {event.title}
                 </h1>
                 <div className="flex flex-wrap gap-8 items-center mt-4">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-lg">calendar_today</span>
-                    <span className="qph-label-bold text-sm">15 DE OCTUBRE, 2024</span>
+                    <span className="qph-label-bold text-sm">
+                      {event.date.toUpperCase()}
+                      {event.time ? ` • ${event.time}` : ""}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-lg">location_on</span>
-                    <span className="qph-label-bold text-sm">ESTADIO NACIONAL, MADRID</span>
+                    <span className="qph-label-bold text-sm">
+                      {event.venue.toUpperCase()}, {event.location.toUpperCase()}
+                    </span>
                   </div>
                   <button
                     onClick={toggleFavorite}
@@ -400,218 +364,369 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
 
         {/* Content Grid */}
         <div className="max-w-container-max mx-auto px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
           {/* Main Content (Left) */}
-          <div className="lg:col-span-8 flex flex-col gap-16">
-            
-            {/* About Section */}
-            <section className="flex flex-col gap-4">
-              <h2 className="qph-headline-lg text-deep-slate font-bold">Sobre el Evento</h2>
-              <p className="qph-body-lg text-on-surface-variant leading-relaxed">
-                Prepárate para la noche más espectacular del año. Midnight Echoes llega a Madrid con una producción audiovisual sin precedentes. Tras agotar entradas en Londres y Nueva York, la banda presenta su nuevo álbum junto a sus más grandes éxitos en una experiencia sensorial que combina arte digital, sonido e iluminación futurista.
+          <div className="lg:col-span-8 flex flex-col gap-10">
+            {/* About Section - Detalle del Evento en Card Enmarcada */}
+            <section className="bg-white p-6 sm:p-8 rounded-2xl border border-surface-variant shadow-xs flex flex-col gap-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-surface-variant">
+                <div className="w-10 h-10 rounded-xl bg-electric-indigo/10 border border-electric-indigo/20 flex items-center justify-center text-electric-indigo">
+                  <span className="material-symbols-outlined text-2xl">description</span>
+                </div>
+                <div>
+                  <span className="text-[10px] qph-label-bold uppercase tracking-widest text-electric-indigo block">
+                    Información Oficial
+                  </span>
+                  <h2 className="qph-headline-lg text-deep-slate font-bold text-xl sm:text-2xl">
+                    Sobre el Evento
+                  </h2>
+                </div>
+              </div>
+
+              <p className="qph-body-lg text-on-surface-variant leading-relaxed text-sm sm:text-base">
+                {event.description}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <div className="bg-surface-container-low p-5 rounded-xl flex gap-4 items-start border border-outline-variant/30">
-                  <span className="material-symbols-outlined text-electric-indigo mt-0.5">info</span>
+
+              {/* Sub-cards de Requisitos y Horarios */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="bg-surface-gray/60 p-4.5 rounded-xl flex gap-3.5 items-start border border-surface-variant">
+                  <div className="w-9 h-9 rounded-lg bg-white border border-surface-variant/40 flex items-center justify-center flex-shrink-0 text-electric-indigo shadow-xs">
+                    <span className="material-symbols-outlined text-xl">verified_user</span>
+                  </div>
                   <div>
-                    <h4 className="qph-label-bold text-deep-slate">Requisitos de entrada</h4>
-                    <p className="qph-body-md text-sm text-on-surface-variant mt-1">
-                      Mayores de 16 años o acompañados por tutor legal. Identificación oficial requerida.
+                    <h4 className="qph-label-bold text-deep-slate font-bold text-xs uppercase tracking-wider">
+                      Requisitos de entrada
+                    </h4>
+                    <p className="qph-body-md text-xs text-on-surface-variant mt-1 leading-relaxed">
+                      Mayores de 16 años o acompañados por tutor legal. Identificación oficial requerida en el acceso.
                     </p>
                   </div>
                 </div>
-                <div className="bg-surface-container-low p-5 rounded-xl flex gap-4 items-start border border-outline-variant/30">
-                  <span className="material-symbols-outlined text-electric-indigo mt-0.5">schedule</span>
+
+                <div className="bg-surface-gray/60 p-4.5 rounded-xl flex gap-3.5 items-start border border-surface-variant">
+                  <div className="w-9 h-9 rounded-lg bg-white border border-surface-variant/40 flex items-center justify-center flex-shrink-0 text-electric-indigo shadow-xs">
+                    <span className="material-symbols-outlined text-xl">schedule</span>
+                  </div>
                   <div>
-                    <h4 className="qph-label-bold text-deep-slate">Horarios</h4>
-                    <p className="qph-body-md text-sm text-on-surface-variant mt-1">
-                      Apertura de puertas: 18:00h. Inicio Show: 21:00h.
+                    <h4 className="qph-label-bold text-deep-slate font-bold text-xs uppercase tracking-wider">
+                      Horarios y Accesos
+                    </h4>
+                    <p className="qph-body-md text-xs text-on-surface-variant mt-1 leading-relaxed">
+                      Apertura de puertas: 2 horas antes del show. Inicio puntual programado: {event.time || "21:00h"}.
                     </p>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* Ticket Categories Section */}
-            <section className="flex flex-col gap-6" id="entradas-seccion">
-              <div className="flex justify-between items-end">
-                <h2 className="qph-headline-lg text-deep-slate font-bold">Categorías de Entradas</h2>
-                <span className="qph-label-bold text-on-surface-variant">{TICKET_CATEGORIES.length} Categorías Disponibles</span>
-              </div>
-              <div className="overflow-hidden border border-outline-variant/30 rounded-2xl bg-white qph-soft-shadow">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[600px]">
-                    <thead>
-                      <tr className="bg-surface-container text-deep-slate border-b border-outline-variant/30">
-                        <th className="p-6 qph-label-bold uppercase tracking-wider">Categoría</th>
-                        <th className="p-6 qph-label-bold uppercase tracking-wider">Ubicación & Beneficios</th>
-                        <th className="p-6 qph-label-bold uppercase tracking-wider">Precio</th>
-                        <th className="p-6"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant/20">
-                      {TICKET_CATEGORIES.map((ticket) => (
-                        <tr key={ticket.id} className="hover:bg-surface-container-low transition-colors group">
-                          <td className="p-6">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${ticket.badgeStyle}`}>
-                              {ticket.name}
-                            </span>
-                          </td>
-                          <td className="p-6">
-                            <p className="qph-label-bold text-deep-slate">{ticket.title}</p>
-                            <p className="qph-body-md text-xs text-on-surface-variant mt-1">{ticket.description}</p>
-                          </td>
-                          <td className="p-6 qph-price-tag text-electric-indigo font-bold">
-                            €{ticket.price}
-                          </td>
-                          <td className="p-6 text-right">
-                            <button 
-                              onClick={() => handleSelectZone(ticket.id)}
-                              className="bg-deep-slate text-white px-4 py-2 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition-all cursor-pointer hover:bg-black active:scale-95"
-                            >
-                              Seleccionar
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            {/* Ticket Categories Section - Informativo */}
+            <section className="flex flex-col gap-4" id="entradas-seccion">
+              <div className="flex justify-between items-end mb-1">
+                <div>
+                  <span className="text-[10px] qph-label-bold uppercase tracking-widest text-electric-indigo block">
+                    Zonas y Localidades
+                  </span>
+                  <h2 className="qph-headline-lg text-deep-slate font-bold text-xl sm:text-2xl">
+                    Categorías de Entradas
+                  </h2>
                 </div>
+                <span className="qph-label-bold text-xs text-on-surface-variant bg-white px-3 py-1 rounded-full border border-surface-variant shadow-xs">
+                  {ticketCategories.length} Tipos Disponibles
+                </span>
+              </div>
+
+              {/* Lista de Cards de Entradas Informativas */}
+              <div className="flex flex-col gap-3.5">
+                {ticketCategories.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    className="bg-white p-5 sm:p-6 rounded-2xl border border-surface-variant shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-label-bold uppercase tracking-wider shadow-xs ${ticket.badgeStyle}`}
+                        >
+                          {ticket.name}
+                        </span>
+                        <h4 className="font-headline-md text-base sm:text-lg text-deep-slate font-bold">
+                          {ticket.title}
+                        </h4>
+                        {ticket.isPresale ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-label-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <span className="material-symbols-outlined text-[12px]">bolt</span>
+                            Preventa
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-label-bold text-on-surface-variant bg-surface-gray px-2 py-0.5 rounded-full border border-surface-variant/50">
+                            Oficial
+                          </span>
+                        )}
+                      </div>
+                      <p className="qph-body-md text-xs text-on-surface-variant max-w-xl leading-relaxed">
+                        {ticket.description}
+                      </p>
+                    </div>
+
+                    {/* Bloque Precio e Información */}
+                    <div className="flex items-center justify-between sm:justify-end gap-5 pt-3 sm:pt-0 border-t sm:border-t-0 border-surface-variant sm:min-w-[140px]">
+                      <div className="text-left sm:text-right">
+                        <span className="text-[10px] text-outline uppercase font-label-bold block">
+                          Precio por entrada
+                        </span>
+                        <div className="flex items-baseline gap-2 justify-start sm:justify-end">
+                          <span className="font-price-tag text-price-tag text-deep-slate font-extrabold text-2xl">
+                            €{ticket.price}
+                          </span>
+                          {ticket.regularPrice && ticket.regularPrice > ticket.price && (
+                            <span className="text-xs text-outline line-through font-semibold text-gray-400">
+                              €{ticket.regularPrice}
+                            </span>
+                          )}
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 mt-0.5">
+                          <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                          Disponible
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
 
             {/* Location Map Section */}
             <section className="flex flex-col gap-4">
-              <h2 className="qph-headline-lg text-deep-slate font-bold">Ubicación</h2>
-              <div className="w-full h-80 rounded-2xl overflow-hidden relative qph-soft-shadow">
+              <h2 className="qph-headline-lg text-deep-slate font-bold text-xl sm:text-2xl">Ubicación</h2>
+              <div className="w-full h-80 rounded-2xl overflow-hidden relative border border-surface-variant shadow-xs">
                 <img
                   className="w-full h-full object-cover grayscale opacity-80"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQWO-g3Ms96zR7IjQFeNqY1kcs-rLOz6jrPLJwzqgZhhZ27o4-CiOL_bgoJq4EN2kWLiUtjY2ALN0nDTaG2c_TtfxMu_NFTrT_cqEQv81y5tyloWo5lOluWdEtLD0BIhrMadvdfcsB0YXAtvXdiEB2oKSdQHX5q4QCmG5O-fAAlLZxTTVOZe1E7a7LrLXjNlTStbN9iRZpLFVfAJwjXjM6213qx2R2f54cuhnkA7WSCBeW2Apqson4g3qCyO4R2KCa3ig_9reDRKzW"
-                  alt="Map location Estadio Nacional"
+                  alt={`Mapa ubicación de ${event.venue}`}
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white p-4 rounded-xl shadow-xl border border-outline-variant/30 flex items-center gap-3">
-                    <div className="bg-electric-indigo/10 p-2 rounded-lg">
+                  <div className="bg-white p-4 rounded-2xl shadow-lg border border-surface-variant flex items-center gap-3">
+                    <div className="bg-electric-indigo/10 p-2.5 rounded-xl border border-electric-indigo/20">
                       <span className="material-symbols-outlined text-electric-indigo text-[24px]">location_on</span>
                     </div>
                     <div>
-                      <p className="qph-label-bold text-deep-slate">Estadio Nacional</p>
-                      <p className="qph-body-md text-xs text-on-surface-variant">Paseo de la Castellana, Madrid</p>
+                      <p className="qph-label-bold text-deep-slate font-bold">{event.venue}</p>
+                      <p className="qph-body-md text-xs text-on-surface-variant">{event.address}</p>
                     </div>
                   </div>
                 </div>
               </div>
             </section>
-            
           </div>
 
           {/* Sidebar Sticky (Right) */}
           <aside className="lg:col-span-4">
             <div className="sticky top-28 flex flex-col gap-6">
-              
-              {/* Purchase Card */}
-              <div className="bg-white p-6 rounded-2xl qph-soft-shadow border border-outline-variant/20">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <p className="text-on-surface-variant text-xs qph-label-bold uppercase tracking-wider">Desde</p>
-                    <p className="qph-price-tag text-3xl text-electric-indigo font-bold">€75.00</p>
-                  </div>
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
-                    Disponible
-                  </span>
-                </div>
-                <div className="flex flex-col gap-3 mb-6">
-                  <div className="flex items-center gap-3 p-3 bg-surface-gray rounded-xl">
-                    <span className="material-symbols-outlined text-on-surface-variant">calendar_month</span>
+              {/* Card donde se muestra el Monto (Purchase Card) */}
+              <div className="bg-white rounded-2xl shadow-xs border border-surface-variant overflow-hidden">
+                {/* Mini Banner de la tarjeta */}
+                <div className="relative h-28 overflow-hidden">
+                  <img
+                    alt={event.title}
+                    className="w-full h-full object-cover"
+                    src={event.bannerUrl || event.imageUrl}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/40 to-transparent" />
+                  <div className="absolute bottom-3 left-4 right-4 text-white flex justify-between items-end">
                     <div>
-                      <p className="qph-body-md text-[10px] text-on-surface-variant font-medium">Fecha única</p>
-                      <p className="qph-label-bold text-sm text-deep-slate">Sábado, 15 de Octubre</p>
+                      <span className="inline-block bg-white/90 backdrop-blur-md text-deep-slate text-[9px] font-label-bold px-2 py-0.5 rounded-full uppercase mb-1 border border-surface-variant/40">
+                        {event.category}
+                      </span>
+                      <h3 className="font-headline-md text-xs font-bold leading-tight line-clamp-1 text-white">
+                        {event.title}
+                      </h3>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-surface-gray rounded-xl">
-                    <span className="material-symbols-outlined text-on-surface-variant">confirmation_number</span>
-                    <div>
-                      <p className="qph-body-md text-[10px] text-on-surface-variant font-medium">Capacidad</p>
-                      <p className="qph-label-bold text-sm text-deep-slate">Entradas limitadas</p>
-                    </div>
+                    <span className="text-[10px] text-white/80 font-label-bold">
+                      {event.venue}
+                    </span>
                   </div>
                 </div>
-                <button
-                  onClick={handleBuyTicketsClick}
-                  className="w-full bg-electric-indigo text-white py-4 rounded-xl qph-headline-md font-semibold hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-electric-indigo/20 cursor-pointer"
-                >
-                  Comprar Entradas
-                </button>
-                <p className="text-center qph-body-md text-[11px] text-on-surface-variant mt-4">
-                  Garantía QPH: Entradas 100% verificadas.
-                </p>
+
+                <div className="p-6">
+                  {/* Encabezado de Precio */}
+                  <div className="flex justify-between items-start mb-5 pb-4 border-b border-surface-variant">
+                    <div>
+                      <p className="text-on-surface-variant text-[10px] qph-label-bold uppercase tracking-wider">
+                        {event.isPresale ? "Preventa desde" : "Precio Desde"}
+                      </p>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        <p className="font-price-tag text-price-tag text-3xl text-deep-slate font-extrabold">
+                          €{event.price}.00
+                        </p>
+                        {event.regularPrice && event.regularPrice > event.price && (
+                          <span className="text-sm text-outline line-through font-semibold text-gray-400">
+                            €{event.regularPrice}.00
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {event.isPresale ? (
+                      <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-xs">
+                        <span className="material-symbols-outlined text-[14px]">bolt</span>
+                        Preventa
+                      </span>
+                    ) : (
+                      <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200 shadow-xs">
+                        Disponible
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Metadatos en cajas enmarcadas */}
+                  <div className="flex flex-col gap-2.5 mb-6">
+                    <div className="flex items-center gap-3 p-3 bg-surface-gray rounded-xl border border-surface-variant">
+                      <span className="material-symbols-outlined text-electric-indigo text-lg">calendar_month</span>
+                      <div>
+                        <p className="qph-body-md text-[10px] text-on-surface-variant font-medium">Fecha confirmada</p>
+                        <p className="qph-label-bold text-xs text-deep-slate font-bold">{event.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-surface-gray rounded-xl border border-surface-variant">
+                      <span className="material-symbols-outlined text-electric-indigo text-lg">location_on</span>
+                      <div>
+                        <p className="qph-body-md text-[10px] text-on-surface-variant font-medium">Recinto oficial</p>
+                        <p className="qph-label-bold text-xs text-deep-slate font-bold truncate">{event.venue}, {event.location}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botón CTA Principal */}
+                  <button
+                    onClick={handleBuyTickets}
+                    className="w-full bg-electric-indigo hover:bg-primary text-white py-4 rounded-xl font-label-bold text-sm active:scale-95 transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>Comprar Entradas</span>
+                    <span className="material-symbols-outlined text-base">arrow_forward</span>
+                  </button>
+
+                  {/* Métodos de Pago aceptados en píldoras con borde */}
+                  <div className="mt-5 pt-4 border-t border-surface-variant">
+                    <div className="text-center text-[10px] font-label-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                      Métodos aceptados:
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-1.5">
+                      <span className="px-2 py-0.5 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
+                        💳 Tarjetas
+                      </span>
+                      <span className="px-2 py-0.5 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
+                        Apple Pay
+                      </span>
+                      <span className="px-2 py-0.5 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
+                        Google Pay
+                      </span>
+                      <span className="px-2 py-0.5 bg-surface-gray rounded text-[10px] font-bold text-purple-700 border border-surface-variant">
+                        Bizum / Yape
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Sello de Seguridad */}
+                  <div className="mt-4 p-3 border border-surface-variant border-dashed rounded-xl bg-surface-gray/50 flex items-center gap-2 text-xs text-on-surface-variant">
+                    <span className="material-symbols-outlined text-electric-indigo text-lg">verified_user</span>
+                    <span className="text-[11px] font-medium leading-tight">
+                      Garantía QPH: Entradas 100% verificadas y reserva protegida SSL.
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Support Card */}
-              <div className="bg-deep-slate p-6 rounded-2xl text-white">
-                <h4 className="qph-label-bold text-white mb-2">¿Necesitas ayuda?</h4>
-                <p className="qph-body-md text-sm opacity-70 mb-4 leading-relaxed">
-                  Nuestro equipo de soporte está disponible 24/7 para asistirte con tu compra.
+              <div className="bg-deep-slate p-6 rounded-2xl text-white border border-surface-variant shadow-xs">
+                <h4 className="qph-label-bold text-white mb-2 font-bold">¿Necesitas ayuda?</h4>
+                <p className="qph-body-md text-xs opacity-75 mb-4 leading-relaxed">
+                  Nuestro equipo de soporte está disponible 24/7 para asistirte con tu compra y asignación de asientos.
                 </p>
-                <a className="text-electric-indigo qph-label-bold text-sm hover:underline flex items-center gap-1" href="#">
+                <a className="text-electric-indigo hover:text-white transition-colors qph-label-bold text-xs flex items-center gap-1" href="#">
                   Contactar Soporte &rarr;
                 </a>
               </div>
-
             </div>
           </aside>
-
         </div>
 
         {/* Similar Events Section */}
-        <section className="bg-surface-container-low py-16 mt-16 border-t border-outline-variant/10">
+        <section className="bg-surface-container-low py-16 mt-16 border-t border-surface-variant">
           <div className="max-w-container-max mx-auto px-8">
             <div className="flex justify-between items-end mb-8">
               <h2 className="qph-headline-lg text-deep-slate font-bold">Eventos Similares</h2>
-              <a className="text-electric-indigo qph-label-bold hover:underline" href="#">
-                Ver todos los conciertos
-              </a>
+              <Link href="/events" className="text-electric-indigo qph-label-bold hover:underline">
+                Ver todos los eventos
+              </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {RECOMMENDATIONS.map((rec) => {
                 const recIsFavorite = favoritesState[rec.id] || false;
                 return (
-                  <div key={rec.id} className="bg-white rounded-2xl overflow-hidden qph-soft-shadow qph-hover-lift group cursor-pointer flex flex-col">
-                    <div className="relative aspect-video">
+                  <div
+                    key={rec.id}
+                    className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer flex flex-col justify-between border border-surface-variant"
+                  >
+                    {/* Media / Imagen y Badges */}
+                    <div className="relative aspect-video overflow-hidden">
                       <img
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
                         src={rec.imageUrl}
                         alt={rec.title}
                       />
-                      <span className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-deep-slate shadow-sm tracking-wider">
-                        {rec.category}
-                      </span>
-                    </div>
-                    <div className="p-5 flex flex-col flex-1">
-                      <p className="qph-label-bold text-[11px] text-on-surface-variant uppercase tracking-widest">
-                        {rec.date} • {rec.location}
-                      </p>
-                      <h3 className="qph-headline-md text-deep-slate mt-1 group-hover:text-electric-indigo transition-colors font-semibold text-lg flex-1">
-                        {rec.title}
-                      </h3>
-                      <div className="flex justify-between items-center mt-6 pt-4 border-t border-surface-gray">
-                        <span className="qph-price-tag text-electric-indigo font-bold">€{rec.price}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleRecommendationFavorite(rec.id);
+                      <div className="absolute top-3 left-3 flex gap-2">
+                        <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
+                          {rec.category}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleRecommendationFavorite(rec.id);
+                        }}
+                        aria-label="Guardar en favoritos"
+                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer"
+                      >
+                        <span
+                          className="material-symbols-outlined text-lg"
+                          style={{
+                            fontVariationSettings: recIsFavorite ? "'FILL' 1" : "'FILL' 0",
+                            color: recIsFavorite ? "#e11d48" : "inherit",
                           }}
-                          className={`hover:text-error transition-colors cursor-pointer p-1 rounded-full ${
-                            recIsFavorite ? "text-error" : "text-on-surface-variant"
-                          }`}
                         >
-                          <span
-                            className="material-symbols-outlined text-lg"
-                            style={{ fontVariationSettings: recIsFavorite ? "'FILL' 1" : "'FILL' 0" }}
-                          >
-                            favorite
+                          favorite
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Contenido */}
+                    <div className="p-5 flex flex-col flex-1 justify-between">
+                      <div>
+                        <p className="font-label-bold text-[12px] text-electric-indigo mb-1 uppercase">
+                          {rec.date} • {rec.location}
+                        </p>
+                        <h3 className="font-headline-md text-headline-md text-deep-slate group-hover:text-electric-indigo transition-colors font-bold line-clamp-1 mb-2">
+                          {rec.title}
+                        </h3>
+                        <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3">
+                          Acceso oficial garantizado para esta función en directo.
+                        </p>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-outline uppercase font-label-bold">Precio</span>
+                          <span className="font-price-tag text-price-tag text-deep-slate font-extrabold text-base">
+                            Desde {rec.price}€
                           </span>
-                        </button>
+                        </div>
+                        <Link
+                          href={`/events/${rec.id}`}
+                          className="px-3.5 py-2 bg-electric-indigo text-white rounded-xl font-label-bold text-[12px] hover:bg-primary transition-all shadow-sm"
+                        >
+                          Comprar Entradas
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -620,75 +735,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             </div>
           </div>
         </section>
-
       </div>
-
-      {/* Modal para selección de cantidad */}
-      {showQtyModal && (
-        <div className="fixed inset-0 bg-deep-slate/55 backdrop-blur-sm z-[99] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-outline-variant/20 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-deep-slate">Selecciona la cantidad</h3>
-              <button 
-                onClick={() => setShowQtyModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-gray text-on-surface-variant hover:text-deep-slate"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-            
-            <p className="text-xs text-on-surface-variant mb-4">
-              Zona seleccionada: <span className="font-bold text-deep-slate">{
-                selectedZone === 'box' ? 'Box Experience' :
-                selectedZone === 'platinum' ? 'Platinum Front' :
-                selectedZone === 'vip' ? 'VIP Central' : 'Entrada General'
-              }</span>
-            </p>
-
-            <div className="flex items-center justify-between mb-8 p-3 bg-surface-gray rounded-xl">
-              <span className="text-sm font-semibold text-deep-slate pl-2">Cantidad</span>
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  disabled={qtySelected <= 1}
-                  onClick={() => setQtySelected(qtySelected - 1)}
-                  className="w-8 h-8 rounded-lg bg-white border border-outline-variant/30 flex items-center justify-center font-bold text-deep-slate hover:bg-gray-100 disabled:opacity-50"
-                >
-                  -
-                </button>
-                <span className="font-extrabold text-lg w-4 text-center">{qtySelected}</span>
-                <button
-                  type="button"
-                  disabled={qtySelected >= 10}
-                  onClick={() => setQtySelected(qtySelected + 1)}
-                  className="w-8 h-8 rounded-lg bg-white border border-outline-variant/30 flex items-center justify-center font-bold text-deep-slate hover:bg-gray-100 disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={handleConfirmPurchase}
-              disabled={isCreatingOrder}
-              className="w-full bg-electric-indigo text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/20 active:scale-[0.98] transition-all hover:bg-primary-container"
-            >
-              {isCreatingOrder ? (
-                <>
-                  <span className="material-symbols-outlined animate-spin text-[20px]">refresh</span>
-                  <span>Reservando...</span>
-                </>
-              ) : (
-                <>
-                  <span>Confirmar y Comprar</span>
-                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

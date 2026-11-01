@@ -1,4 +1,6 @@
 import React from "react";
+import Link from "next/link";
+import { DesktopHeader } from "../common/components/desktop-header";
 
 export default function MainLayout({
   children,
@@ -7,65 +9,20 @@ export default function MainLayout({
 }>) {
   return (
     <>
-      {/* Header (TopNavBar) - Desktop */}
-      <header className="hidden md:block w-full sticky top-0 z-50 bg-surface-container-lowest/80 backdrop-blur-xl shadow-sm border-b border-outline-variant/10">
-        <div className="flex justify-between items-center w-full px-8 max-w-container-max mx-auto h-20">
-          
-          {/* Brand Logo */}
-          <div className="flex items-center gap-2 cursor-pointer">
-            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
-            <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-              queplanes<span className="text-electric-indigo">hoy</span>
-            </span>
-          </div>
-
-          {/* Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-8">
-            <a className="qph-label-bold text-electric-indigo border-b-2 border-primary pb-1" href="/">
-              Eventos
-            </a>
-            <a className="qph-label-bold text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">
-              Teatro
-            </a>
-            <a className="qph-label-bold text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">
-              Conciertos
-            </a>
-            <a className="qph-label-bold text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">
-              Deportes
-            </a>
-          </nav>
-
-          {/* Actions */}
-          <div className="flex items-center gap-4">
-            <button className="qph-btn-watchlist hidden lg:flex">
-              <span className="material-symbols-outlined text-lg">favorite</span>
-              <span>Lista de seguimiento</span>
-            </button>
-            <button className="qph-btn-primary">
-              Crear Evento
-            </button>
-            <a href="/profile/tickets" className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/30 cursor-pointer">
-              <img
-                alt="Avatar de usuario"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnqXVnsmBrHy9Kd7cWWb0PaButWFj7ieVvda4KQ6Gzku7NMPcNGxi_Cq2UC1DSwk2r8_qL2ZzWM5Lq_9BFFEpeMNF11zZiUQtr4JjMsCuraW_kcZXdxL4ftivhWz3SLrtagNNngRrHMt2Gwg553z8hX80YVC9_BRRQrviCyXSypPSe4atADFZpigLRh7RNFotpC4cdb05tB9_JhjTFs4nsISy6vQFzA78k7jIKy4CTPzUqYunCJ3yBvoR8hOOwXModWn6WconFu2O9"
-              />
-            </a>
-          </div>
-        </div>
-      </header>
+      {/* Header (TopNavBar) - Desktop con reemplazo dinámico de categorías por buscador en scroll */}
+      <DesktopHeader />
 
       {/* Header (TopNavBar) - Mobile (Stitch Style) */}
       <header className="qph-mobile-header md:hidden bg-white sticky top-0 z-50 h-16 flex items-center px-4 justify-between transition-all duration-300 shadow-sm border-b border-outline-variant/5">
-        <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3 cursor-pointer">
           <img alt="queplaneshoy logo" className="w-8 h-8 rounded-md object-contain" src="/logo-qph.svg"/>
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
             queplanes<span className="text-electric-indigo">hoy</span>
           </span>
-        </div>
+        </Link>
         <div className="flex items-center gap-4">
           <button className="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-high/50 rounded-lg transition-all">favorite</button>
-          <a href="/profile/tickets" className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/30 cursor-pointer">
+          <a href="/profile" className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/30 cursor-pointer">
             <img
               alt="Avatar de usuario"
               className="w-full h-full object-cover"
@@ -198,18 +155,18 @@ export default function MainLayout({
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
           <span className="font-bold text-[10px] uppercase">Inicio</span>
         </a>
-        <button className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
+        <Link href="/events" className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
           <span className="material-symbols-outlined">explore</span>
           <span className="font-semibold text-[10px] uppercase">Explorar</span>
-        </button>
-        <button className="flex flex-col items-center justify-center -mt-10 w-14 h-14 bg-electric-indigo text-white rounded-full shadow-lg shadow-electric-indigo/30 active:scale-95 transition-transform cursor-pointer">
+        </Link>
+        <Link href="/organizer/events/new" aria-label="Crear evento" className="flex flex-col items-center justify-center -mt-10 w-14 h-14 bg-electric-indigo text-white rounded-full shadow-lg shadow-electric-indigo/30 active:scale-95 transition-transform cursor-pointer">
           <span className="material-symbols-outlined text-[32px]">add</span>
-        </button>
+        </Link>
         <a href="/profile/tickets" className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
           <span className="material-symbols-outlined">confirmation_number</span>
           <span className="font-semibold text-[10px] uppercase">Tickets</span>
         </a>
-        <a href="/profile/settings" className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
+        <a href="/profile" className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
           <span className="material-symbols-outlined">person</span>
           <span className="font-semibold text-[10px] uppercase">Perfil</span>
         </a>
