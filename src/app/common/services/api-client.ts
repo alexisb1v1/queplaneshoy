@@ -8,9 +8,12 @@ import { ERROR_CODES } from '../errors/error-codes';
 export const AUTH_TOKEN_KEY = 'qph_auth_token';
 
 /**
- * URL base del API con fallback al puerto 3001 por defecto
+ * URL base del API con fallback inteligente:
+ * - En producción, si no se especifica, usa la ruta relativa '/api' gestionada por reverse proxy (Caddy).
+ * - En desarrollo local, usa 'http://localhost:3001/api'.
  */
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/+$/, '');
+const DEFAULT_API_URL = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api';
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL).replace(/\/+$/, '');
 
 /**
  * Opciones avanzadas de petición para ApiClient
@@ -103,11 +106,22 @@ export function mapApiErrorToDomainError(error: unknown): DomainError {
 }
 
 /**
- * Resuelve la URL completa agregando query params
+ * Resuelve la URL completa agregando query params, con soporte para rutas relativas y absolutas
  */
 function buildFullUrl(path: string, params?: Record<string, string | number | boolean | undefined | null>): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  const fullUrl = new URL(`${API_BASE_URL}${cleanPath}`);
+  const combined = `${API_BASE_URL}${cleanPath}`;
+
+  let fullUrl: URL;
+  if (/^https?:\/\//i.test(combined)) {
+    fullUrl = new URL(combined);
+  } else {
+    // Si la URL es relativa (ej. /api/events/featured), usamos el origen del navegador
+    const base = typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'http://localhost:3000';
+    fullUrl = new URL(combined, base);
+  }
 
   if (params) {
     Object.entries(params).forEach(([key, val]) => {
