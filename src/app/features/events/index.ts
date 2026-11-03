@@ -9,6 +9,8 @@ import { GetFeaturedEventsUseCase } from './use-cases/get-featured-events.use-ca
 import { GetUpcomingEventsUseCase } from './use-cases/get-upcoming-events.use-case';
 import { GetWeeklyFeaturedEventsUseCase } from './use-cases/get-weekly-featured-events.use-case';
 import { GetWeekendEventsUseCase } from './use-cases/get-weekend-events.use-case';
+import { GetEventLandingUseCase } from './use-cases/get-event-landing.use-case';
+import { GetEventDetailUseCase } from './use-cases/get-event-detail.use-case';
 
 // Instanciamos el servicio e infraestructura
 const eventApiService = new EventApiService();
@@ -24,7 +26,11 @@ export const getFeaturedEventsUseCase = new GetFeaturedEventsUseCase(eventReposi
 export const getUpcomingEventsUseCase = new GetUpcomingEventsUseCase(eventRepository);
 export const getWeeklyFeaturedEventsUseCase = new GetWeeklyFeaturedEventsUseCase(eventRepository);
 export const getWeekendEventsUseCase = new GetWeekendEventsUseCase(eventRepository);
+export const getEventLandingUseCase = new GetEventLandingUseCase(eventRepository);
+export const getEventDetailUseCase = new GetEventDetailUseCase(eventRepository);
 
 export * from './models/search-event.model';
 export * from './models/home-event-card.model';
+export * from './models/event-landing.model';
+export * from './models/event-detail.model';
 

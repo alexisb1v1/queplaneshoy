@@ -14,281 +14,8 @@ import {
 import { getCategoryById } from "../constants/eventConstants";
 
 // =========================================================================
-// DATOS DE EVENTOS (SINCRONIZADOS CON STITCH PROJECT 13459271233978638733)
+// CATEGORÍAS OFICIALES DE QUÉ PLANES HOY
 // =========================================================================
-
-// 1. Eventos Próximos
-const UPCOMING_EVENTS: EventCardProps[] = [
-  {
-    id: 1,
-    title: "Echoes of Summer Tour",
-    category: "concierto",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDHVY15DpfYzyH93Hw8X7x6UctHW54DfefNOboWhdivHf-ScywQF8yBmZWwZGhiGpYGZPObwBdB0HhNC4pEZnP8E0ggFQrAUuGgZ5Pt1ZJtIL8iKH53j99jFUrpBx5XCCTcdg4gecQES56Shq1fcGEOo_CadQ4XUcav8DgBIjKH2I9CID9XcUNx8MQFd1jM3rm-pjAqVtYL2PTtnniP7DJJ1s1HHUwo0nCw-tUJGlIZKAFYpuZhruFXU-9jlaODrQMOoQu9Ym1XY4vB",
-    altText: "DJ actuando en un concierto de música electrónica",
-    date: "14 OCT, 2024",
-    location: "MADRID",
-    price: 45,
-    ticketType: "General",
-    ticketBadgeStyle: "general",
-    description: "Cierre de gira con los mejores sets de música electrónica y un show de visuales envolventes.",
-    urgencyText: "Últimas 45 entradas",
-    urgencyIcon: "hourglass_top",
-  },
-  {
-    id: 2,
-    title: "Vanguardia Rítmica",
-    category: "teatro",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDuoyPDVeB3IC2Ys_pTmUILUys8yJCuWCU63CJXY5DrJFQU83axPRERE8hLyMZc-3dmCYxFzocnaE1G12OPO8u2ZStiTYJDIJbZ9w3lt9Dc5xFgpCSAN1b02av_9gIeSOiQ5_MtfHBfVTka2Vp83LnpBE58QZOESlDZedrNlXRueK5Vrfh4ulDgt4O0meMR6jckbR7kdgbNwdDRZIoRqUIuVsCFPA4HiqYRPBRoScR6Fw8jdGPRe7Ncix_NpbXpD4P2QwjWtvCgE0xR",
-    altText: "Espectáculo de ballet moderno en un espacio vanguardista",
-    date: "18 OCT, 2024",
-    location: "BARCELONA",
-    price: 75,
-    ticketType: "VIP DISPONIBLE",
-    ticketBadgeStyle: "vip",
-    description: "Una fusión magistral entre danza contemporánea y música de cámara en un escenario histórico.",
-    urgencyText: "Alta demanda • Quedan pocas",
-    urgencyIcon: "local_fire_department",
-  },
-  {
-    id: 3,
-    title: "Masters Cup Series",
-    category: "deportes",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAUB9_XEEj_ZDdk8n2xiDLa-Cye5or9W5oDua9zxoskGxUBWVzQ0x8Vi4-Xp_ugA7aBh5VXnLPXCzPKZk8lJtlUrX2Rb0zDc8wmyipFF908z8FX2cP3alyD7yB-HEWc3Fnr7mk9pS7iAECvBW2yOER8HS_pGV-Mo8IXbSxMDr4XGPRYrrooWRFTFYJW75CtkDRwM7b6jtldK2GPLEUCIOJs-japi4u5cpa21KLX9oAl-ro8PelmCVkbImHrRcwTLVRISfaPXnfCB5mG",
-    altText: "Partido de tenis al atardecer en pista profesional",
-    date: "22 OCT, 2024",
-    location: "VALENCIA",
-    price: 120,
-    ticketType: "PLATINUM",
-    ticketBadgeStyle: "platinum",
-    description: "Semifinales internacionales con los atletas top del ranking en una jornada inolvidable.",
-    urgencyText: "Zona Platinum casi agotada",
-    urgencyIcon: "stars",
-  },
-  {
-    id: 4,
-    title: "Sunset Jazz Session",
-    category: "concierto",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDEL4eAbOCJp6-HVuKFQOkbMfF-GhV54vep61KRoDFrbtebQRAySMLmjv3-Ue0Iv21MDOUAv2aN-ULaUFLLXhSzPqnfmC--4zwXhM7wfJwiUt7H8RlpCFMdkLd2YIQnDMqiP3REOOEGred7luLvCrTbFt3txZiYwjJwT0fvXKPkL3CHkNwOFMPB5_sCl7_tvS7tBgYHkyqhIjJyb02QMqw9cVmYBdLHGcqp4nYrRyX7sV-fB4iH9Tac13LGmL2aC_Djn2JBja3sSYFL",
-    altText: "Festival de jazz al aire libre al atardecer",
-    date: "30 OCT, 2024",
-    location: "MADRID",
-    price: 30,
-    ticketType: "General",
-    ticketBadgeStyle: "general",
-    description: "Sesión íntima al aire libre con leyendas del jazz fusión y vistas panorámicas del atardecer.",
-    urgencyText: "Aforo limitado",
-    urgencyIcon: "bolt",
-  },
-  {
-    id: 12,
-    title: "Cumbia All Stars & Amigos",
-    category: "concierto",
-    imageUrl:
-      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800&auto=format&fit=crop",
-    altText: "Fiesta y concierto de cumbia en vivo",
-    date: "05 NOV, 2024",
-    location: "LIMA",
-    price: 35,
-    ticketType: "General",
-    ticketBadgeStyle: "general",
-    description: "Una noche inolvidable al ritmo de la cumbia clásica y los mayores exponentes del género en vivo.",
-    urgencyText: "Últimas 60 entradas",
-    urgencyIcon: "hourglass_top",
-  },
-  {
-    id: 13,
-    title: "Stand Up: Terapia de Pareja",
-    category: "comedia",
-    imageUrl:
-      "https://images.unsplash.com/photo-1585699324551-f6c309eedeca?q=80&w=800&auto=format&fit=crop",
-    altText: "Monólogo de comedia stand up en teatro",
-    date: "09 NOV, 2024",
-    location: "AREQUIPA",
-    price: 40,
-    ticketType: "VIP DISPONIBLE",
-    ticketBadgeStyle: "vip",
-    description: "Un recorrido cómico e irreverente por las situaciones cotidianas del amor y la convivencia.",
-    urgencyText: "Pocas mesas disponibles",
-    urgencyIcon: "local_fire_department",
-  },
-  {
-    id: 14,
-    title: "Festival Sabores del Perú",
-    category: "gastronomia",
-    imageUrl:
-      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=800&auto=format&fit=crop",
-    altText: "Feria gastronómica y degustación de comida peruana",
-    date: "12 NOV, 2024",
-    location: "TRUJILLO",
-    price: 25,
-    ticketType: "General",
-    ticketBadgeStyle: "general",
-    description: "Feria culinaria con los mejores chefs, catas de pisco, cocina fusión y música criolla en directo.",
-    urgencyText: "Aforo limitado",
-    urgencyIcon: "bolt",
-  },
-  {
-    id: 15,
-    title: "Rock & Sinfonía: Leyendas",
-    category: "concierto",
-    imageUrl:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800&auto=format&fit=crop",
-    altText: "Concierto de rock con orquesta sinfónica",
-    date: "15 NOV, 2024",
-    location: "LIMA",
-    price: 85,
-    ticketType: "PLATINUM",
-    ticketBadgeStyle: "platinum",
-    description: "Los grandes himnos del rock internacional reinterpretados por orquesta filarmónica y banda de rock.",
-    urgencyText: "Zona Platinum al 90%",
-    urgencyIcon: "stars",
-  },
-];
-
-// 2. Eventos Destacados de la Semana (Selección Editorial de Stitch)
-interface FeaturedWeeklyEvent {
-  id: number;
-  title: string;
-  category: string;
-  badge: string;
-  badgeStyle: "error" | "vip" | "general";
-  imageUrl: string;
-  date: string;
-  location: string;
-  description: string;
-  urgencyText: string;
-  urgencyIcon: string;
-  price: number;
-}
-
-const WEEKLY_FEATURED_EVENTS: FeaturedWeeklyEvent[] = [
-  {
-    id: 5,
-    title: "Sinfonía de las Estrellas",
-    category: "CLÁSICA",
-    badge: "ÚLTIMAS ENTRADAS",
-    badgeStyle: "error",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB7E0UFjzRDXfBB--rYurc0cGOw0-4yYkeLqvtDdHYkOcCZahMLGDuv2UAW-bxdIc8_xenxf44YA9WJFeQ-kryVlX0JFEfT7uPOwV764-9zvhRqXbMqIIQKmsD6nWmN43ejHwrf3j4qZ8SNIpjpMGoqePCdQWnLFfJRfBe_uCm8WYCqPraQ0NP5Zrdu4XT8HQJQ2QL0opuHJHZzFOBQp52NINZmj3z4k0ViWXAz3J6OcllZRuQzCy-QvWhvf6nwNPIkCKdKhW0fJPkT",
-    date: "16 NOV, 2024",
-    location: "AUDITORIO NACIONAL",
-    description: "Homenaje a las bandas sonoras más icónicas del cine contemporáneo con más de 90 músicos en directo.",
-    urgencyText: "Solo quedan 12 butacas",
-    urgencyIcon: "hourglass_top",
-    price: 38,
-  },
-  {
-    id: 6,
-    title: "EuroLeague Clasificatorio",
-    category: "BALONCESTO",
-    badge: "VIP DISPONIBLE",
-    badgeStyle: "vip",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBZRf5b2CiwcTa73hpU1YS2bQJeb8P8J77zLnPoakMwOAt7V-XEt1kILsDA1VnrdUUjullHbqTMl4AtQPvnTDxq-GMdQTmJWtAfek1mG6X9oLiBgvHw1j2k0YGo90mUZwn5jvkJEmfhgNRF6QQ5PRQzVehB5FbjTQs3FEn2rLMx4c7ug1qp6bb2Vq3TuVU-4LStN-tEWhVRnxjU1fK8_KN1e_lwxypSsBY8h_jAfWG36bugpW3gDSO2icAmnrzgVyugH5W4q8j7Cl0C",
-    date: "19 NOV, 2024",
-    location: "WI-ZINK CENTER",
-    description: "El choque definitivo por el liderazgo del grupo en una noche de máxima tensión sobre la pista.",
-    urgencyText: "92% vendido • ¡Última semana!",
-    urgencyIcon: "bolt",
-    price: 28,
-  },
-  {
-    id: 7,
-    title: "Midnight Groove Fest",
-    category: "FESTIVAL",
-    badge: "GENERAL",
-    badgeStyle: "general",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuArvALp2f189WFx8f0LzakoBfIG4x9xtX2yELKpqcah5IKtC9OOLdg2NVNBIY7UylA0XMle6rcaUuQoYPDX5n9-7T3KVVVfFJSoFdXXLW-84Z0SLk2p4Uk9EifxKNnMDBjEbe0GIIFzIz8rfZTmDjsTSnmkJ0QcwZCjXLpreh3wkKONf6U5GkqUziZUKXWLad8FOMPZZOwoIJmc4obi9caQKG25SJin0IlLKoXwSjyNQh_QLw76dbziUfyj9bLGLWiVceQMh_G3VjkI",
-    date: "23 NOV, 2024",
-    location: "PARC DEL FÒRUM",
-    description: "12 horas continuadas de música electrónica, visuales envolventes y experiencias gastronómicas.",
-    urgencyText: "🔥 Más de 200 entradas hoy",
-    urgencyIcon: "local_fire_department",
-    price: 52,
-  },
-  {
-    id: 8,
-    title: "Noche de Monólogos Top",
-    category: "COMEDIA",
-    badge: "GENERAL",
-    badgeStyle: "general",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBifKJs2zCLJ21dWBYTNT1ATyvcDIaj7OA-duslvbS3C58Dc3sn4TODUamdiTgHbQ1hWJXAzxZOhbv7S77GwkZTPEV6brn_dNl7LDcahYhJdY5kmmuRaj-KWz19yNiZc84dFWs-gJnVf30oijXVpM-abXcFk294wbyqHRCQCJV7J4Zaf_K62_bSCqWfajU8PO1nRkOdmOurG39yqQaPgaLR45DYUmDGIsl-lWBdsuYjVMnUvX6SkC_DYGOQTcCcEX0lxyG-THTKtVc_",
-    date: "28 NOV, 2024",
-    location: "TEATRO ALCÁZAR",
-    description: "Los cuatro mejores cómicos del panorama nacional juntos en un espectáculo hilarante e irrepetible.",
-    urgencyText: "Top 1 en ventas de comedia",
-    urgencyIcon: "trending_up",
-    price: 22,
-  },
-  {
-    id: 16,
-    title: "Electronic Waves Sunset",
-    category: "ELECTRÓNICA",
-    badge: "VIP DISPONIBLE",
-    badgeStyle: "vip",
-    imageUrl:
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop",
-    date: "01 DIC, 2024",
-    location: "MIRAFLORES",
-    description: "El festival playero de música electrónica más esperado de la temporada con DJs internacionales.",
-    urgencyText: "Últimas 30 entradas VIP",
-    urgencyIcon: "stars",
-    price: 55,
-  },
-  {
-    id: 17,
-    title: "El Rey León: El Musical",
-    category: "TEATRO",
-    badge: "ÚLTIMAS ENTRADAS",
-    badgeStyle: "error",
-    imageUrl:
-      "https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?q=80&w=800&auto=format&fit=crop",
-    date: "04 DIC, 2024",
-    location: "TEATRO MUNICIPAL",
-    description: "La conmovedora historia que cautivó al mundo en una puesta en escena deslumbrante con vestuarios de alta costura.",
-    urgencyText: "Solo quedan 18 butacas",
-    urgencyIcon: "hourglass_top",
-    price: 65,
-  },
-  {
-    id: 18,
-    title: "Maratón Internacional Nocturna",
-    category: "DEPORTES",
-    badge: "GENERAL",
-    badgeStyle: "general",
-    imageUrl:
-      "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?q=80&w=800&auto=format&fit=crop",
-    date: "08 DIC, 2024",
-    location: "COSTA VERDE",
-    description: "Carrera oficial de 10K, 21K y 42K frente al mar con kit de corredor oficial y cronometraje por chip.",
-    urgencyText: "Inscripciones cierran pronto",
-    urgencyIcon: "bolt",
-    price: 45,
-  },
-  {
-    id: 19,
-    title: "Indie Acoustic Sessions",
-    category: "CONCIERTO",
-    badge: "GENERAL",
-    badgeStyle: "general",
-    imageUrl:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop",
-    date: "10 DIC, 2024",
-    location: "BARRANCO",
-    description: "Una noche acústica exclusiva con compositores independientes en un ambiente bohemio e íntimo.",
-    urgencyText: "Aforo íntimo • 100 personas",
-    urgencyIcon: "local_fire_department",
-    price: 32,
-  },
-];
-
-// 3. Categorías Oficiales de Qué Planes Hoy
 interface CategoryChip {
   id: string;
   name: string;
@@ -342,62 +69,9 @@ const CATEGORY_CHIPS: CategoryChip[] = [
   },
 ];
 
-// 4. Planes para Este Fin de Semana (Stitch)
-interface WeekendPlan {
-  id: number;
-  title: string;
-  categoryBadge: string;
-  statusBadge: string;
-  statusStyle: "destacado" | "agotandose" | "platinum";
-  imageUrl: string;
-  date: string;
-  location: string;
-  description: string;
-  price: number;
-}
-
-const WEEKEND_PLANS: WeekendPlan[] = [
-  {
-    id: 9,
-    title: "Indie Sounds Winter Fest",
-    categoryBadge: "FESTIVAL INDIE",
-    statusBadge: "DESTACADO",
-    statusStyle: "destacado",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBr71UQlSs2FurLsTGl6gPOxEX9hPMWEvCnfbWa9DBE-cUs538DUDJOqNPrp58TlvmNywhioPq7t5zgFDtsHuWE1CaR7V00dAs7D9el7hAVDM4tkAzeIn0PsE5X6YDxY6_Bq4L6zeO0xj3VruNNUlS7xdsextrNrv0sZZibfkJdUzfS6VSn73BW3H1n_IxShci9L0Bdy-kTWkKaFQp4Fe8zsxvXK8SCd517vfmIyU2X_l2s0lNh_9KazuVBowqKJypvC64xoScIFOvS",
-    date: "SÁB 07 DIC",
-    location: "SALA LA RIVIERA",
-    description: "Actuaciones exclusivas de bandas revelación nacionales e internacionales en cabina acústica.",
-    price: 35,
-  },
-  {
-    id: 10,
-    title: "Gran Derbi de la Capital",
-    categoryBadge: "FÚTBOL",
-    statusBadge: "AGOTÁNDOSE",
-    statusStyle: "agotandose",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuABlww-UlQho4dnh_cvYTNyKXkTyDxehNVrtHLhU1Z_ge3DlPd43J98PLGEtxaUgVGG38p0POv9ODQmGUdZc-pT1MJXATFftbvvOc02PD4w3ZH-8AkuZItxYh2wdOBGfiF2zyQxU2yHdoADM_lRPT3lzgya6a0Rtv8TiU1FZZU3QYfnigz2nyIh2PPmFuqaTlHgVqLyaMEEpU60DKtSQ70ssEs-972RdR9yhh2sEQmwoDYbTK_gr3DpBt3UQ4uvOBenJG4w8P6SLlTJ",
-    date: "DOM 08 DIC",
-    location: "ESTADIO METROPOLITANO",
-    description: "El encuentro futbolístico más vibrante de la liga regular. Asientos en tribuna central y palcos.",
-    price: 85,
-  },
-  {
-    id: 11,
-    title: "Gourmet & Wine Sessions",
-    categoryBadge: "GASTRONOMÍA",
-    statusBadge: "PLATINUM",
-    statusStyle: "platinum",
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBy-wUVgXEhItgD7xM7FmRd4wZkk3Daggm3B3DNGO4daZVlaQloOxBFcILLpSFZg_81ZvUtB-Ku7ifn0_O-fnqu6WascuRJcaQDLMK49-kwrhwD6PDXA8Bv5oUkW2UnFsu6znIwRhdSWC9T2RSRFfJnfDQ8-zZ2_SYIgphpzobyl293G5XpKHY8PxLMxuCKU5EPz6cjfQwTv6jQ16XXwKIrcr0nZlYwqoSMPXhyvqjUgab-EtHaryokqzykL1U0IW7zwiouG6GdI2hE",
-    date: "SÁB 14 DIC",
-    location: "MERCADO DEL ARTE",
-    description: "Maridaje de vinos de alta gama y tapas de autor preparados en vivo por chefs con estrella Michelin.",
-    price: 65,
-  },
-];
-
+// =========================================================================
+// FORMATEO Y MAPEO DESDE ENTIDADES DE BACKEND
+// =========================================================================
 function formatEventDate(dateStr?: string | null): string {
   if (!dateStr) return "";
   const d = new Date(dateStr);
@@ -432,79 +106,113 @@ function homeCardToEventCardProps(item: HomeEventCardItem): EventCardProps {
   };
 }
 
-const INITIAL_WEEKLY_FEATURED: EventCardProps[] = WEEKLY_FEATURED_EVENTS.map((ev) => ({
-  id: ev.id,
-  title: ev.title,
-  category: ev.category,
-  imageUrl: ev.imageUrl,
-  altText: ev.title,
-  date: ev.date,
-  location: ev.location,
-  price: ev.price,
-  ticketType: ev.badge,
-  ticketBadgeStyle: ev.badgeStyle,
-  description: ev.description,
-  urgencyText: ev.urgencyText,
-  urgencyIcon: ev.urgencyIcon,
-  urgencyType: ev.badgeStyle === "error" ? "critical" : "info",
-}));
+// =========================================================================
+// COMPONENTES AUXILIARES: SKELETONS Y EMPTY STATES
+// =========================================================================
+function EventCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden shadow-xs border border-surface-variant flex flex-col justify-between animate-pulse">
+      <div className="aspect-video bg-surface-gray w-full relative">
+        <div className="absolute top-3 left-3 flex gap-2">
+          <div className="h-5 w-16 bg-slate-200 rounded-full" />
+          <div className="h-5 w-12 bg-slate-200 rounded-full" />
+        </div>
+      </div>
+      <div className="p-5 flex-1 flex flex-col justify-between">
+        <div>
+          <div className="h-3 w-32 bg-slate-200 rounded mb-2" />
+          <div className="h-5 w-3/4 bg-slate-200 rounded mb-2" />
+          <div className="h-3 w-full bg-slate-100 rounded mb-1" />
+          <div className="h-3 w-4/5 bg-slate-100 rounded mb-3" />
+          <div className="h-3 w-28 bg-slate-200 rounded mb-2" />
+        </div>
+        <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
+          <div className="h-4 w-20 bg-slate-200 rounded" />
+          <div className="h-8 w-24 bg-slate-200 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
-const INITIAL_WEEKEND_PLANS: EventCardProps[] = WEEKEND_PLANS.map((plan) => ({
-  id: plan.id,
-  title: plan.title,
-  category: plan.categoryBadge,
-  imageUrl: plan.imageUrl,
-  altText: plan.title,
-  date: plan.date,
-  location: plan.location,
-  price: plan.price,
-  ticketType: plan.statusBadge,
-  ticketBadgeStyle:
-    plan.statusStyle === "agotandose" ? "error" : plan.statusStyle === "platinum" ? "platinum" : "vip",
-  description: plan.description,
-  urgencyText: plan.statusBadge === "AGOTÁNDOSE" ? "Últimas plazas disponibles" : "Alta demanda",
-  urgencyIcon: plan.statusStyle === "agotandose" ? "hourglass_top" : "trending_up",
-  urgencyType: plan.statusStyle === "agotandose" ? "critical" : "high_demand",
-}));
+function EmptySectionMessage({ message }: { message: string }) {
+  return (
+    <div className="col-span-full py-12 px-6 rounded-2xl bg-surface-container-lowest border border-dashed border-surface-variant text-center flex flex-col items-center justify-center">
+      <span className="material-symbols-outlined text-4xl text-outline mb-2">calendar_today</span>
+      <p className="font-body-md text-sm text-on-surface-variant">{message}</p>
+      <Link
+        href="/events"
+        className="mt-3 text-electric-indigo font-label-bold text-xs hover:underline inline-flex items-center gap-1"
+      >
+        Explorar toda la cartelera <span className="material-symbols-outlined text-xs">arrow_forward</span>
+      </Link>
+    </div>
+  );
+}
 
+// =========================================================================
+// PÁGINA PRINCIPAL (HOME PAGE)
+// =========================================================================
 export default function HomePage() {
   const [activeMobileFilter, setActiveMobileFilter] = useState("Todo");
-  const [favorites, setFavorites] = useState<Record<number, boolean>>({});
-  const [upcomingEvents, setUpcomingEvents] = useState<EventCardProps[]>(UPCOMING_EVENTS);
-  const [weeklyFeaturedEvents, setWeeklyFeaturedEvents] = useState<EventCardProps[]>(INITIAL_WEEKLY_FEATURED);
-  const [weekendPlans, setWeekendPlans] = useState<EventCardProps[]>(INITIAL_WEEKEND_PLANS);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventCardProps[]>([]);
+  const [weeklyFeaturedEvents, setWeeklyFeaturedEvents] = useState<EventCardProps[]>([]);
+  const [weekendPlans, setWeekendPlans] = useState<EventCardProps[]>([]);
+
+  const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(true);
+  const [isLoadingWeekly, setIsLoadingWeekly] = useState(true);
+  const [isLoadingWeekend, setIsLoadingWeekend] = useState(true);
+
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     // 1. Cargar Próximos Eventos desde Redis / Backend
-    getUpcomingEventsUseCase.execute().match(
-      (items) => {
-        if (items && items.length > 0) {
-          setUpcomingEvents(items.map(homeCardToEventCardProps));
+    getUpcomingEventsUseCase.execute().then((res) => {
+      if (!isMounted) return;
+      res.match(
+        (items) => {
+          setUpcomingEvents(items ? items.map(homeCardToEventCardProps) : []);
+        },
+        () => {
+          setUpcomingEvents([]);
         }
-      },
-      () => {}
-    );
+      );
+      setIsLoadingUpcoming(false);
+    });
 
     // 2. Cargar Destacados Semanales desde Redis / Backend
-    getWeeklyFeaturedEventsUseCase.execute().match(
-      (items) => {
-        if (items && items.length > 0) {
-          setWeeklyFeaturedEvents(items.map(homeCardToEventCardProps));
+    getWeeklyFeaturedEventsUseCase.execute().then((res) => {
+      if (!isMounted) return;
+      res.match(
+        (items) => {
+          setWeeklyFeaturedEvents(items ? items.map(homeCardToEventCardProps) : []);
+        },
+        () => {
+          setWeeklyFeaturedEvents([]);
         }
-      },
-      () => {}
-    );
+      );
+      setIsLoadingWeekly(false);
+    });
 
     // 3. Cargar Planes de Fin de Semana desde Redis / Backend
-    getWeekendEventsUseCase.execute().match(
-      (items) => {
-        if (items && items.length > 0) {
-          setWeekendPlans(items.map(homeCardToEventCardProps));
+    getWeekendEventsUseCase.execute().then((res) => {
+      if (!isMounted) return;
+      res.match(
+        (items) => {
+          setWeekendPlans(items ? items.map(homeCardToEventCardProps) : []);
+        },
+        () => {
+          setWeekendPlans([]);
         }
-      },
-      () => {}
-    );
+      );
+      setIsLoadingWeekend(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const scrollCategories = (direction: "left" | "right") => {
@@ -524,9 +232,26 @@ export default function HomePage() {
     }
   };
 
-  const toggleFavorite = (id: number) => {
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  // Filtrado reactivo en vista móvil
+  const filteredMobileEvents = upcomingEvents.filter((event) => {
+    if (activeMobileFilter === "Todo") return true;
+    const catMap: Record<string, string> = {
+      CONCERTS: "concierto",
+      THEATER: "teatro",
+      SPORTS: "deportes",
+      FESTIVALS: "festivales",
+      COMEDY: "comedia",
+      GASTRONOMY: "gastronomia",
+    };
+    const target = (catMap[activeMobileFilter] || activeMobileFilter).toLowerCase();
+    return event.category.toLowerCase().includes(target) || target.includes(event.category.toLowerCase());
+  });
+
+  // Eventos para carrusel móvil (destacados o fallback a próximos)
+  const mobileFeaturedList =
+    weeklyFeaturedEvents.length > 0
+      ? weeklyFeaturedEvents
+      : upcomingEvents.slice(0, 5);
 
   return (
     <>
@@ -546,9 +271,12 @@ export default function HomePage() {
               placeholder="¿Qué planes hoy?"
               type="text"
             />
-            <button className="absolute inset-y-2 right-2 px-4 bg-electric-indigo text-white rounded-lg qph-label-bold hover:bg-primary transition-colors cursor-pointer">
-              Filtrar
-            </button>
+            <Link
+              href="/events"
+              className="absolute inset-y-2 right-2 px-4 bg-electric-indigo text-white rounded-lg qph-label-bold hover:bg-primary transition-colors cursor-pointer flex items-center"
+            >
+              Explorar
+            </Link>
           </div>
         </section>
 
@@ -556,56 +284,61 @@ export default function HomePage() {
         <section className="mb-6">
           <div className="flex items-center justify-between px-4 mb-3">
             <h2 className="qph-headline-lg text-[20px] font-bold text-deep-slate">Destacados</h2>
-            <a className="text-electric-indigo qph-label-bold text-xs" href="#">Ver todos</a>
+            <Link className="text-electric-indigo qph-label-bold text-xs" href="/events">
+              Ver todos
+            </Link>
           </div>
-          <div className="flex overflow-x-auto snap-x snap-mandatory qph-hide-scrollbar px-4 gap-4 pb-4">
-            
-            {/* Item 1 */}
-            <div className="min-w-[85%] snap-center rounded-2xl overflow-hidden relative aspect-[3/4] shadow-md border border-surface-variant group flex-none">
-              <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/20 to-transparent z-10" />
-              <img
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0hjIajPExsJKa7RaHv4HoFjroTQmrC3G20rnCOCH__TMBuX-pLvI26-JvwhtELP-XxQ7m9WYP5hXG4q5Dz61ag6G7z6PwwrrTbrrJoLe0C09kFYUC1JabUXwAIMOErhEmNf4Cc3UGjkwGwhKjcDe5d1Zwz4Mg2n4tWdun3WPEXxTptFbgQukdAsPzsOfBzu0vUEfNTNHOKGJnYD7EyyQBTuvaGpccJNzstscbgLZAodGUwk0BHBv1NlnT-cUj7B4vbstKPEHER0Pe"
-                alt="Indigo Music Festival"
-              />
-              <div className="absolute bottom-0 left-0 p-6 z-20 w-full">
-                <span className="inline-block px-3 py-1 bg-vip-gold text-white text-[10px] qph-label-bold rounded-full uppercase mb-2">
-                  Destacado
-                </span>
-                <h3 className="text-white qph-headline-md text-[20px] mb-1 font-semibold">Neon Pulse Festival</h3>
-                <p className="text-platinum-silver qph-body-md text-sm mb-4">Parque Central • 22 de Mayo</p>
-                <Link
-                  href="/checkout"
-                  className="w-full py-3 bg-electric-indigo text-white rounded-lg qph-label-bold hover:bg-primary transition-colors cursor-pointer block text-center shadow-md shadow-electric-indigo/30"
-                >
-                  Comprar Entradas
-                </Link>
-              </div>
-            </div>
 
-            {/* Item 2 */}
-            <div className="min-w-[85%] snap-center rounded-2xl overflow-hidden relative aspect-[3/4] shadow-md border border-surface-variant group flex-none">
-              <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/20 to-transparent z-10" />
-              <img
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDplj48Bi3auGgPy91VxeRj042B5hUGuTysP3sjqmaY62HzH6nKoaSDsyww_YbDXjQlafdMsJraGLHanhdm_NNdcY5PlIPh7MnFvvG0Jl9f3S15U5VQERKcDQeT68RTR0CxKQxqTy37JESi9OalaifYG9_GR2jB1OiL6hdmeBsNJxncSF8Nu0StpC1k0AQpnz2iSHsKl_-RvPEpj5XwzSGhz9DpafrZF-n60lHzIZZzciliuK4q0antY06Hwd-Q2INX2Pn-iqhKZeP"
-                alt="Noches de Jazz & Blues"
-              />
-              <div className="absolute bottom-0 left-0 p-6 z-20 w-full">
-                <span className="inline-block px-3 py-1 bg-electric-indigo text-white text-[10px] qph-label-bold rounded-full uppercase mb-2">
-                  Últimas plazas
-                </span>
-                <h3 className="text-white qph-headline-md text-[20px] mb-1 font-semibold">Noches de Jazz &amp; Blues</h3>
-                <p className="text-platinum-silver qph-body-md text-sm mb-4">Teatro Principal • 25 de Mayo</p>
-                <Link
-                  href="/events/4"
-                  className="w-full py-3 bg-electric-indigo text-white rounded-lg qph-label-bold hover:bg-primary transition-colors cursor-pointer block text-center shadow-md shadow-electric-indigo/30"
-                >
-                  Ver Detalles
-                </Link>
-              </div>
+          {isLoadingWeekly && isLoadingUpcoming ? (
+            <div className="flex overflow-x-auto qph-hide-scrollbar px-4 gap-4 pb-4">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="min-w-[85%] rounded-2xl aspect-[3/4] bg-surface-gray animate-pulse border border-surface-variant flex-none"
+                />
+              ))}
             </div>
-          </div>
+          ) : mobileFeaturedList.length > 0 ? (
+            <div className="flex overflow-x-auto snap-x snap-mandatory qph-hide-scrollbar px-4 gap-4 pb-4">
+              {mobileFeaturedList.slice(0, 5).map((event) => {
+                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${event.id}`;
+                return (
+                  <div
+                    key={event.id}
+                    className="min-w-[85%] snap-center rounded-2xl overflow-hidden relative aspect-[3/4] shadow-md border border-surface-variant group flex-none"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/20 to-transparent z-10" />
+                    <img
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      src={event.imageUrl}
+                      alt={event.altText || event.title}
+                    />
+                    <div className="absolute bottom-0 left-0 p-6 z-20 w-full">
+                      <span className="inline-block px-3 py-1 bg-vip-gold text-white text-[10px] qph-label-bold rounded-full uppercase mb-2">
+                        {event.category || "Destacado"}
+                      </span>
+                      <h3 className="text-white qph-headline-md text-[20px] mb-1 font-semibold line-clamp-2">
+                        {event.title}
+                      </h3>
+                      <p className="text-platinum-silver qph-body-md text-sm mb-4">
+                        {event.location} {event.date ? `• ${event.date}` : ""}
+                      </p>
+                      <Link
+                        href={ctaHref}
+                        className="w-full py-3 bg-electric-indigo text-white rounded-lg qph-label-bold hover:bg-primary transition-colors cursor-pointer block text-center shadow-md shadow-electric-indigo/30"
+                      >
+                        {event.hasLandingPage ? "Ver Experiencia" : "Comprar Entradas"}
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="px-4 py-8 text-center text-on-surface-variant text-sm bg-surface-container-lowest mx-4 rounded-2xl border border-dashed border-surface-variant">
+              Próximamente más eventos destacados.
+            </div>
+          )}
         </section>
 
         {/* Chips de Categorías Móvil */}
@@ -646,61 +379,74 @@ export default function HomePage() {
         <section className="px-4 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="qph-headline-lg text-[20px] font-bold text-deep-slate">Eventos Próximos</h2>
+            <Link href="/events" className="text-electric-indigo text-xs font-semibold hover:underline">
+              Ver todos
+            </Link>
           </div>
           <div className="flex flex-col gap-6">
-            {upcomingEvents.filter((event) => {
-              if (activeMobileFilter === "Todo") return true;
-              const catMap: Record<string, string> = {
-                CONCERTS: "concierto",
-                THEATER: "teatro",
-                SPORTS: "deportes",
-                FESTIVALS: "festivales",
-                COMEDY: "comedia",
-                GASTRONOMY: "gastronomia",
-              };
-              const target = (catMap[activeMobileFilter] || activeMobileFilter).toLowerCase();
-              return event.category.toLowerCase().includes(target) || target.includes(event.category.toLowerCase());
-            }).map((event) => (
-              <Link
-                key={event.id}
-                href={`/events/${event.id}`}
-                className="bg-white rounded-2xl overflow-hidden shadow-xs border border-surface-variant flex flex-col group active:scale-[0.98] transition-transform cursor-pointer"
-              >
-                <div className="aspect-[16/9] w-full relative">
-                  <img className="w-full h-full object-cover" src={event.imageUrl} alt={event.altText} />
-                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-3 py-1 rounded-xl text-center shadow-xs border border-surface-variant/50">
-                    <span className="block text-electric-indigo qph-label-bold text-[16px] font-bold">
-                      {event.date.split(" ")[0]}
-                    </span>
-                    <span className="block text-on-surface-variant text-[10px] uppercase qph-label-bold">
-                      {event.date.split(" ")[1]}
-                    </span>
-                  </div>
+            {isLoadingUpcoming ? (
+              [1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl overflow-hidden border border-surface-variant p-4 animate-pulse flex flex-col gap-3"
+                >
+                  <div className="aspect-[16/9] w-full bg-surface-gray rounded-xl" />
+                  <div className="h-5 w-3/4 bg-slate-200 rounded" />
+                  <div className="h-4 w-1/2 bg-slate-100 rounded" />
                 </div>
-                <div className="p-5 flex flex-col gap-2">
-                  <div className="flex justify-between items-start">
-                    <h4 className="qph-headline-md text-[20px] text-on-surface leading-tight font-semibold group-hover:text-electric-indigo transition-colors">
-                      {event.title}
-                    </h4>
-                    <span className="text-electric-indigo qph-price-tag text-[20px] font-bold">
-                      Desde S/. {event.price}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-on-surface-variant">
-                    <span className="material-symbols-outlined text-[18px]">location_on</span>
-                    <span className="qph-body-md text-sm">{event.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="px-2 py-0.5 bg-surface-gray border border-surface-variant/40 text-on-secondary-fixed-variant text-[10px] qph-label-bold rounded uppercase">
-                      {event.category}
-                    </span>
-                    <span className="px-2 py-0.5 bg-surface-gray border border-surface-variant/40 text-on-secondary-fixed-variant text-[10px] qph-label-bold rounded uppercase">
-                      {event.ticketType}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+              ))
+            ) : filteredMobileEvents.length > 0 ? (
+              filteredMobileEvents.map((event) => {
+                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${event.id}`;
+                return (
+                  <Link
+                    key={event.id}
+                    href={ctaHref}
+                    className="bg-white rounded-2xl overflow-hidden shadow-xs border border-surface-variant flex flex-col group active:scale-[0.98] transition-transform cursor-pointer"
+                  >
+                    <div className="aspect-[16/9] w-full relative">
+                      <img className="w-full h-full object-cover" src={event.imageUrl} alt={event.altText} />
+                      {event.date && (
+                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-3 py-1 rounded-xl text-center shadow-xs border border-surface-variant/50">
+                          <span className="block text-electric-indigo qph-label-bold text-[16px] font-bold">
+                            {event.date.split(" ")[0]}
+                          </span>
+                          <span className="block text-on-surface-variant text-[10px] uppercase qph-label-bold">
+                            {event.date.split(" ")[1]}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5 flex flex-col gap-2">
+                      <div className="flex justify-between items-start">
+                        <h4 className="qph-headline-md text-[20px] text-on-surface leading-tight font-semibold group-hover:text-electric-indigo transition-colors line-clamp-2">
+                          {event.title}
+                        </h4>
+                        <span className="text-electric-indigo qph-price-tag text-[20px] font-bold whitespace-nowrap ml-2">
+                          Desde S/. {event.price}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-on-surface-variant">
+                        <span className="material-symbols-outlined text-[18px]">location_on</span>
+                        <span className="qph-body-md text-sm">{event.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="px-2 py-0.5 bg-surface-gray border border-surface-variant/40 text-on-secondary-fixed-variant text-[10px] qph-label-bold rounded uppercase">
+                          {event.category}
+                        </span>
+                        <span className="px-2 py-0.5 bg-surface-gray border border-surface-variant/40 text-on-secondary-fixed-variant text-[10px] qph-label-bold rounded uppercase">
+                          {event.ticketType}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="py-8 text-center text-on-surface-variant text-sm bg-surface-container-lowest rounded-2xl border border-dashed border-surface-variant">
+                No se encontraron eventos disponibles en esta selección.
+              </div>
+            )}
           </div>
         </section>
 
@@ -810,13 +556,22 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
-            {upcomingEvents.map((event) => (
-              <EventCard key={event.id} {...event} />
-            ))}
+            {isLoadingUpcoming ? (
+              <>
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+              </>
+            ) : upcomingEvents.length > 0 ? (
+              upcomingEvents.map((event) => <EventCard key={event.id} {...event} />)
+            ) : (
+              <EmptySectionMessage message="No hay eventos próximos registrados en este momento." />
+            )}
           </div>
         </section>
 
-        {/* 4. Eventos Destacados de la Semana (SELECCIÓN EDITORIAL - STITCH REQUIREMENT) */}
+        {/* 4. Eventos Destacados de la Semana (SELECCIÓN EDITORIAL) */}
         <section className="max-w-container-max mx-auto px-margin-x pt-4 pb-6">
           <div className="flex justify-between items-end mb-4">
             <div>
@@ -840,13 +595,22 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-            {weeklyFeaturedEvents.map((ev) => (
-              <EventCard key={ev.id} {...ev} />
-            ))}
+            {isLoadingWeekly ? (
+              <>
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+              </>
+            ) : weeklyFeaturedEvents.length > 0 ? (
+              weeklyFeaturedEvents.map((ev) => <EventCard key={ev.id} {...ev} />)
+            ) : (
+              <EmptySectionMessage message="Próximamente publicaremos nuevos eventos destacados de la semana." />
+            )}
           </div>
         </section>
 
-        {/* 4. Planes para Este Fin de Semana (TENDENCIAS Y MÁS POPULARES - STITCH) */}
+        {/* 5. Planes para Este Fin de Semana (TENDENCIAS Y MÁS POPULARES) */}
         <section className="max-w-container-max mx-auto px-margin-x pt-4 pb-12 mb-8">
           <div className="flex justify-between items-end mb-4">
             <div>
@@ -870,9 +634,17 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-            {weekendPlans.map((plan) => (
-              <EventCard key={plan.id} {...plan} />
-            ))}
+            {isLoadingWeekend ? (
+              <>
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+                <EventCardSkeleton />
+              </>
+            ) : weekendPlans.length > 0 ? (
+              weekendPlans.map((plan) => <EventCard key={plan.id} {...plan} />)
+            ) : (
+              <EmptySectionMessage message="Aún no hay planes específicos programados para este fin de semana." />
+            )}
           </div>
         </section>
 

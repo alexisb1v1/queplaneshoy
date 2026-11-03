@@ -1,188 +1,119 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { EVENT_CATEGORIES } from "../constants/eventConstants";
-import { getPublishedCitiesUseCase, PublishedCity } from "../index";
+import { useSearchParams, usePathname } from "next/navigation";
+import {
+  searchEventsUseCase,
+  getPublishedCitiesUseCase,
+  PublishedCity,
+  SearchEventItem,
+} from "../index";
 
-interface ExploreEvent {
-  id: string | number;
-  title: string;
-  category: "conciertos" | "teatro" | "deportes" | "festivales" | "comedia" | "gastronomia";
-  categoryLabel: string;
-  hasVip: boolean;
-  imageUrl: string;
-  dateStr: string;
-  timeStr: string;
-  location: string;
-  city: string;
-  price: number;
-  popularity: number;
-  description?: string;
-  urgencyText?: string;
-  urgencyIcon?: string;
+// =========================================================================
+// DEFINICIONES DE TIPOS PARA FILTROS
+// =========================================================================
+export type DateFilterType = "all" | "today" | "weekend" | "this_week" | "this_month" | "custom";
+export type SortByType = "date_asc" | "price_asc" | "price_desc" | "title_asc";
+export type PriceRangeType = "all" | "under_50" | "50_to_150" | "over_150" | "custom";
+
+interface CategoryOption {
+  id: string;
+  name: string;
+  icon: string;
 }
 
-const CATALOG_EVENTS: ExploreEvent[] = [
-  {
-    id: 1,
-    title: "Neon Pulse: Tour Mundial 2024",
-    category: "conciertos",
-    categoryLabel: "Concierto",
-    hasVip: true,
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDx68N5ktAxUu8BdVvppGk25pxGBDX2GRzTYDQXUt9B5plHeZT-YF5wVep0TiuLBffWwClpulHSgPJFHeywpb9Nxby9I0S4AAnLmF9zBhqa5lBET5M7HE9PG5nFIeGuch9_hPPHZGc-qtYQB5iCjwgx0gBI_u_DtpNGTPkIY_H1RkWtVUZAVCSPUwSYqGRKW86dHrWgrKr-O1pdl8XZae-e_b1mM4Bf0kyyqwvHvg5p__Mathttrlwa0qC-LljgFZpnYeXzseLUIGxD",
-    dateStr: "15 NOV, 2024",
-    timeStr: "20:00 PM",
-    location: "Estadio Nacional",
-    city: "Lima",
-    price: 120,
-    popularity: 98,
-    description: "La mayor producción audiovisual y pirotecnia del año en vivo con iluminación láser 360°.",
-    urgencyText: "Últimas 15 entradas disponibles",
-    urgencyIcon: "bolt",
-  },
-  {
-    id: 2,
-    title: "El Fantasma de la Ópera",
-    category: "teatro",
-    categoryLabel: "Teatro",
-    hasVip: true,
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDvCijwtoBcFGGsOgH612WdgVhptsxK5VrMUfkXRHC8ZnImv6_QDVLolvJMo6UgucwhKUiNbLtQW0JpcWCqcX0JSMWDbpqFJyh2P8C04RL7AdeuNJ0Rw3eNp1YVjSSH_3LuBMUgV3VZG9u4ivC_1lbKV4un7is0odlvOjb1R_jDaC9i5RwJf6ew7tDd59qEpZe5uvdjweI-nMinLJNXmrnckigPdBuw6EQyGgNLXoSzxl4D-fWIfNMSgf_LDispYxhjsF9Hn7sMloo7",
-    dateStr: "02 DIC, 2024",
-    timeStr: "19:30 PM",
-    location: "Teatro Segura",
-    city: "Lima",
-    price: 45,
-    popularity: 88,
-    description: "El aclamado clásico de Broadway interpretado por orquesta sinfónica completa y elenco estelar.",
-    urgencyText: "Aforo al 92%",
-    urgencyIcon: "local_fire_department",
-  },
-  {
-    id: 3,
-    title: "Final Liga de Basket: Playoffs",
-    category: "deportes",
-    categoryLabel: "Deportes",
-    hasVip: false,
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAAWIXek-zpjIinj-PvT4Qj9FK42jK8dZgoQ6MfwnDzRy7R3LHETM4KFxsIvd8prlgWc_L81AUH5N1tgXWpFgSveF6mhCD7cQYDawz8WaXF6OKWTHc8j0QVPiTRatugn7pX2GRF04vWaj3iiu19w4Dke8hLonaSMV16WQGEmTnLntGieA8kqFlKYf2FOBB7KrG3u51FOb6AokVid21wb30DmPRsYoN3yoT8ugIT8_YNt8qWLiZoz5WhAjSAyevkoIMwVu6a3EYvxiGt",
-    dateStr: "12 NOV, 2024",
-    timeStr: "16:00 PM",
-    location: "Coliseo Dibós",
-    city: "Lima",
-    price: 30,
-    popularity: 76,
-    description: "El duelo definitivo por el título nacional con emoción pura y asientos de tribuna preferencial.",
-    urgencyText: "Entradas limitadas",
-    urgencyIcon: "bolt",
-  },
-  {
-    id: 4,
-    title: "Festival Jardines de Lima",
-    category: "festivales",
-    categoryLabel: "Festival",
-    hasVip: true,
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCVPT7-hwsVGFPnXOywAVi3nje9WncAVGjrmUvfcUFyU14KLYTsKTP1qU6EArKH3K8FGfyihbj9tzsXwNh7Xu2pbKTFLx9B07-VfH4FthxWkA1wQVkcPsJDCm4TzwIIvm92kYOE8G-cUhWzIdGmPPl8sZnrVGDmhCEoiuhMDIOj4cFGPaJeZSQaBEgPCuL8iH5_W0Gi51O0hnyFz5PQarjrEWlgWejwz9aF0hkB1V_79y1ESdXvO_HAY1XJIyCPs56wKP701zJN1i4p",
-    dateStr: "18 DIC, 2024",
-    timeStr: "12:00 PM",
-    location: "Parque de la Exposición",
-    city: "Lima",
-    price: 85,
-    popularity: 92,
-    description: "Tres escenarios al aire libre, más de 20 agrupaciones independientes y feria gastronómica.",
-    urgencyText: "Pases VIP agotándose",
-    urgencyIcon: "star",
-  },
-  {
-    id: 5,
-    title: "Sinfonía de las Estrellas",
-    category: "teatro",
-    categoryLabel: "Clásica",
-    hasVip: true,
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB7E0UFjzRDXfBB--rYurc0cGOw0-4yYkeLqvtDdHYkOcCZahMLGDuv2UAW-bxdIc8_xenxf44YA9WJFeQ-kryVlX0JFEfT7uPOwV764-9zvhRqXbMqIIQKmsD6nWmN43ejHwrf3j4qZ8SNIpjpMGoqePCdQWnLFfJRfBe_uCm8WYCqPraQ0NP5Zrdu4XT8HQJQ2QL0opuHJHZzFOBQp52NINZmj3z4k0ViWXAz3J6OcllZRuQzCy-QvWhvf6nwNPIkCKdKhW0fJPkT",
-    dateStr: "16 NOV, 2024",
-    timeStr: "20:30 PM",
-    location: "Gran Teatro Nacional",
-    city: "Lima",
-    price: 38,
-    popularity: 85,
-    description: "Homenaje a las bandas sonoras cinematográficas más épicas con coro polifónico en vivo.",
-    urgencyText: "Últimas 25 localidades",
-    urgencyIcon: "bolt",
-  },
-  {
-    id: 6,
-    title: "Indie Sounds Winter Fest",
-    category: "conciertos",
-    categoryLabel: "Concierto",
-    hasVip: false,
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBr71UQlSs2FurLsTGl6gPOxEX9hPMWEvCnfbWa9DBE-cUs538DUDJOqNPrp58TlvmNywhioPq7t5zgFDtsHuWE1CaR7V00dAs7D9el7hAVDM4tkAzeIn0PsE5X6YDxY6_Bq4L6zeO0xj3VruNNUlS7xdsextrNrv0sZZibfkJdUzfS6VSn73BW3H1n_IxShci9L0Bdy-kTWkKaFQp4Fe8zsxvXK8SCd517vfmIyU2X_l2s0lNh_9KazuVBowqKJypvC64xoScIFOvS",
-    dateStr: "07 DIC, 2024",
-    timeStr: "18:00 PM",
-    location: "Centro de Convenciones Barranco",
-    city: "Lima",
-    price: 35,
-    popularity: 89,
-    description: "Actuaciones exclusivas de bandas revelación nacionales e internacionales en cabina acústica.",
-    urgencyText: "Entradas limitadas",
-    urgencyIcon: "bolt",
-  },
-  {
-    id: 7,
-    title: "Noche de Stand-Up Comedy Top",
-    category: "comedia",
-    categoryLabel: "Comedia",
-    hasVip: false,
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBifKJs2zCLJ21dWBYTNT1ATyvcDIaj7OA-duslvbS3C58Dc3sn4TODUamdiTgHbQ1hWJXAzxZOhbv7S77GwkZTPEV6brn_dNl7LDcahYhJdY5kmmuRaj-KWz19yNiZc84dFWs-gJnVf30oijXVpM-abXcFk294wbyqHRCQCJV7J4Zaf_K62_bSCqWfajU8PO1nRkOdmOurG39yqQaPgaLR45DYUmDGIsl-lWBdsuYjVMnUvX6SkC_DYGOQTcCcEX0lxyG-THTKtVc_",
-    dateStr: "28 NOV, 2024",
-    timeStr: "21:00 PM",
-    location: "La Estación de Barranco",
-    city: "Lima",
-    price: 25,
-    popularity: 82,
-    description: "Los mejores comediantes del circuito nacional reunidos en una velada de risas garantizadas.",
-    urgencyText: "Casi agotado",
-    urgencyIcon: "local_fire_department",
-  },
-  {
-    id: 8,
-    title: "Gourmet & Wine Masterclass",
-    category: "gastronomia",
-    categoryLabel: "Gastronomía",
-    hasVip: true,
-    imageUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBy-wUVgXEhItgD7xM7FmRd4wZkk3Daggm3B3DNGO4daZVlaQloOxBFcILLpSFZg_81ZvUtB-Ku7ifn0_O-fnqu6WascuRJcaQDLMK49-kwrhwD6PDXA8Bv5oUkW2UnFsu6znIwRhdSWC9T2RSRFfJnfDQ8-zZ2_SYIgphpzobyl293G5XpKHY8PxLMxuCKU5EPz6cjfQwTv6jQ16XXwKIrcr0nZlYwqoSMPXhyvqjUgab-EtHaryokqzykL1U0IW7zwiouG6GdI2hE",
-    dateStr: "14 DIC, 2024",
-    timeStr: "13:00 PM",
-    location: "Casa Prado Miraflores",
-    city: "Lima",
-    price: 65,
-    popularity: 79,
-    description: "Maridaje de vinos de alta gama y tapas de autor preparados en vivo por sommeliers galardonados.",
-    urgencyText: "Cupos reducidos",
-    urgencyIcon: "star",
-  },
+const CATEGORY_OPTIONS: CategoryOption[] = [
+  { id: "TODOS", name: "Todas las categorías", icon: "category" },
+  { id: "CONCERTS", name: "Conciertos", icon: "music_note" },
+  { id: "THEATER", name: "Teatro & Musicales", icon: "theater_comedy" },
+  { id: "SPORTS", name: "Deportes", icon: "sports_soccer" },
+  { id: "FESTIVALS", name: "Festivales", icon: "celebration" },
+  { id: "COMEDY", name: "Comedia & Stand Up", icon: "sentiment_very_satisfied" },
+  { id: "GASTRONOMY", name: "Gastronomía", icon: "restaurant" },
+  { id: "PARTY", name: "Fiestas & Nightlife", icon: "nightlife" },
+  { id: "FAMILY", name: "Familiar & Niños", icon: "family_restroom" },
 ];
 
 export default function ExploreEventsPageComponent() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("todos");
-  const [selectedCity, setSelectedCity] = useState<string>("Todos");
-  const [publishedCities, setPublishedCities] = useState<PublishedCity[]>([]);
-  const [maxPrice, setMaxPrice] = useState<number>(500);
-  const [dateFilter, setDateFilter] = useState<"all" | "weekend" | "next_week">("all");
-  const [sortBy, setSortBy] = useState<"relevant" | "price_asc" | "date">("relevant");
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [favorites, setFavorites] = useState<Record<string | number, boolean>>({});
-  const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Cargar ciudades con eventos en estado 'published'
+  // Estados de Filtros sincronizados con la URL
+  const [searchTerm, setSearchTerm] = useState<string>(
+    searchParams.get("search") || searchParams.get("q") || ""
+  );
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    (searchParams.get("category") || "TODOS").toUpperCase()
+  );
+  const [selectedCity, setSelectedCity] = useState<string>(
+    searchParams.get("city") || "Todas"
+  );
+  const [pricePreset, setPricePreset] = useState<PriceRangeType>("all");
+  const [minPrice, setMinPrice] = useState<number>(
+    searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : 0
+  );
+  const [maxPrice, setMaxPrice] = useState<number>(
+    searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : 500
+  );
+  const [dateFilter, setDateFilter] = useState<DateFilterType>(
+    (searchParams.get("date") as DateFilterType) || "all"
+  );
+  const [customStartDate, setCustomStartDate] = useState<string>(
+    searchParams.get("startDate") || ""
+  );
+  const [customEndDate, setCustomEndDate] = useState<string>(
+    searchParams.get("endDate") || ""
+  );
+  const [sortBy, setSortBy] = useState<SortByType>(
+    (searchParams.get("sort") as SortByType) || "date_asc"
+  );
+
+  // Estados de los Dropdowns Horizontales (Top Filter Bar)
+  const [activeDropdown, setActiveDropdown] = useState<
+    "date" | "category" | "city" | "price" | null
+  >(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+
+  // Estados de Datos
+  const [events, setEvents] = useState<SearchEventItem[]>([]);
+  const [publishedCities, setPublishedCities] = useState<PublishedCity[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+
+  // 1. Cargar favoritos persistidos en localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("qph_favorites");
+      if (stored) {
+        const ids: string[] = JSON.parse(stored);
+        const favMap: Record<string, boolean> = {};
+        ids.forEach((id) => {
+          favMap[id] = true;
+        });
+        setFavorites(favMap);
+      }
+    } catch {
+      // Fallback silencioso
+    }
+  }, []);
+
+  const toggleFavorite = (eventId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorites((prev) => {
+      const next = { ...prev, [eventId]: !prev[eventId] };
+      try {
+        const activeIds = Object.keys(next).filter((k) => next[k]);
+        localStorage.setItem("qph_favorites", JSON.stringify(activeIds));
+      } catch {
+        // Fallback silencioso
+      }
+      return next;
+    });
+  };
+
+  // 2. Cargar ciudades con eventos publicados
   useEffect(() => {
     let isMounted = true;
     getPublishedCitiesUseCase.execute().then((res) => {
@@ -198,539 +129,944 @@ export default function ExploreEventsPageComponent() {
     };
   }, []);
 
-  // Atajo de teclado ⌘K / Ctrl+K
+  // 3. Sincronizar reactivamente si cambia la búsqueda en el Navbar superior
   useEffect(() => {
+    const q = searchParams.get("search") || searchParams.get("q") || "";
+    setSearchTerm(q);
+    const cat = (searchParams.get("category") || "TODOS").toUpperCase();
+    setSelectedCategory(cat);
+    const c = searchParams.get("city") || "Todas";
+    setSelectedCity(c);
+  }, [searchParams]);
+
+  // 4. Cerrar dropdowns al hacer clic fuera o presionar Escape
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterBarRef.current && !filterBarRef.current.contains(e.target as Node)) {
+        setActiveDropdown(null);
+      }
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveDropdown(null);
+      }
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        const input = document.getElementById("event-search-input");
+        const input = document.getElementById("global-search-input");
         if (input) input.focus();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
-  const toggleFavorite = (id: string | number) => {
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+  // 5. Sincronizar parámetros en URL (sin recargar la página)
+  const syncUrlParams = useCallback(
+    (params: {
+      search?: string;
+      category?: string;
+      city?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      date?: string;
+      startDate?: string;
+      endDate?: string;
+      sort?: string;
+    }) => {
+      const current = new URLSearchParams(window.location.search);
+
+      if (params.search) current.set("search", params.search);
+      else current.delete("search");
+
+      if (params.category && params.category !== "TODOS") {
+        current.set("category", params.category.toLowerCase());
+      } else {
+        current.delete("category");
+      }
+
+      if (params.city && params.city !== "Todas" && params.city !== "Todos") {
+        current.set("city", params.city);
+      } else {
+        current.delete("city");
+      }
+
+      if (params.minPrice && params.minPrice > 0) {
+        current.set("minPrice", String(params.minPrice));
+      } else {
+        current.delete("minPrice");
+      }
+
+      if (params.maxPrice && params.maxPrice < 500) {
+        current.set("maxPrice", String(params.maxPrice));
+      } else {
+        current.delete("maxPrice");
+      }
+
+      if (params.date && params.date !== "all") {
+        current.set("date", params.date);
+      } else {
+        current.delete("date");
+      }
+
+      if (params.startDate) current.set("startDate", params.startDate);
+      else current.delete("startDate");
+
+      if (params.endDate) current.set("endDate", params.endDate);
+      else current.delete("endDate");
+
+      if (params.sort && params.sort !== "date_asc") {
+        current.set("sort", params.sort);
+      } else {
+        current.delete("sort");
+      }
+
+      const queryString = current.toString();
+      const newUrl = `${pathname}${queryString ? `?${queryString}` : ""}`;
+      window.history.replaceState(null, "", newUrl);
+    },
+    [pathname]
+  );
+
+  // 6. Cargar eventos desde el caso de uso
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+
+    const categoryParam =
+      selectedCategory && selectedCategory !== "TODOS" ? selectedCategory : undefined;
+    const cityParam =
+      selectedCity && selectedCity !== "Todas" && selectedCity !== "Todos"
+        ? selectedCity
+        : undefined;
+
+    const res = await searchEventsUseCase.execute({
+      q: searchTerm.trim() || undefined,
+      category: categoryParam,
+      city: cityParam,
+      minPrice: minPrice > 0 ? minPrice : undefined,
+      maxPrice: maxPrice < 500 ? maxPrice : undefined,
+      limit: 60,
+      status: "published",
+    });
+
+    res.match(
+      (data) => {
+        setEvents(data.hits || []);
+        setIsLoading(false);
+      },
+      () => {
+        setEvents([]);
+        setIsLoading(false);
+      }
+    );
+  }, [searchTerm, selectedCategory, selectedCity, minPrice, maxPrice]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchEvents();
+      syncUrlParams({
+        search: searchTerm.trim(),
+        category: selectedCategory,
+        city: selectedCity,
+        minPrice,
+        maxPrice,
+        date: dateFilter,
+        startDate: customStartDate,
+        endDate: customEndDate,
+        sort: sortBy,
+      });
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [
+    searchTerm,
+    selectedCategory,
+    selectedCity,
+    minPrice,
+    maxPrice,
+    dateFilter,
+    customStartDate,
+    customEndDate,
+    sortBy,
+    fetchEvents,
+    syncUrlParams,
+  ]);
+
+  // 7. Filtrado y ordenamiento en cliente para filtros de fecha específicos
+  const filteredAndSortedEvents = useMemo(() => {
+    return events
+      .filter((ev) => {
+        // Filtro de fecha
+        if (dateFilter === "all" && !customStartDate && !customEndDate) {
+          return true;
+        }
+
+        if (!ev.date) return false;
+        const evDate = new Date(ev.date);
+        if (isNaN(evDate.getTime())) return true;
+
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+        if (dateFilter === "today") {
+          return evDate >= todayStart && evDate <= todayEnd;
+        }
+
+        if (dateFilter === "weekend") {
+          const day = now.getDay();
+          const daysUntilFriday = (5 - day + 7) % 7;
+          const friday = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() + (daysUntilFriday === 0 && now.getHours() > 22 ? 7 : daysUntilFriday),
+            0,
+            0,
+            0
+          );
+          const sunday = new Date(
+            friday.getFullYear(),
+            friday.getMonth(),
+            friday.getDate() + 2,
+            23,
+            59,
+            59,
+            999
+          );
+          return evDate >= friday && evDate <= sunday;
+        }
+
+        if (dateFilter === "this_week") {
+          const in7Days = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+          return evDate >= todayStart && evDate <= in7Days;
+        }
+
+        if (dateFilter === "this_month") {
+          const endOfMonth = new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+            999
+          );
+          return evDate >= todayStart && evDate <= endOfMonth;
+        }
+
+        if (dateFilter === "custom") {
+          if (customStartDate) {
+            const start = new Date(customStartDate);
+            start.setHours(0, 0, 0, 0);
+            if (evDate < start) return false;
+          }
+          if (customEndDate) {
+            const end = new Date(customEndDate);
+            end.setHours(23, 59, 59, 999);
+            if (evDate > end) return false;
+          }
+          return true;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "price_asc") {
+          return a.minPrice - b.minPrice;
+        }
+        if (sortBy === "price_desc") {
+          return b.minPrice - a.minPrice;
+        }
+        if (sortBy === "title_asc") {
+          return a.title.localeCompare(b.title);
+        }
+        // date_asc por defecto
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateA - dateB;
+      });
+  }, [events, dateFilter, customStartDate, customEndDate, sortBy]);
+
+  // Manejador de rangos de precio con presets amigables
+  const handleSelectPricePreset = (preset: PriceRangeType) => {
+    setPricePreset(preset);
+    if (preset === "all") {
+      setMinPrice(0);
+      setMaxPrice(500);
+    } else if (preset === "under_50") {
+      setMinPrice(0);
+      setMaxPrice(50);
+    } else if (preset === "50_to_150") {
+      setMinPrice(50);
+      setMaxPrice(150);
+    } else if (preset === "over_150") {
+      setMinPrice(150);
+      setMaxPrice(500);
+    }
+    setActiveDropdown(null);
   };
 
-  // Filtrado reactivo en tiempo real
-  const filteredEvents = useMemo(() => {
-    return CATALOG_EVENTS.filter((ev) => {
-      // Búsqueda por texto
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase();
-        const matchTitle = ev.title.toLowerCase().includes(q);
-        const matchLoc = ev.location.toLowerCase().includes(q);
-        const matchCat = ev.categoryLabel.toLowerCase().includes(q);
-        if (!matchTitle && !matchLoc && !matchCat) return false;
-      }
-
-      // Categoría
-      if (selectedCategory !== "todos" && ev.category !== selectedCategory) {
-        return false;
-      }
-
-      // Ciudad
-      if (selectedCity !== "Todos" && ev.city !== selectedCity) {
-        return false;
-      }
-
-      // Precio máximo
-      if (ev.price > maxPrice) {
-        return false;
-      }
-
-      return true;
-    }).sort((a, b) => {
-      if (sortBy === "price_asc") return a.price - b.price;
-      if (sortBy === "relevant") return b.popularity - a.popularity;
-      return 0;
-    });
-  }, [searchTerm, selectedCategory, selectedCity, maxPrice, sortBy]);
-
-  const clearFilters = () => {
+  // Limpiar todos los filtros
+  const handleClearFilters = () => {
     setSearchTerm("");
-    setSelectedCategory("todos");
-    setSelectedCity("Todos");
+    setSelectedCategory("TODOS");
+    setSelectedCity("Todas");
+    setPricePreset("all");
+    setMinPrice(0);
     setMaxPrice(500);
     setDateFilter("all");
-    setSortBy("relevant");
+    setCustomStartDate("");
+    setCustomEndDate("");
+    setSortBy("date_asc");
+    setActiveDropdown(null);
+    syncUrlParams({});
+  };
+
+  // Contar filtros activos
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (searchTerm.trim()) count++;
+    if (selectedCategory !== "TODOS") count++;
+    if (selectedCity !== "Todas" && selectedCity !== "Todos") count++;
+    if (minPrice > 0 || maxPrice < 500) count++;
+    if (dateFilter !== "all") count++;
+    return count;
+  }, [searchTerm, selectedCategory, selectedCity, minPrice, maxPrice, dateFilter]);
+
+  // Etiquetas para los botones de la barra superior
+  const dateFilterLabel = useMemo(() => {
+    switch (dateFilter) {
+      case "today":
+        return "Hoy";
+      case "weekend":
+        return "Este fin de semana";
+      case "this_week":
+        return "Esta semana";
+      case "this_month":
+        return "Este mes";
+      case "custom":
+        return "Fechas elegidas";
+      case "all":
+      default:
+        return "Cualquier fecha";
+    }
+  }, [dateFilter]);
+
+  const categoryFilterLabel = useMemo(() => {
+    const found = CATEGORY_OPTIONS.find((c) => c.id === selectedCategory);
+    return found && found.id !== "TODOS" ? found.name : "Categorías";
+  }, [selectedCategory]);
+
+  const priceFilterLabel = useMemo(() => {
+    if (minPrice === 0 && maxPrice === 50) return "Menos de S/. 50";
+    if (minPrice === 50 && maxPrice === 150) return "S/. 50 - 150";
+    if (minPrice === 150 && maxPrice >= 500) return "Más de S/. 150";
+    if (minPrice > 0 || maxPrice < 500) return `S/. ${minPrice} - ${maxPrice}`;
+    return "Presupuesto";
+  }, [minPrice, maxPrice]);
+
+  // Formateador de fecha para eventos (Día, Mes, Año)
+  const formatEventDate = (dateStr?: string | null) => {
+    if (!dateStr) return "Fecha por confirmar";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const formatted = new Intl.DateTimeFormat("es-PE", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }).format(d);
+      return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    } catch {
+      return dateStr;
+    }
   };
 
   return (
-    <div className="w-full bg-background min-h-screen text-on-background">
+    <div className="w-full bg-[#f8fafc] min-h-screen text-on-background font-body-md">
+      
       {/* =========================================================================
-          CONTENEDOR PRINCIPAL
+          1. HEADER COMPACTO: TÍTULO INSTITUCIONAL + CONTEXTO DE ENTRETENIMIENTO
          ========================================================================= */}
-      <main className="max-w-container-max mx-auto px-4 sm:px-8 py-8 sm:py-12">
-        
-        {/* Cabecera y Buscador Hero */}
-        <header className="mb-10">
-          <h1 className="qph-headline-lg text-deep-slate mb-6">
-            Explora experiencias únicas
-          </h1>
-
-          {/* Input de Búsqueda con Atajo ⌘K */}
-          <div className="relative group max-w-4xl">
-            <div className="absolute inset-y-0 left-0 pl-4 sm:pl-5 flex items-center pointer-events-none">
-              <span className="material-symbols-outlined text-outline text-2xl">search</span>
-            </div>
-
-            <input
-              id="event-search-input"
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => setIsAutocompleteOpen(true)}
-              onBlur={() => setTimeout(() => setIsAutocompleteOpen(false), 200)}
-              placeholder="Buscar por artista, evento o ciudad..."
-              className="w-full pl-13 pr-16 py-4 sm:py-5 bg-white border border-surface-variant rounded-2xl shadow-xs focus:ring-2 focus:ring-electric-indigo qph-body-lg text-on-surface placeholder:text-platinum-silver transition-all outline-none"
-            />
-
-            <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-              <kbd className="hidden md:inline-flex items-center gap-1 bg-surface-gray px-2.5 py-1 rounded-lg text-xs font-semibold text-deep-slate border border-surface-variant">
-                <span>⌘</span>K
-              </kbd>
-            </div>
-
-            {/* Dropdown de Autocomplete Sugerencias */}
-            {isAutocompleteOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-surface-variant z-40 overflow-hidden animate-in fade-in">
-                <div className="p-3 border-b border-surface-variant qph-label-bold text-xs text-platinum-silver">
-                  Sugerencias Rápidas
-                </div>
-                <div
-                  onMouseDown={() => setSearchTerm("Rock")}
-                  className="hover:bg-surface-gray p-3.5 flex items-center gap-3 cursor-pointer transition-colors"
-                >
-                  <span className="material-symbols-outlined text-electric-indigo">music_note</span>
-                  <div>
-                    <p className="qph-label-bold text-xs text-deep-slate">Conciertos de Rock &amp; Metal</p>
-                    <p className="text-[11px] text-platinum-silver">Estadio Nacional, Lima</p>
-                  </div>
-                </div>
-                <div
-                  onMouseDown={() => setSearchTerm("Teatro")}
-                  className="hover:bg-surface-gray p-3.5 flex items-center gap-3 cursor-pointer transition-colors"
-                >
-                  <span className="material-symbols-outlined text-electric-indigo">theater_comedy</span>
-                  <div>
-                    <p className="qph-label-bold text-xs text-deep-slate">Romeo y Julieta - Temporada 2024</p>
-                    <p className="text-[11px] text-platinum-silver">Teatro Municipal, Lima</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* =======================================================================
-            LAYOUT: SIDEBAR FILTERS (DESKTOP) + RESULTADOS GRID
-           ======================================================================= */}
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
-          
-          {/* SIDEBAR DE FILTROS (DESKTOP) */}
-          <aside className="hidden lg:block w-72 shrink-0 space-y-7 bg-white p-6 rounded-2xl border border-surface-variant shadow-xs sticky top-28">
-            
-            {/* Categorías */}
+      <div className="bg-white border-b border-surface-variant/80 pt-6 pb-5 shadow-2xs">
+        <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="qph-label-bold text-xs uppercase tracking-widest text-on-surface-variant mb-3">
-                Categorías
-              </h3>
-              <div className="flex flex-col gap-1.5">
-                {[
-                  { id: "todos", name: "Todos" },
-                  ...EVENT_CATEGORIES.map((c) => ({ id: c.id.toLowerCase(), name: c.label })),
-                ].map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs qph-label-bold transition-all cursor-pointer border ${
-                      selectedCategory === cat.id
-                        ? "bg-electric-indigo text-white border-electric-indigo shadow-xs"
-                        : "bg-transparent text-on-surface-variant border-transparent hover:bg-surface-gray hover:border-surface-variant/40"
-                    }`}
-                  >
-                    <span>{cat.name}</span>
-                  </button>
-                ))}
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-electric-indigo/10 text-electric-indigo text-[11px] font-label-bold mb-1">
+                <span className="w-2 h-2 rounded-full bg-electric-indigo animate-pulse" />
+                <span>Cartelera Oficial en Vivo</span>
               </div>
+              <h1 className="font-headline-md text-2xl sm:text-3xl font-black text-deep-slate tracking-tight">
+                Explora experiencias y planes
+              </h1>
+              <p className="text-on-surface-variant text-xs sm:text-sm">
+                Conciertos, festivales, teatro y vida nocturna garantizada en todo el Perú.
+              </p>
             </div>
 
-            {/* Ubicación */}
-            <div className="pt-6 border-t border-surface-variant">
-              <h3 className="qph-label-bold text-xs uppercase tracking-widest text-on-surface-variant mb-3">
-                Ubicación
-              </h3>
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full bg-white border border-surface-variant rounded-xl p-3 text-xs qph-body-md focus:ring-2 focus:ring-electric-indigo outline-none cursor-pointer text-deep-slate shadow-xs"
-              >
-                <option value="Todos">Todas las ciudades</option>
-                {publishedCities.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name} ({c.eventCount})
-                  </option>
-                ))}
-              </select>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-xs font-label-bold text-on-surface-variant bg-surface-gray px-3.5 py-1.5 rounded-xl border border-surface-variant">
+                {isLoading ? "Consultando eventos..." : `${filteredAndSortedEvents.length} eventos disponibles`}
+              </span>
             </div>
-
-            {/* Rango de Precio */}
-            <div className="pt-6 border-t border-surface-variant">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="qph-label-bold text-xs uppercase tracking-widest text-on-surface-variant">
-                  Precio Máximo
-                </h3>
-                <span className="text-xs font-bold text-electric-indigo">
-                  Hasta S/. {maxPrice}
-                </span>
-              </div>
-              <input
-                type="range"
-                min="20"
-                max="500"
-                step="10"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full h-1.5 bg-surface-gray rounded-lg appearance-none cursor-pointer accent-electric-indigo"
-              />
-              <div className="flex justify-between mt-2 text-[11px] text-platinum-silver qph-label-bold">
-                <span>20€</span>
-                <span>500€+</span>
-              </div>
-            </div>
-
-            {/* Fecha */}
-            <div className="pt-6 border-t border-surface-variant">
-              <h3 className="qph-label-bold text-xs uppercase tracking-widest text-on-surface-variant mb-3">
-                Fecha
-              </h3>
-              <div className="space-y-2.5 text-xs">
-                {[
-                  { id: "all", label: "Cualquier fecha" },
-                  { id: "weekend", label: "Este fin de semana" },
-                  { id: "next_week", label: "Próxima semana" },
-                ].map((d) => (
-                  <label key={d.id} className="flex items-center gap-2.5 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="date_filter"
-                      checked={dateFilter === d.id}
-                      onChange={() => setDateFilter(d.id as typeof dateFilter)}
-                      className="w-4 h-4 text-electric-indigo focus:ring-electric-indigo border-surface-variant"
-                    />
-                    <span className="text-on-surface-variant group-hover:text-primary transition-colors">
-                      {d.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Botón Limpiar */}
-            <button
-              onClick={clearFilters}
-              className="w-full py-2.5 bg-white border border-surface-variant hover:bg-surface-gray rounded-xl qph-label-bold text-xs text-on-surface transition-all cursor-pointer shadow-xs"
-            >
-              Limpiar Filtros
-            </button>
-          </aside>
-
-          {/* =====================================================================
-              ÁREA PRINCIPAL DE RESULTADOS
-             ===================================================================== */}
-          <section className="flex-1 w-full">
-            
-            {/* Barra de Filtros Móvil y Ordenamiento */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-surface-variant">
-              <div>
-                <p className="text-on-surface-variant qph-body-md text-sm">
-                  Mostrando <strong className="text-on-surface font-bold">{filteredEvents.length} eventos</strong> encontrados
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {/* Botón trigger para abrir filtros en móvil */}
-                <button
-                  onClick={() => setIsMobileFilterOpen(true)}
-                  className="lg:hidden flex items-center gap-1.5 px-3.5 py-2 bg-white rounded-xl border border-surface-variant text-xs font-semibold text-deep-slate shadow-xs cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-sm">tune</span>
-                  <span>Filtros</span>
-                </button>
-
-                {/* Ordenamiento */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] qph-label-bold text-platinum-silver hidden sm:inline">
-                    ORDENAR POR:
-                  </span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                    className="bg-white border border-surface-variant rounded-xl px-3 py-1.5 text-xs qph-label-bold text-on-surface focus:outline-none cursor-pointer shadow-xs"
-                  >
-                    <option value="relevant">Más relevantes</option>
-                    <option value="price_asc">Precio: Menor a Mayor</option>
-                    <option value="date">Próximos eventos</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* GRID DE TARJETAS DE EVENTOS */}
-            {filteredEvents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-7">
-                {filteredEvents.map((ev) => {
-                  const isFav = !!favorites[ev.id];
-                  return (
-                    <article
-                      key={ev.id}
-                      className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer flex flex-col justify-between border border-surface-variant"
-                    >
-                      {/* Media Area / Imagen y Badges */}
-                      <div className="aspect-video relative overflow-hidden">
-                        <img
-                          src={ev.imageUrl}
-                          alt={ev.title}
-                          className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-                        />
-
-                        {/* Badges superiores sobre la imagen */}
-                        <div className="absolute top-3 left-3 flex gap-2">
-                          <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
-                            {ev.categoryLabel}
-                          </span>
-                          {ev.hasVip && (
-                            <span className="bg-vip-gold text-white px-2.5 py-1 rounded-full text-[10px] uppercase font-label-bold shadow-xs">
-                              VIP DISPONIBLE
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Botón Favorito Flotante */}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toggleFavorite(ev.id);
-                          }}
-                          aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer"
-                        >
-                          <span
-                            className="material-symbols-outlined text-lg"
-                            style={{
-                              fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
-                              color: isFav ? "#e11d48" : "inherit",
-                            }}
-                          >
-                            favorite
-                          </span>
-                        </button>
-                      </div>
-
-                      {/* Contenido / Cuerpo de la Tarjeta */}
-                      <div className="p-5 flex-1 flex flex-col justify-between">
-                        <div>
-                          <p className="font-label-bold text-[12px] text-electric-indigo mb-1 uppercase">
-                            {ev.dateStr} • {ev.location}, {ev.city}
-                          </p>
-
-                          <h3 className="font-headline-md text-headline-md group-hover:text-electric-indigo transition-colors leading-tight mb-2 font-bold line-clamp-1">
-                            {ev.title}
-                          </h3>
-
-                          <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3">
-                            {ev.description || "Acceso oficial garantizado para esta función en directo."}
-                          </p>
-
-                          <div className="flex items-center gap-1.5 text-rose-500 mb-2">
-                            <span className="material-symbols-outlined text-sm">{ev.urgencyIcon || "bolt"}</span>
-                            <span className="font-label-bold text-[11px]">{ev.urgencyText || "Últimas entradas disponibles"}</span>
-                          </div>
-                        </div>
-
-                        {/* Footer de Tarjeta Homogéneo al Home */}
-                        <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-outline uppercase font-label-bold">
-                              Precio
-                            </span>
-                            <span className="font-price-tag text-price-tag text-deep-slate font-extrabold text-base sm:text-lg">
-                              Desde {ev.price}€
-                            </span>
-                          </div>
-
-                          <Link
-                            href={`/events/${ev.id}`}
-                            className="px-3.5 py-2 bg-electric-indigo text-white rounded-xl font-label-bold text-[12px] hover:bg-primary transition-all shadow-sm"
-                          >
-                            Comprar Entradas
-                          </Link>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            ) : (
-              /* ESTADO VACÍO (EMPTY STATE) */
-              <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-surface-variant p-8 shadow-xs">
-                <div className="w-24 h-24 bg-surface-gray rounded-full flex items-center justify-center mb-5 text-platinum-silver border border-surface-variant/40">
-                  <span className="material-symbols-outlined text-5xl">search_off</span>
-                </div>
-                <h3 className="qph-headline-lg text-xl text-deep-slate mb-2">
-                  No encontramos resultados
-                </h3>
-                <p className="text-on-surface-variant max-w-md mx-auto mb-6 qph-body-md text-xs sm:text-sm">
-                  Prueba ajustando tus filtros de precio, cambiando la categoría o buscando una palabra diferente.
-                </p>
-                <button
-                  onClick={clearFilters}
-                  className="px-6 py-2.5 bg-electric-indigo text-white rounded-xl qph-label-bold text-xs hover:bg-primary transition-all cursor-pointer shadow-sm"
-                >
-                  Ver todos los eventos
-                </button>
-              </div>
-            )}
-
-            {/* Paginación */}
-            {filteredEvents.length > 0 && (
-              <div className="mt-12 flex justify-center items-center gap-2">
-                <button
-                  aria-label="Página anterior"
-                  className="w-10 h-10 rounded-xl flex items-center justify-center bg-white border border-surface-variant hover:bg-surface-gray text-on-surface-variant transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-base">chevron_left</span>
-                </button>
-                <button className="w-10 h-10 rounded-xl bg-electric-indigo text-white flex items-center justify-center font-bold text-xs shadow-xs border border-electric-indigo">
-                  1
-                </button>
-                <button className="w-10 h-10 rounded-xl bg-white border border-surface-variant flex items-center justify-center hover:bg-surface-gray text-on-surface-variant font-semibold text-xs transition-all cursor-pointer shadow-xs">
-                  2
-                </button>
-                <button className="w-10 h-10 rounded-xl bg-white border border-surface-variant flex items-center justify-center hover:bg-surface-gray text-on-surface-variant font-semibold text-xs transition-all cursor-pointer shadow-xs">
-                  3
-                </button>
-                <span className="px-2 text-platinum-silver text-xs">...</span>
-                <button className="w-10 h-10 rounded-xl bg-white border border-surface-variant flex items-center justify-center hover:bg-surface-gray text-on-surface-variant font-semibold text-xs transition-all cursor-pointer shadow-xs">
-                  12
-                </button>
-                <button
-                  aria-label="Página siguiente"
-                  className="w-10 h-10 rounded-xl flex items-center justify-center bg-white border border-surface-variant hover:bg-surface-gray text-on-surface-variant transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-base">chevron_right</span>
-                </button>
-              </div>
-            )}
-          </section>
+          </div>
         </div>
-      </main>
+      </div>
 
       {/* =========================================================================
-          DRAWER / MODAL DE FILTROS PARA MÓVIL (BOTTOM SHEET)
+          2. BARRA HORIZONTAL DE FILTROS (TOP FILTER BAR - PATRÓN FEVER / DICE)
          ========================================================================= */}
-      {isMobileFilterOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
-          {/* Backdrop */}
-          <div
-            onClick={() => setIsMobileFilterOpen(false)}
-            className="absolute inset-0 bg-deep-slate/60 backdrop-blur-sm animate-in fade-in"
-          />
-
-          {/* Panel Deslizable */}
-          <div className="relative bg-white rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto shadow-2xl z-10 animate-in slide-in-from-bottom duration-300 border-t border-surface-variant">
-            <div className="w-12 h-1 bg-surface-variant rounded-full mx-auto mb-4" />
-
-            <div className="flex justify-between items-center mb-6 pb-3 border-b border-surface-variant">
-              <h2 className="qph-headline-lg text-lg font-bold text-deep-slate">
-                Filtros de Búsqueda
-              </h2>
+      <div
+        ref={filterBarRef}
+        className="sticky top-20 z-40 bg-white/95 backdrop-blur-md border-b border-surface-variant/80 py-3 shadow-xs"
+      >
+        <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3">
+          
+          {/* Grupo de Filtros Desplegables (Pills) */}
+          <div className="flex flex-wrap items-center gap-2">
+            
+            {/* PILL 1: CUÁNDO (FECHAS) */}
+            <div className="relative">
               <button
-                onClick={() => setIsMobileFilterOpen(false)}
-                className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-gray border border-surface-variant cursor-pointer"
+                type="button"
+                onClick={() =>
+                  setActiveDropdown(activeDropdown === "date" ? null : "date")
+                }
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                  dateFilter !== "all"
+                    ? "bg-electric-indigo text-white border-electric-indigo shadow-sm shadow-electric-indigo/25"
+                    : "bg-surface-gray hover:bg-surface-container text-deep-slate border-surface-variant"
+                }`}
               >
-                <span className="material-symbols-outlined">close</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  calendar_month
+                </span>
+                <span>{dateFilterLabel}</span>
+                <span className="material-symbols-outlined text-[14px]">
+                  {activeDropdown === "date" ? "expand_less" : "expand_more"}
+                </span>
               </button>
+
+              {/* Popover Desplegable de Fechas */}
+              {activeDropdown === "date" && (
+                <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-surface-variant p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-2 pb-2 mb-1 border-b border-surface-variant/60">
+                    Selecciona una fecha
+                  </span>
+                  
+                  <div className="space-y-1">
+                    {[
+                      { id: "all", label: "Cualquier fecha", icon: "all_inclusive" },
+                      { id: "today", label: "Hoy", icon: "today" },
+                      { id: "weekend", label: "Este fin de semana", icon: "weekend" },
+                      { id: "this_week", label: "Esta semana", icon: "date_range" },
+                      { id: "this_month", label: "Este mes", icon: "calendar_month" },
+                      { id: "custom", label: "Rango personalizado", icon: "edit_calendar" },
+                    ].map((d) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => {
+                          setDateFilter(d.id as DateFilterType);
+                          if (d.id !== "custom") setActiveDropdown(null);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                          dateFilter === d.id
+                            ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+                            : "hover:bg-surface-gray text-deep-slate"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[16px]">
+                            {d.icon}
+                          </span>
+                          <span>{d.label}</span>
+                        </div>
+                        {dateFilter === d.id && (
+                          <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                            check
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Rango Personalizado */}
+                  {dateFilter === "custom" && (
+                    <div className="mt-2 pt-2 border-t border-surface-variant/60 space-y-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">
+                          Desde:
+                        </label>
+                        <input
+                          type="date"
+                          value={customStartDate}
+                          onChange={(e) => setCustomStartDate(e.target.value)}
+                          className="w-full bg-surface-gray border border-surface-variant rounded-lg p-1.5 text-xs text-deep-slate outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">
+                          Hasta:
+                        </label>
+                        <input
+                          type="date"
+                          value={customEndDate}
+                          onChange={(e) => setCustomEndDate(e.target.value)}
+                          className="w-full bg-surface-gray border border-surface-variant rounded-lg p-1.5 text-xs text-deep-slate outline-none"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveDropdown(null)}
+                        className="w-full py-1.5 bg-electric-indigo text-white text-xs font-bold rounded-lg shadow-xs hover:bg-primary transition-colors cursor-pointer"
+                      >
+                        Aplicar fechas
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-6">
-              {/* Categorías */}
-              <div>
-                <h4 className="qph-label-bold text-xs uppercase text-on-surface-variant mb-3">
-                  Categoría
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { id: "todos", name: "Todos" },
-                    ...EVENT_CATEGORIES.map((c) => ({ id: c.id.toLowerCase(), name: c.label })),
-                  ].map((cat) => (
+            {/* PILL 2: CATEGORÍA (DESPLEGABLE) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveDropdown(activeDropdown === "category" ? null : "category")
+                }
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                  selectedCategory !== "TODOS"
+                    ? "bg-electric-indigo text-white border-electric-indigo shadow-sm shadow-electric-indigo/25"
+                    : "bg-surface-gray hover:bg-surface-container text-deep-slate border-surface-variant"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  theater_comedy
+                </span>
+                <span>{categoryFilterLabel}</span>
+                <span className="material-symbols-outlined text-[14px]">
+                  {activeDropdown === "category" ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+
+              {/* Popover Desplegable de Categorías */}
+              {activeDropdown === "category" && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-2 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-80 overflow-y-auto">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-3 py-1.5 mb-1 border-b border-surface-variant/60">
+                    Filtrar por categoría
+                  </span>
+                  {CATEGORY_OPTIONS.map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-4 py-2 rounded-xl text-xs qph-label-bold transition-all border cursor-pointer ${
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setActiveDropdown(null);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                         selectedCategory === cat.id
-                          ? "bg-electric-indigo text-white border-electric-indigo shadow-xs"
-                          : "bg-white text-on-surface-variant border-surface-variant hover:bg-surface-gray"
+                          ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+                          : "hover:bg-surface-gray text-deep-slate"
                       }`}
                     >
-                      {cat.name}
+                      <div className="flex items-center gap-2.5">
+                        <span className="material-symbols-outlined text-[18px]">
+                          {cat.icon}
+                        </span>
+                        <span>{cat.name}</span>
+                      </div>
+                      {selectedCategory === cat.id && (
+                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                          check
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
-              </div>
+              )}
+            </div>
 
-              {/* Ubicación (Móvil) */}
-              <div className="pt-4 border-t border-surface-variant">
-                <h4 className="qph-label-bold text-xs uppercase text-on-surface-variant mb-3">
-                  Ciudad
-                </h4>
-                <select
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  className="w-full bg-white border border-surface-variant rounded-xl p-3 text-xs qph-body-md focus:ring-2 focus:ring-electric-indigo outline-none cursor-pointer text-deep-slate shadow-xs"
-                >
-                  <option value="Todos">Todas las ciudades</option>
-                  {publishedCities.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name} ({c.eventCount})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Rango de Precio */}
-              <div className="pt-4 border-t border-surface-variant">
-                <div className="flex justify-between text-xs mb-2">
-                  <span className="qph-label-bold text-on-surface-variant">Precio Máximo:</span>
-                  <span className="font-bold text-electric-indigo">Hasta S/. {maxPrice}</span>
-                </div>
-                <input
-                  type="range"
-                  min="20"
-                  max="500"
-                  step="10"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(Number(e.target.value))}
-                  className="w-full h-2 bg-surface-gray rounded-lg appearance-none accent-electric-indigo cursor-pointer"
-                />
-              </div>
-
-              {/* Botón Aplicar */}
+            {/* PILL 3: UBICACIÓN (CIUDADES DE PERÚ) */}
+            <div className="relative">
               <button
-                onClick={() => setIsMobileFilterOpen(false)}
-                className="w-full py-3.5 bg-electric-indigo text-white rounded-xl qph-label-bold text-sm shadow-md hover:bg-primary active:scale-95 transition-all cursor-pointer"
+                type="button"
+                onClick={() =>
+                  setActiveDropdown(activeDropdown === "city" ? null : "city")
+                }
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                  selectedCity !== "Todas" && selectedCity !== "Todos"
+                    ? "bg-electric-indigo text-white border-electric-indigo shadow-sm shadow-electric-indigo/25"
+                    : "bg-surface-gray hover:bg-surface-container text-deep-slate border-surface-variant"
+                }`}
               >
-                Aplicar Filtros ({filteredEvents.length} resultados)
+                <span className="material-symbols-outlined text-[16px]">
+                  location_on
+                </span>
+                <span>
+                  {selectedCity !== "Todas" && selectedCity !== "Todos"
+                    ? selectedCity
+                    : "Ubicación"}
+                </span>
+                <span className="material-symbols-outlined text-[14px]">
+                  {activeDropdown === "city" ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+
+              {/* Popover Desplegable de Ciudades */}
+              {activeDropdown === "city" && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-3 py-1.5 mb-1 border-b border-surface-variant/60">
+                    Ciudades con cartelera
+                  </span>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCity("Todas");
+                      setActiveDropdown(null);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                      selectedCity === "Todas" || selectedCity === "Todos"
+                        ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+                        : "hover:bg-surface-gray text-deep-slate"
+                    }`}
+                  >
+                    <span>Todas las ciudades (Perú)</span>
+                    {(selectedCity === "Todas" || selectedCity === "Todos") && (
+                      <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                        check
+                      </span>
+                    )}
+                  </button>
+
+                  {publishedCities.map((city) => (
+                    <button
+                      key={city.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCity(city.name);
+                        setActiveDropdown(null);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                        selectedCity === city.name
+                          ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+                          : "hover:bg-surface-gray text-deep-slate"
+                      }`}
+                    >
+                      <span>{city.name}</span>
+                      <span className="text-[11px] font-normal text-on-surface-variant bg-surface-gray px-1.5 py-0.5 rounded">
+                        {city.eventCount}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* PILL 4: PRESUPUESTO / PRECIO */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveDropdown(activeDropdown === "price" ? null : "price")
+                }
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                  minPrice > 0 || maxPrice < 500
+                    ? "bg-electric-indigo text-white border-electric-indigo shadow-sm shadow-electric-indigo/25"
+                    : "bg-surface-gray hover:bg-surface-container text-deep-slate border-surface-variant"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  payments
+                </span>
+                <span>{priceFilterLabel}</span>
+                <span className="material-symbols-outlined text-[14px]">
+                  {activeDropdown === "price" ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+
+              {/* Popover Desplegable de Precios */}
+              {activeDropdown === "price" && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-1 pb-2 mb-2 border-b border-surface-variant/60">
+                    Rango de entradas
+                  </span>
+
+                  <div className="space-y-1 mb-3">
+                    {[
+                      { id: "all", label: "Cualquier precio" },
+                      { id: "under_50", label: "Menos de S/. 50 (Económicas)" },
+                      { id: "50_to_150", label: "S/. 50 a S/. 150 (Intermedias)" },
+                      { id: "over_150", label: "Más de S/. 150 (VIP / Especiales)" },
+                    ].map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleSelectPricePreset(p.id as PriceRangeType)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                          pricePreset === p.id
+                            ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+                            : "hover:bg-surface-gray text-deep-slate"
+                        }`}
+                      >
+                        <span>{p.label}</span>
+                        {pricePreset === p.id && (
+                          <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                            check
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Slider de ajuste fino */}
+                  <div className="pt-2 border-t border-surface-variant/60">
+                    <div className="flex justify-between text-[11px] font-bold text-on-surface-variant mb-1">
+                      <span>Límite máximo:</span>
+                      <span className="text-electric-indigo">
+                        {maxPrice >= 500 ? "Sin límite" : `Hasta S/. ${maxPrice}`}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="500"
+                      step="10"
+                      value={maxPrice}
+                      onChange={(e) => {
+                        setMaxPrice(Number(e.target.value));
+                        setPricePreset("custom");
+                      }}
+                      className="w-full h-1.5 bg-surface-gray rounded-lg appearance-none cursor-pointer accent-electric-indigo"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* BOTÓN LIMPIAR FILTROS (Visible solo cuando hay filtros activos) */}
+            {activeFiltersCount > 0 && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-label-bold text-electric-indigo hover:bg-electric-indigo/10 border border-electric-indigo/20 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[15px]">close</span>
+                <span>Limpiar filtros ({activeFiltersCount})</span>
+              </button>
+            )}
+
+          </div>
+
+          {/* Lado Derecho: Ordenamiento */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-label-bold text-on-surface-variant uppercase hidden sm:inline">
+              Ordenar por:
+            </span>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortByType)}
+                className="bg-surface-gray hover:bg-surface-container border border-surface-variant rounded-xl py-2 pl-3 pr-7 text-xs font-bold text-deep-slate focus:outline-none cursor-pointer appearance-none shadow-2xs"
+              >
+                <option value="date_asc">Más próximos</option>
+                <option value="price_asc">Precio: Menor a Mayor</option>
+                <option value="price_desc">Precio: Mayor a Menor</option>
+                <option value="title_asc">Nombre: A - Z</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-on-surface-variant">
+                <span className="material-symbols-outlined text-[16px]">expand_more</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* =========================================================================
+          3. CATÁLOGO A PANTALLA COMPLETA (FULL-WIDTH GRID - 3 A 4 COLUMNAS)
+         ========================================================================= */}
+      <main className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        
+        {/* Chip de búsqueda por texto activa si viene desde el Navbar */}
+        {searchTerm && (
+          <div className="mb-6 flex items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-surface-variant text-xs text-deep-slate shadow-2xs">
+              <span className="material-symbols-outlined text-[16px] text-electric-indigo">search</span>
+              <span>Resultados para: <strong className="font-bold text-electric-indigo">&ldquo;{searchTerm}&rdquo;</strong></span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  syncUrlParams({ search: "" });
+                }}
+                className="hover:bg-surface-gray rounded-full p-0.5 text-on-surface-variant transition-colors cursor-pointer"
+                title="Quitar término de búsqueda"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* ESTADO: CARGANDO (SKELETONS FULL-WIDTH) */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div
+                key={`skel-${idx}`}
+                className="bg-white rounded-2xl overflow-hidden border border-surface-variant shadow-xs flex flex-col justify-between animate-pulse"
+              >
+                <div className="aspect-16/10 bg-surface-variant/50 relative" />
+                <div className="p-4 flex-1 flex flex-col justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="h-3.5 bg-surface-variant/40 rounded w-1/3" />
+                    <div className="h-5 bg-surface-variant/60 rounded w-4/5" />
+                    <div className="h-3 bg-surface-variant/30 rounded w-full" />
+                  </div>
+                  <div className="pt-3 border-t border-surface-variant flex justify-between items-center">
+                    <div className="h-4 bg-surface-variant/50 rounded w-1/4" />
+                    <div className="h-8 bg-surface-variant/60 rounded-xl w-1/3" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredAndSortedEvents.length > 0 ? (
+          /* GRID DE EVENTOS REALES (FULL-WIDTH 3-4 COLS) */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredAndSortedEvents.map((ev) => {
+              const isFav = !!favorites[ev.id];
+              const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${ev.id}`;
+              const ctaText = ev.hasLandingPage && ev.slug ? "Ver Experiencia" : "Comprar";
+              const fallbackImage =
+                "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80";
+
+              return (
+                <article
+                  key={ev.id}
+                  className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between border border-surface-variant"
+                >
+                  {/* Media Area / Póster del Evento */}
+                  <div className="aspect-16/10 relative overflow-hidden bg-slate-900">
+                    <Link href={ctaHref} className="block w-full h-full">
+                      <img
+                        src={ev.bannerUrl || fallbackImage}
+                        alt={ev.title}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-108 duration-500 cursor-pointer"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = fallbackImage;
+                        }}
+                      />
+                    </Link>
+
+                    {/* Badge de Categoría y Destacado */}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none">
+                      <span className="px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
+                        {ev.category}
+                      </span>
+                      {ev.isFeatured && (
+                        <span className="px-2 py-0.5 bg-vip-gold text-white rounded-full text-[10px] font-label-bold uppercase shadow-xs">
+                          Destacado
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Botón Favorito Flotante */}
+                    <button
+                      type="button"
+                      onClick={(e) => toggleFavorite(ev.id, e)}
+                      aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                      className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
+                    >
+                      <span
+                        className="material-symbols-outlined text-[18px]"
+                        style={{
+                          fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
+                          color: isFav ? "#e11d48" : "inherit",
+                        }}
+                      >
+                        favorite
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Cuerpo de la Tarjeta */}
+                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      {/* Fecha y Lugar */}
+                      <p className="font-label-bold text-[11px] text-electric-indigo mb-1 uppercase tracking-wide flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[13px]">calendar_today</span>
+                        <span>{formatEventDate(ev.date)}</span>
+                        <span>•</span>
+                        <span className="truncate">{ev.venue || "Recinto Oficial"}</span>
+                      </p>
+
+                      <Link href={ctaHref} className="block">
+                        <h3 className="font-headline-md text-base sm:text-lg font-bold text-deep-slate group-hover:text-electric-indigo transition-colors leading-tight mb-2 line-clamp-1 cursor-pointer">
+                          {ev.title}
+                        </h3>
+                      </Link>
+
+                      <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3 leading-relaxed">
+                        {ev.description || "Acceso digital garantizado con control de seguridad oficial."}
+                      </p>
+                    </div>
+
+                    {/* Footer de Tarjeta con Precio y CTA */}
+                    <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-on-surface-variant uppercase font-label-bold">
+                          Precio
+                        </span>
+                        <span className="font-headline-md font-black text-sm sm:text-base text-deep-slate">
+                          {ev.minPrice > 0 ? `Desde S/. ${ev.minPrice.toFixed(2)}` : "Entrada Libre"}
+                        </span>
+                      </div>
+
+                      <Link
+                        href={ctaHref}
+                        className="px-3.5 py-2 bg-electric-indigo hover:bg-primary text-white rounded-xl font-label-bold text-xs shadow-xs hover:shadow-md hover:shadow-electric-indigo/20 active:scale-95 transition-all"
+                      >
+                        {ctaText}
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          /* ESTADO VACÍO (EMPTY STATE) */
+          <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-surface-variant p-8 shadow-xs max-w-xl mx-auto">
+            <div className="w-16 h-16 bg-surface-gray rounded-full flex items-center justify-center mb-4 text-on-surface-variant border border-surface-variant">
+              <span className="material-symbols-outlined text-3xl text-electric-indigo">
+                event_busy
+              </span>
+            </div>
+            <h3 className="font-headline-md text-xl font-bold text-deep-slate mb-2">
+              No encontramos eventos con estos filtros
+            </h3>
+            <p className="text-on-surface-variant text-xs sm:text-sm mb-6 leading-relaxed">
+              Prueba cambiando la fecha, seleccionando otra ciudad o explorando todas las categorías disponibles.
+            </p>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="px-6 py-2.5 bg-electric-indigo text-white rounded-xl font-label-bold text-xs hover:bg-primary transition-all cursor-pointer shadow-md shadow-electric-indigo/20 active:scale-95"
+            >
+              Restablecer todos los filtros
+            </button>
+          </div>
+        )}
+
+      </main>
+
     </div>
   );
 }

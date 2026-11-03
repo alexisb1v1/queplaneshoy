@@ -135,6 +135,42 @@ sequenceDiagram
 | **`SearchInstantDropdown`** | `isLoading` | Muestra spinner circular en el extremo derecho del input. |
 | **`SearchBar / ExplorePage`** | `publishedCities` | Al montar, consulta `getPublishedCitiesUseCase` y renderiza en el `<select>` solo las ciudades con eventos en estado `published` (`name (count)`). Evita mostrar departamentos sin eventos. |
 | **`DesktopHeader`** | `shouldShowSearch` | En la Home en reposo, el centro del header permanece despejado para destacar el Hero. Al scrollear (o en páginas internas), activa la barra flotante `SearchInstantDropdown` con fade-in. |
-| **`HeroCarousel`** | `slides` | Consume `getFeaturedEventsUseCase` con estrategia híbrida (máx 5 eventos). Enlaza dinámicamente a `/e/:slug` si tiene landing o `/events/:id` si es ficha regular. |
+| **`HeroCarousel`** | `slides` | Consume `getFeaturedEventsUseCase` con estrategia híbrida (máx 5 eventos). Enlaza dinámicamente a `/e/:slug` si tiene landing o `/events/:id` si es ficha regular. Si no hay destacados, realiza fallback dinámico a `getUpcomingEventsUseCase`. |
 | **`LandingConfigManager`** | `hasLanding = true` | Inicializa automáticamente el slug amigable a partir del título del evento. |
+| **`HomePage`** | `isLoadingUpcoming, isLoadingWeekly, isLoadingWeekend` | Controla de manera independiente los esqueletos (*Skeleton Loaders / Shimmers*) animados para cada sección de eventos. Si no hay eventos disponibles en base de datos, presenta un *Empty State* amigable sin romper la cuadrícula. |
+
+---
+
+## 6. Cartelera Dinámica del Home (`/`) sin Mocks
+
+Toda la portada principal se encuentra 100% desvinculada de datos estáticos y sincronizada con el backend (PostgreSQL + Redis):
+
+1. **`HeroCarousel`**:
+   - `getFeaturedEventsUseCase`: Consulta hasta 5 eventos con `is_featured = true`.
+   - **Fallback Dinámico**: Si ningún evento está marcado como destacado, toma automáticamente los primeros 3 eventos publicados desde `getUpcomingEventsUseCase`.
+   - **Contingencia Institucional**: Si no existen eventos publicados en la base de datos, presenta el slide de bienvenida oficial de *Qué Planes Hoy* con enlace a `/events`.
+2. **`Eventos Próximos`**:
+   - Consume `getUpcomingEventsUseCase` ordenados cronológicamente a partir de las funciones más cercanas.
+   - Renderiza esqueletos animados mientras espera la respuesta.
+3. **`Eventos Destacados de la Semana`**:
+   - Consume `getWeeklyFeaturedEventsUseCase` con selección editorial y eventos de alta demanda.
+4. **`Planes para Este Fin de Semana`**:
+   - Consume `getWeekendEventsUseCase` para eventos programados en el fin de semana próximo.
+5. **Vista Móvil**:
+   - El carrusel de destacados y la lista de próximos eventos se alimentan en tiempo real de los mismos datos vivos con filtrado reactivo por categorías oficiales.
+
+---
+
+## 7. Vinculación de Sesión Activa al Checkout y Emisión de Entradas
+
+Para garantizar la integridad y titularidad de las compras:
+1. **Frontend (`PurchaseFlowPage`)**:
+   - Sincroniza el usuario autenticado activo desde `localStorage.getItem('qph_user')` y `getCurrentUserUseCase`.
+   - En el Paso 2 de pago, muestra el bloque de titularidad con nombre y correo del comprador.
+   - Envía el token JWT en el encabezado `Authorization: Bearer <token>` a través de `apiClient` junto a `customerEmail` y `customerName` del usuario logueado.
+2. **Backend (`OrdersController` + `SimulateOrderCheckoutHandler`)**:
+   - Extrae y valida criptográficamente el JWT mediante `TokenService` resolviendo el `id` interno del usuario en sesión.
+   - Asocia directamente la orden en la tabla `orders` y los tickets emitidos en `tickets` al `userId` del comprador autenticado existente en PostgreSQL, sin crear cuentas duplicadas.
+
+
 

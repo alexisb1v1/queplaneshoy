@@ -111,17 +111,19 @@ export function EventCard({
   const ctaText = hasLandingPage && slug ? "Ver Experiencia" : "Comprar Entradas";
 
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer flex flex-col justify-between border border-surface-variant">
+    <div className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 flex flex-col justify-between border border-surface-variant">
       {/* Media Area */}
       <div className="aspect-video relative overflow-hidden">
-        <img
-          className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-          src={imageUrl}
-          alt={altText}
-        />
+        <Link href={ctaHref} className="block w-full h-full">
+          <img
+            className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500 cursor-pointer"
+            src={imageUrl}
+            alt={altText}
+          />
+        </Link>
 
         {/* Badges */}
-        <div className="absolute top-3 left-3 flex gap-2">
+        <div className="absolute top-3 left-3 flex gap-2 pointer-events-none">
           <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
             {category}
           </span>
@@ -136,7 +138,7 @@ export function EventCard({
         <button
           onClick={toggleFavorite}
           aria-label={isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer"
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer"
         >
           <span
             className="material-symbols-outlined text-lg"
@@ -156,9 +158,11 @@ export function EventCard({
           <p className="font-label-bold text-[12px] text-electric-indigo mb-1 uppercase">
             {date} • {location}
           </p>
-          <h3 className="font-headline-md text-headline-md group-hover:text-electric-indigo transition-colors leading-tight mb-2">
-            {title}
-          </h3>
+          <Link href={ctaHref} className="block">
+            <h3 className="font-headline-md text-headline-md group-hover:text-electric-indigo transition-colors leading-tight mb-2 cursor-pointer">
+              {title}
+            </h3>
+          </Link>
           <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3">
             {description}
           </p>

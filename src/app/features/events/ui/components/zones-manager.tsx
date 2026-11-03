@@ -64,7 +64,7 @@ export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
     setEditingZoneId(null);
     const defaultColor = PRESET_COLORS[zones.length % PRESET_COLORS.length] || '#F59E0B';
     setName(zones.length === 0 ? 'VIP' : zones.length === 1 ? 'GENERAL' : `ZONA ${zones.length + 1}`);
-    setTitle(zones.length === 0 ? 'Platinum VIP Front Stage' : 'General Pista (De Pie)');
+    setTitle(zones.length === 0 ? 'Zona Preferencial VIP' : 'Pista General (De Pie)');
     setColor(defaultColor);
     setCapacity(zones.length === 0 ? 450 : 2500);
     setRegularPrice(zones.length === 0 ? 145 : 55);

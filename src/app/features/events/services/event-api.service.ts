@@ -1,11 +1,17 @@
 import { EventDto, CreateEventParams } from '../dto/event.dto';
 import { SearchEventsResponse, PublishedCity, SearchEventItem } from '../models/search-event.model';
 import { HomeEventCardItem } from '../models/home-event-card.model';
+import { EventLandingModel } from '../models/event-landing.model';
+import { EventDetailModel } from '../models/event-detail.model';
 import { apiClient } from '../../../common/services/api-client';
 
 export class EventApiService {
   async fetchEvents(): Promise<EventDto[]> {
     return apiClient.get<EventDto[]>('/events');
+  }
+
+  async getEventDetail(identifier: string): Promise<EventDetailModel> {
+    return apiClient.get<EventDetailModel>(`/events/${identifier}`);
   }
 
   async getFeaturedEvents(): Promise<SearchEventItem[]> {
@@ -22,6 +28,10 @@ export class EventApiService {
 
   async getWeekendEvents(): Promise<HomeEventCardItem[]> {
     return apiClient.get<HomeEventCardItem[]>('/events/weekend');
+  }
+
+  async getEventLanding(slug: string): Promise<EventLandingModel> {
+    return apiClient.get<EventLandingModel>(`/events/landing/${slug}`);
   }
 
   async createEvent(params: CreateEventParams): Promise<EventDto> {

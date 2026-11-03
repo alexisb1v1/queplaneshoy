@@ -4,6 +4,8 @@ import { EventModel } from '../models/event.model';
 import { CreateEventParams, EventDto } from '../dto/event.dto';
 import { SearchEventsResponse, PublishedCity, SearchEventItem } from '../models/search-event.model';
 import { HomeEventCardItem } from '../models/home-event-card.model';
+import { EventLandingModel } from '../models/event-landing.model';
+import { EventDetailModel } from '../models/event-detail.model';
 import { DomainError } from '../../../common/errors/domain-error';
 import { EventApiService } from '../services/event-api.service';
 import { eventDtoToModel } from '../mappers/event.mapper';
@@ -52,5 +54,13 @@ export class EventRepositoryImpl implements EventRepository {
 
   getWeekendEvents(): ResultAsync<HomeEventCardItem[], DomainError> {
     return apiClient.requestResult<HomeEventCardItem[]>(this.api.getWeekendEvents());
+  }
+
+  getEventLanding(slug: string): ResultAsync<EventLandingModel, DomainError> {
+    return apiClient.requestResult<EventLandingModel>(this.api.getEventLanding(slug));
+  }
+
+  getEventDetail(identifier: string): ResultAsync<EventDetailModel, DomainError> {
+    return apiClient.requestResult<EventDetailModel>(this.api.getEventDetail(identifier));
   }
 }

@@ -135,6 +135,7 @@ export function SearchInstantDropdown({
         </span>
 
         <input
+          id="global-search-input"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

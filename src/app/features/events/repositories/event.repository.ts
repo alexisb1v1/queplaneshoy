@@ -3,6 +3,8 @@ import { EventModel } from '../models/event.model';
 import { CreateEventParams } from '../dto/event.dto';
 import { SearchEventsResponse, PublishedCity, SearchEventItem } from '../models/search-event.model';
 import { HomeEventCardItem } from '../models/home-event-card.model';
+import { EventLandingModel } from '../models/event-landing.model';
+import { EventDetailModel } from '../models/event-detail.model';
 import { DomainError } from '../../../common/errors/domain-error';
 
 export interface SearchEventsParams {
@@ -27,4 +29,6 @@ export abstract class EventRepository {
   abstract getUpcomingEvents(): ResultAsync<HomeEventCardItem[], DomainError>;
   abstract getWeeklyFeaturedEvents(): ResultAsync<HomeEventCardItem[], DomainError>;
   abstract getWeekendEvents(): ResultAsync<HomeEventCardItem[], DomainError>;
+  abstract getEventLanding(slug: string): ResultAsync<EventLandingModel, DomainError>;
+  abstract getEventDetail(identifier: string): ResultAsync<EventDetailModel, DomainError>;
 }

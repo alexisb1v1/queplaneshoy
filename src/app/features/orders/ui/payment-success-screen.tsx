@@ -2,12 +2,32 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { QRCodeSVG } from "qrcode.react";
 import CheckoutStepper from "./components/checkout-stepper";
 import TicketPrintScreen from "./ticket-print-screen";
+
+// Carga dinámica del mapa OpenStreetMap / Leaflet (desactivando SSR)
+const EventLocationMap = dynamic(
+  () =>
+    import("../../events/ui/components/event-location-map").then(
+      (mod) => mod.EventLocationMap
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-48 rounded-xl bg-surface-gray border border-surface-variant flex flex-col items-center justify-center gap-2 text-xs font-semibold text-on-surface-variant animate-pulse">
+        <span className="material-symbols-outlined text-electric-indigo text-2xl">map</span>
+        <span>Cargando ubicación oficial del recinto...</span>
+      </div>
+    ),
+  }
+);
 
 export interface PaymentSuccessProps {
   orderCode?: string;
   userEmail?: string;
+  customerName?: string;
   eventTitle?: string;
   categoryTag?: string;
   bannerImageUrl?: string;
@@ -17,6 +37,10 @@ export interface PaymentSuccessProps {
   venueName?: string;
   venueAccess?: string;
   venueAddress?: string;
+  coordinates?: string | null;
+  addressReference?: string | null;
+  city?: string;
+  googleMapsUrl?: string | null;
   zoneName?: string;
   tierBadge?: string;
   ticketCount?: number;
@@ -26,44 +50,53 @@ export interface PaymentSuccessProps {
   totalAmount?: number;
   paymentMethodText?: string;
   txCode?: string;
+  qrPayload?: string;
+  tickets?: Array<{
+    ticketId: string;
+    ticketUuid: string;
+    ticketNumber: number;
+    zoneName: string;
+    tierName: string;
+    unitPrice: number;
+    qrPayload: string;
+  }>;
 }
 
 export default function PaymentSuccessScreen({
   orderCode = "#QPH-849204",
-  userEmail = "usuario@ejemplo.com",
-  eventTitle = "Afterlife Madrid: Global Tour 2024",
-  categoryTag = "Música Electrónica • World Tour",
-  bannerImageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuB6zlOV5Dky2moZZwBSETqhUT5lhvjwGPa9jJGDrr1krL9Lx8Y4cFqyEjtp_ep-p-XDjKBTdINqn32bKAXlcfVJ0iTnh5Z2nin5LAEEHCum75H9xWBMzSYey9B_8rQxRHEOWCqOizX5JHNzZXbyPQiWaR2DBYAmA7kEL4btLbIxCzLN-_52Xuuk4dYbl8qvh89DpQmSEwN_SYN2pKZSOIl0T-8Ry-WFWoBS8y9Y0uW5XlDwgdnoI0SnVQ",
-  dateStr = "Sábado, 15 Junio 2024",
-  timeStr = "21:00h",
-  doorsOpenStr = "Apertura 19:30h",
-  venueName = "Caja Mágica, Madrid",
-  venueAccess = "Puerta C • Front Stage VIP",
-  venueAddress = "Cmo. de Perales, 23, 28041 Madrid",
-  zoneName = "Platinum VIP Experience",
-  tierBadge = "Platinum VIP",
-  ticketCount = 2,
-  unitPrice = 120,
-  distributionFee = 12,
-  vatAmount = 25.2,
-  totalAmount = 277.2,
-  paymentMethodText = "Tarjeta de crédito (•••• 4829)",
+  userEmail = "usuario@queplaneshoy.com",
+  customerName = "Comprador Oficial QPH",
+  eventTitle = "Evento Oficial",
+  categoryTag = "Venta Oficial QPH",
+  bannerImageUrl = "",
+  dateStr = "Fecha Confirmada",
+  timeStr = "Horario Oficial",
+  doorsOpenStr = "Apertura 2 hrs antes",
+  venueName = "Recinto Oficial",
+  venueAccess = "Puerta Principal • Control QR Ed25519",
+  venueAddress = "Recinto Oficial, Perú",
+  coordinates = null,
+  addressReference = null,
+  city = "LIMA",
+  googleMapsUrl = null,
+  zoneName = "Zona General",
+  tierBadge = "General",
+  ticketCount = 1,
+  unitPrice = 50,
+  distributionFee = 0,
+  vatAmount = 0,
+  totalAmount = 50,
+  paymentMethodText = "Tarjeta de crédito",
   txCode = "TX-910403",
+  qrPayload,
+  tickets = [],
 }: PaymentSuccessProps) {
   const [showPrintView, setShowPrintView] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [addedWallet, setAddedWallet] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   const handleDownloadPdf = () => {
     setShowPrintView(true);
-  };
-
-  const handleAddToWallet = () => {
-    setAddedWallet(true);
-    setTimeout(() => {
-      alert("¡Pases guardados en tu Wallet (Apple / Google)!");
-    }, 400);
   };
 
   const handleShare = () => {
@@ -77,25 +110,6 @@ export default function PaymentSuccessScreen({
   };
 
   const subtotalEntradas = ticketCount * unitPrice;
-
-  if (showPrintView) {
-    return (
-      <TicketPrintScreen
-        orderNumber={orderCode.replace("#", "")}
-        eventName={eventTitle}
-        eventDate={dateStr}
-        eventTime={timeStr}
-        eventVenue={venueName}
-        eventAddress={venueAddress}
-        tierName={tierBadge}
-        tierZone={zoneName}
-        ticketCount={ticketCount}
-        unitPrice={unitPrice}
-        totalAmount={totalAmount}
-        onBack={() => setShowPrintView(false)}
-      />
-    );
-  }
 
   return (
     <div className="bg-background font-body-md text-on-background min-h-screen flex flex-col">
@@ -195,7 +209,7 @@ export default function PaymentSuccessScreen({
                   </span>
                   <span>Fecha:</span>
                   <span className="text-deep-slate font-medium">
-                    15 de Junio, 2024 • 21:05h
+                    {dateStr} • {timeStr}
                   </span>
                 </div>
               </div>
@@ -319,63 +333,25 @@ export default function PaymentSuccessScreen({
                     <div className="w-6 h-12 bg-background rounded-l-full shadow-inner border-y border-l border-surface-variant/40" />
                   </div>
 
-                  {/* QR Code Access Area (Simulated High Fidelity SVG QR Code) */}
+                  {/* QR Code Access Area con QR Real y Logo QPH Central */}
                   <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-surface-gray border border-surface-variant/50">
-                    <div className="p-3 bg-white rounded-xl shadow-sm shrink-0 flex flex-col items-center">
-                      <svg
-                        className="w-32 h-32 text-deep-slate"
-                        fill="currentColor"
-                        viewBox="0 0 100 100"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        {/* Outer Corners Pattern */}
-                        <rect fill="currentColor" height="28" rx="4" width="28" x="5" y="5" />
-                        <rect fill="#ffffff" height="20" rx="2" width="20" x="9" y="9" />
-                        <rect fill="currentColor" height="12" rx="1" width="12" x="13" y="13" />
-
-                        <rect fill="currentColor" height="28" rx="4" width="28" x="67" y="5" />
-                        <rect fill="#ffffff" height="20" rx="2" width="20" x="71" y="9" />
-                        <rect fill="currentColor" height="12" rx="1" width="12" x="75" y="13" />
-
-                        <rect fill="currentColor" height="28" rx="4" width="28" x="5" y="67" />
-                        <rect fill="#ffffff" height="20" rx="2" width="20" x="9" y="71" />
-                        <rect fill="currentColor" height="12" rx="1" width="12" x="13" y="75" />
-
-                        {/* QR Data Matrix Dots Simulation */}
-                        <rect height="6" rx="1" width="6" x="38" y="7" />
-                        <rect height="6" rx="1" width="6" x="48" y="7" />
-                        <rect height="6" rx="1" width="6" x="38" y="17" />
-                        <rect height="6" rx="1" width="6" x="56" y="17" />
-                        <rect height="6" rx="1" width="6" x="48" y="27" />
-
-                        <rect height="6" rx="1" width="6" x="7" y="38" />
-                        <rect height="6" rx="1" width="6" x="17" y="48" />
-                        <rect height="6" rx="1" width="6" x="27" y="38" />
-                        <rect height="6" rx="1" width="6" x="27" y="48" />
-                        <rect height="6" rx="1" width="6" x="7" y="56" />
-
-                        <rect fill="#4648d4" height="8" rx="1.5" width="8" x="40" y="40" />
-                        <rect fill="currentColor" height="8" rx="1.5" width="8" x="52" y="40" />
-                        <rect fill="currentColor" height="8" rx="1.5" width="8" x="40" y="52" />
-                        <rect fill="#4648d4" height="8" rx="1.5" width="8" x="52" y="52" />
-
-                        <rect height="6" rx="1" width="6" x="67" y="40" />
-                        <rect height="6" rx="1" width="6" x="77" y="48" />
-                        <rect height="6" rx="1" width="6" x="87" y="40" />
-                        <rect height="6" rx="1" width="6" x="67" y="60" />
-                        <rect height="6" rx="1" width="6" x="87" y="60" />
-
-                        <rect height="6" rx="1" width="6" x="38" y="68" />
-                        <rect height="6" rx="1" width="6" x="48" y="78" />
-                        <rect height="6" rx="1" width="6" x="58" y="68" />
-                        <rect height="6" rx="1" width="6" x="38" y="88" />
-                        <rect height="6" rx="1" width="6" x="58" y="88" />
-                        <rect height="6" rx="1" width="6" x="68" y="78" />
-                        <rect height="6" rx="1" width="6" x="78" y="88" />
-                        <rect height="6" rx="1" width="6" x="88" y="78" />
-                      </svg>
-                      <span className="mt-1 font-bold text-xs text-on-surface-variant font-mono">
-                        {orderCode}-VIP
+                    <div className="p-3.5 bg-white rounded-2xl shadow-sm shrink-0 flex flex-col items-center">
+                      <QRCodeSVG
+                        value={qrPayload || (tickets && tickets[0]?.qrPayload) || `QPH|ORD:${orderCode}|TX:${txCode}`}
+                        size={160}
+                        level="H"
+                        includeMargin={false}
+                        imageSettings={{
+                          src: "/logo-qph.svg",
+                          x: undefined,
+                          y: undefined,
+                          height: 48,
+                          width: 48,
+                          excavate: true,
+                        }}
+                      />
+                      <span className="mt-2.5 font-bold text-xs text-on-surface-variant font-mono">
+                        {orderCode}
                       </span>
                     </div>
 
@@ -399,24 +375,15 @@ export default function PaymentSuccessScreen({
                     </div>
                   </div>
 
-                  {/* Quick Actions on the Pass */}
-                  <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                  {/* Quick Action on the Pass: Descargar Entradas centrado */}
+                  <div className="flex justify-center pt-2">
                     <button
                       type="button"
                       onClick={handleDownloadPdf}
-                      className="w-full sm:w-1/2 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-electric-indigo text-white font-bold text-sm hover:bg-primary transition-all shadow-sm active:scale-95 cursor-pointer"
+                      className="w-full sm:w-auto min-w-[280px] max-w-md flex items-center justify-center gap-2.5 py-3.5 px-8 rounded-xl bg-electric-indigo text-white font-bold text-sm hover:bg-primary transition-all shadow-md shadow-electric-indigo/25 active:scale-95 cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-[20px]">download</span>
                       <span>Descargar Entradas (PDF)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleAddToWallet}
-                      className="w-full sm:w-1/2 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-surface-gray text-deep-slate font-bold text-sm hover:bg-surface-container transition-all border border-surface-variant active:scale-95 cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">wallet</span>
-                      <span>{addedWallet ? "✓ Guardado en Wallet" : "Añadir a Apple / Google Wallet"}</span>
                     </button>
                   </div>
 
@@ -453,24 +420,28 @@ export default function PaymentSuccessScreen({
                   <div className="flex justify-between items-center text-deep-slate">
                     <div>
                       <span className="font-bold block">
-                        {ticketCount}x {zoneName} Front Stage
+                        {ticketCount}x {zoneName}
                       </span>
                       <span className="text-xs text-on-surface-variant">
-                        {unitPrice.toFixed(2)}€ por entrada
+                        S/. {unitPrice.toFixed(2)} por entrada
                       </span>
                     </div>
-                    <span className="font-bold">{subtotalEntradas.toFixed(2)}€</span>
+                    <span className="font-bold">S/. {subtotalEntradas.toFixed(2)}</span>
                   </div>
 
-                  <div className="flex justify-between items-center text-on-surface-variant">
-                    <span>Gastos de gestión y distribución</span>
-                    <span>{distributionFee.toFixed(2)}€</span>
-                  </div>
+                  {distributionFee > 0 && (
+                    <div className="flex justify-between items-center text-on-surface-variant">
+                      <span>Gastos de gestión y distribución</span>
+                      <span>S/. {distributionFee.toFixed(2)}</span>
+                    </div>
+                  )}
 
-                  <div className="flex justify-between items-center text-on-surface-variant">
-                    <span>IVA aplicado (10%)</span>
-                    <span>{vatAmount.toFixed(2)}€</span>
-                  </div>
+                  {vatAmount > 0 && (
+                    <div className="flex justify-between items-center text-on-surface-variant">
+                      <span>IGV aplicado</span>
+                      <span>S/. {vatAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Total Box */}
@@ -487,7 +458,7 @@ export default function PaymentSuccessScreen({
                     </div>
                     <div className="text-right">
                       <span className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
-                        {totalAmount.toFixed(2)}€
+                        S/. {totalAmount.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -499,40 +470,26 @@ export default function PaymentSuccessScreen({
                 </div>
               </div>
 
-              {/* Venue & Location Snapshot Card */}
+              {/* Venue & Location Snapshot Card con Mapa Interactivo Oficial */}
               <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col gap-4 border border-surface-variant">
-                <h3 className="font-bold text-deep-slate text-base sm:text-lg">
-                  Ubicación del Recinto
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-deep-slate text-base sm:text-lg">
+                    Ubicación del Recinto
+                  </h3>
+                  <span className="text-xs font-bold text-electric-indigo uppercase tracking-wider">
+                    {city || "Ubicación Confirmada"}
+                  </span>
+                </div>
 
-                <div
-                  className="w-full h-44 rounded-xl bg-surface-container overflow-hidden relative shadow-inner flex items-end p-3 bg-cover bg-center"
-                  style={{
-                    backgroundImage:
-                      "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCgQk9Xquk3YFtnH-2g6gAr8T0i-4tSS13IbbmfbL_1l_1MNc_rnmOonZxBoqQqwXOAygda_y3Xym3OlZRXQxnNAaGRJnxbiPfuLDik2dl5OmHi29ZmXbpG-Umc9aSyFNev6MKm5wnm_anCn5uDuWXcC1QW7q8KBaMWiReISKZoOrGXT-T-xivl7tzcnSZxyXE-LhV9plsoDsJUL63AawEqcJ-8LRtRMVcMJs3tfP3ljj1bvfHg7XoPJQ')",
-                  }}
-                >
-                  <div className="relative z-10 bg-white/95 backdrop-blur-md rounded-xl p-3 flex items-center justify-between w-full shadow-sm border border-surface-variant/30">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary text-[22px]">
-                        pin_drop
-                      </span>
-                      <div className="text-xs">
-                        <p className="font-bold text-deep-slate">{venueName}</p>
-                        <p className="text-on-surface-variant truncate">{venueAddress}</p>
-                      </div>
-                    </div>
-                    <a
-                      className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold shrink-0 hover:bg-primary-container transition-colors shadow-xs"
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                        venueAddress
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Ruta
-                    </a>
-                  </div>
+                <div className="rounded-xl overflow-hidden border border-surface-variant shadow-xs">
+                  <EventLocationMap
+                    coordinates={coordinates}
+                    venue={venueName}
+                    address={venueAddress}
+                    addressReference={addressReference}
+                    city={city}
+                    googleMapsUrl={googleMapsUrl}
+                  />
                 </div>
               </div>
 
@@ -598,20 +555,27 @@ export default function PaymentSuccessScreen({
                     ¿Cómo llegar al recinto?
                   </h4>
                   <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                    Metro Línea 3 (San Fermín - Orcasur) a 10 min a pie. Se habilitará servicio especial de lanzadera desde Atocha cada 15 minutos.
+                    {addressReference
+                      ? `${addressReference}. Te recomendamos acudir con anticipación al inicio del show.`
+                      : venueAddress
+                      ? `Ubicado en ${venueAddress}. Te sugerimos planificar tu transporte y llegar con anticipación.`
+                      : "Te sugerimos planificar tu ruta de llegada con anticipación para un ingreso fluido."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-surface-variant/40">
                   <a
                     className="inline-flex items-center gap-1 font-bold text-primary hover:underline text-xs"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert("Lanzaderas oficiales disponibles desde las 18:00h en estación de Atocha.");
-                    }}
+                    href={
+                      googleMapsUrl ||
+                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        venueAddress
+                      )}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    <span>Ver guía de transporte</span>
-                    <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                    <span>Abrir en Google Maps</span>
+                    <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                   </a>
                 </div>
               </div>
@@ -623,24 +587,18 @@ export default function PaymentSuccessScreen({
                     <span className="material-symbols-outlined text-[24px]">schedule</span>
                   </div>
                   <h4 className="font-bold text-deep-slate text-base sm:text-lg mb-2">
-                    Horarios y Políticas VIP
+                    Horarios y Control de Acceso
                   </h4>
                   <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                    El Fast-Track Front Stage abre a las 19:30h. Acceso restringido a mayores de 18 años. Documento de identidad original obligatorio.
+                    {doorsOpenStr ? `Apertura de puertas: ${doorsOpenStr}. ` : ""}
+                    Acceso con código QR oficial firmado criptográficamente. Es obligatorio portar documento de identidad (DNI físico o digital).
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-surface-variant/40">
-                  <a
-                    className="inline-flex items-center gap-1 font-bold text-primary hover:underline text-xs"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert("Se requiere documento nacional de identidad en físico para el control de acceso.");
-                    }}
-                  >
-                    <span>Consultar normativa completa</span>
-                    <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-                  </a>
+                  <span className="inline-flex items-center gap-1 font-bold text-emerald-600 text-xs">
+                    <span className="material-symbols-outlined text-[16px]">verified</span>
+                    <span>Control QR Offline Activo</span>
+                  </span>
                 </div>
               </div>
 
@@ -767,6 +725,34 @@ export default function PaymentSuccessScreen({
           © 2024 queplaneshoy. Todos los derechos reservados. Compra segura con tecnología certificada.
         </div>
       </footer>
+
+      {/* =========================================================================
+          MODAL DRAWER DESLIZANTE DESDE LA DERECHA (TICKET PRINT SCREEN)
+         ========================================================================= */}
+      {showPrintView && (
+        <TicketPrintScreen
+          isDrawer={true}
+          orderNumber={orderCode.replace("#", "")}
+          orderRef={txCode}
+          eventName={eventTitle}
+          eventSubtitle={categoryTag}
+          eventDate={dateStr}
+          eventTime={timeStr}
+          eventVenue={venueName}
+          eventAddress={venueAddress}
+          tierName={tierBadge}
+          tierZone={zoneName}
+          ticketCount={ticketCount}
+          unitPrice={unitPrice}
+          totalAmount={totalAmount}
+          holderName={customerName}
+          holderDni={userEmail}
+          tickets={tickets}
+          backLabel="Cerrar visor"
+          onBack={() => setShowPrintView(false)}
+        />
+      )}
+
     </div>
   );
 }

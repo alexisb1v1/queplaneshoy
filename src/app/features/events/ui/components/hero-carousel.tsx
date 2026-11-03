@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { getFeaturedEventsUseCase, SearchEventItem } from "../../index";
+import {
+  getFeaturedEventsUseCase,
+  getUpcomingEventsUseCase,
+} from "../../index";
 import { getCategoryById } from "../../constants/eventConstants";
 
 interface SlideItem {
@@ -16,56 +19,45 @@ interface SlideItem {
   targetUrl: string;
 }
 
-const DEFAULT_SLIDES: SlideItem[] = [
-  {
-    id: "neon-pulse",
-    category: "Conciertos",
-    title: "Neon Pulse Festival 2026",
-    description: "Vive la experiencia musical definitiva con los mejores artistas internacionales en un escenario de vanguardia.",
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuArvALp2f189WFx8f0LzakoBfIG4x9xtX2yELKpqcah5IKtC9OOLdg2NVNBIY7UylA0XMle6rcaUuQoYPDX5n9-7T3KVVVfFJSoFdXXLW-84Z0SLk2p4Uk9EifxKNnMDBjEbe0GIIFzIz8rfZTmDjsTSnmkJ0QcwZCjXLpreh3wkKONf6U5GkqUziZUKXWLad8FOMPZZOwoIJmc4obi9caQKG25SJin0IlLKoXwSjyNQh_QLw76dbziUfyj9bLGLWiVceQMh_G3VjkI",
-    altText: "Festival de musica Neon Pulse",
-    ctaText: "Comprar Entradas",
-    targetUrl: "/events",
-  },
-  {
-    id: "pro-league",
-    category: "Deportes",
-    title: "Finales de Verano: Pro League",
-    description: "La culminación de la temporada en un encuentro histórico que no te puedes perder. Asegura tu lugar en la historia.",
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBZRf5b2CiwcTa73hpU1YS2bQJeb8P8J77zLnPoakMwOAt7V-XEt1kILsDA1VnrdUUjullHbqTMl4AtQPvnTDxq-GMdQTmJWtAfek1mG6X9oLiBgvHw1j2k0YGo90mUZwn5jvkJEmfhgNRF6QQ5PRQzVehB5FbjTQs3FEn2rLMx4c7ug1qp6bb2Vq3TuVU-4LStN-tEWhVRnxjU1fK8_KN1e_lwxypSsBY8h_jAfWG36bugpW3gDSO2icAmnrzgVyugH5W4q8j7Cl0C",
-    altText: "Estadio deportivo",
-    ctaText: "Ver Detalles",
-    targetUrl: "/events",
-  },
-  {
-    id: "renacer-drama",
-    category: "Teatro",
-    title: "El Renacer del Drama",
-    description: "Una producción galardonada que redefine los límites de la interpretación clásica en el Gran Teatro Nacional.",
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuB7E0UFjzRDXfBB--rYurc0cGOw0-4yYkeLqvtDdHYkOcCZahMLGDuv2UAW-bxdIc8_xenxf44YA9WJFeQ-kryVlX0JFEfT7uPOwV764-9zvhRqXbMqIIQKmsD6nWmN43ejHwrf3j4qZ8SNIpjpMGoqePCdQWnLFfJRfBe_uCm8WYCqPraQ0NP5Zrdu4XT8HQJQ2QL0opuHJHZzFOBQp52NINZmj3z4k0ViWXAz3J6OcllZRuQzCy-QvWhvf6nwNPIkCKdKhW0fJPkT",
-    altText: "Interior de teatro historico",
-    ctaText: "Reservar Ahora",
-    targetUrl: "/events",
-  },
-];
+const DEFAULT_FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=1600&auto=format&fit=crop";
+
+const INSTITUTIONAL_SLIDE: SlideItem = {
+  id: "qph-welcome",
+  category: "Cartelera Oficial",
+  title: "Descubre los mejores eventos en Perú",
+  description:
+    "Encuentra conciertos, obras de teatro, festivales y deportes con venta oficial de entradas y accesos 100% verificados.",
+  imageUrl: DEFAULT_FALLBACK_IMAGE,
+  altText: "Conciertos y eventos en Qué Planes Hoy",
+  ctaText: "Explorar Cartelera",
+  targetUrl: "/events",
+};
 
 export function HeroCarousel() {
-  const [slides, setSlides] = useState<SlideItem[]>(DEFAULT_SLIDES);
+  const [slides, setSlides] = useState<SlideItem[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Cargar eventos estelares / destacados para el Hero Carousel
+  // Cargar eventos estelares / destacados para el Hero Carousel desde la base de datos
   useEffect(() => {
     let isMounted = true;
-    getFeaturedEventsUseCase.execute().then((res) => {
-      res.match(
+
+    const loadHeroSlides = async () => {
+      setIsLoading(true);
+
+      // 1. Intentar cargar eventos destacados oficiales
+      const featuredRes = await getFeaturedEventsUseCase.execute();
+      let resolvedSlides: SlideItem[] = [];
+
+      featuredRes.match(
         (featured) => {
-          if (isMounted && featured && featured.length > 0) {
-            const mappedSlides: SlideItem[] = featured.map((item, idx) => {
+          if (featured && featured.length > 0) {
+            resolvedSlides = featured.map((item) => {
               const categoryInfo = getCategoryById(item.category);
               const targetUrl =
                 item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${item.id}`;
-              const fallbackImage = DEFAULT_SLIDES[idx % DEFAULT_SLIDES.length].imageUrl;
 
               return {
                 id: item.id,
@@ -74,18 +66,59 @@ export function HeroCarousel() {
                 description:
                   item.description ||
                   "Asegura tus entradas oficiales para este gran evento antes de que se agoten.",
-                imageUrl: item.bannerUrl || fallbackImage,
+                imageUrl: item.bannerUrl || DEFAULT_FALLBACK_IMAGE,
                 altText: item.title,
                 ctaText: item.hasLandingPage ? "Ver Experiencia" : "Comprar Entradas",
                 targetUrl,
               };
             });
-            setSlides(mappedSlides);
           }
         },
         () => {}
       );
-    });
+
+      // 2. Si no hay destacados, fallback dinámico a los primeros eventos próximos en BD
+      if (resolvedSlides.length === 0) {
+        const upcomingRes = await getUpcomingEventsUseCase.execute();
+        upcomingRes.match(
+          (upcoming) => {
+            if (upcoming && upcoming.length > 0) {
+              resolvedSlides = upcoming.slice(0, 3).map((item) => {
+                const categoryInfo = getCategoryById(item.category);
+                const targetUrl =
+                  item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${item.id}`;
+
+                return {
+                  id: item.id,
+                  category: categoryInfo.label,
+                  title: item.title,
+                  description:
+                    item.description ||
+                    "Asegura tus entradas oficiales para este gran evento antes de que se agoten.",
+                  imageUrl: item.imageUrl || DEFAULT_FALLBACK_IMAGE,
+                  altText: item.title,
+                  ctaText: item.hasLandingPage ? "Ver Experiencia" : "Comprar Entradas",
+                  targetUrl,
+                };
+              });
+            }
+          },
+          () => {}
+        );
+      }
+
+      // 3. Fallback de contingencia institucional si no hay ningún evento publicado en BD
+      if (resolvedSlides.length === 0) {
+        resolvedSlides = [INSTITUTIONAL_SLIDE];
+      }
+
+      if (isMounted) {
+        setSlides(resolvedSlides);
+        setIsLoading(false);
+      }
+    };
+
+    loadHeroSlides();
 
     return () => {
       isMounted = false;
@@ -115,6 +148,22 @@ export function HeroCarousel() {
     return () => clearInterval(timer);
   }, [currentSlide, slides.length]);
 
+  // Skeleton Loader mientras cargan los datos reales desde la BD / Redis
+  if (isLoading) {
+    return (
+      <section className="relative w-full h-[819px] min-h-[600px] overflow-hidden bg-slate-900 animate-pulse">
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
+        <div className="absolute bottom-40 left-8 md:left-12 z-20 max-w-2xl px-4 md:px-0">
+          <div className="h-6 w-28 bg-white/20 rounded-full mb-4" />
+          <div className="h-12 w-3/4 bg-white/20 rounded-xl mb-4" />
+          <div className="h-4 w-full bg-white/10 rounded mb-2" />
+          <div className="h-4 w-2/3 bg-white/10 rounded mb-8" />
+          <div className="h-14 w-48 bg-electric-indigo/40 rounded-xl" />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative w-full h-[819px] min-h-[600px] overflow-hidden">
       {/* Slides Container */}
@@ -126,7 +175,7 @@ export function HeroCarousel() {
           <div key={slide.id} className="qph-carousel-item relative">
             {/* Dark Overlay for Legibility */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10"></div>
-            
+
             {/* Background Image */}
             <img
               className="w-full h-full object-cover"

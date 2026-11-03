@@ -1,9 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PaymentSuccessScreen from "./payment-success-screen";
 import CheckoutStepper from "./components/checkout-stepper";
+import VenueZonesMap from "./components/venue-zones-map";
+import { getEventDetailUseCase } from "../../events";
+import { EventDetailModel } from "../../events/models/event-detail.model";
+import { getCurrentUserUseCase } from "../../auth";
+import { UserModel } from "../../auth/models/user.model";
+import { simulateCheckoutUseCase, getMyOrdersUseCase, SimulateCheckoutResponseModel } from "../index";
 
 interface TicketTier {
   id: string;
@@ -15,6 +22,9 @@ interface TicketTier {
   available: boolean;
   quantity: number;
   colorHex: string;
+  maxTicketsPerOrder?: number;
+  maxTicketsPerUser?: number;
+  remainingTickets?: number;
 }
 
 interface ShowFunction {
@@ -25,7 +35,7 @@ interface ShowFunction {
   statusType: "available" | "last_passes" | "sold_out";
 }
 
-const SHOW_FUNCTIONS: ShowFunction[] = [
+const DEFAULT_SHOW_FUNCTIONS: ShowFunction[] = [
   {
     id: "f1",
     dateStr: "Viernes 14 Junio",
@@ -40,77 +50,198 @@ const SHOW_FUNCTIONS: ShowFunction[] = [
     statusText: "¡Últimos pases!",
     statusType: "last_passes",
   },
+];
+
+const DEFAULT_TICKET_TIERS: TicketTier[] = [
   {
-    id: "f3",
-    dateStr: "Domingo 16 Junio",
-    timeStr: "18:00h",
-    statusText: "Entradas disp.",
-    statusType: "available",
+    id: "platinum-vip",
+    name: "Platinum VIP Experience",
+    badge: "Últimas 12 uds",
+    badgeColor: "bg-amber-100 text-amber-800",
+    description:
+      "Front Stage exclusivo junto al DJ, acceso prioritario sin colas, barra libre premium y acreditación conmemorativa.",
+    price: 120,
+    available: true,
+    quantity: 1,
+    colorHex: "#4F46E5",
+  },
+  {
+    id: "general-pista",
+    name: "General Pista",
+    badge: "Disponible",
+    badgeColor: "bg-emerald-100 text-emerald-800",
+    description:
+      "Acceso general al recinto y pista central con visibilidad directa al espectáculo en vivo.",
+    price: 65,
+    available: true,
+    quantity: 0,
+    colorHex: "#7C3AED",
   },
 ];
 
 export default function PurchaseFlowPageComponent() {
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("eventId");
+  const zoneId = searchParams.get("zoneId");
+
   // --- NAVEGACIÓN ENTRE PASOS (1: Selección de Entradas, 2: Pasarela de Pagos, 3: Confirmación) ---
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
-  const [selectedFunctionId, setSelectedFunctionId] = useState<string>("f2");
+  const [selectedFunctionId, setSelectedFunctionId] = useState<string>("f1");
+
+  // Estado dinámico del evento
+  const [event, setEvent] = useState<EventDetailModel | null>(null);
+  const [loadingEvent, setLoadingEvent] = useState<boolean>(Boolean(eventId));
 
   // Temporizador de Reserva regresivo (14:59 min)
   const [secondsRemaining, setSecondsRemaining] = useState<number>(899);
 
-  // Lista de Zonas / Entradas
-  const [ticketTiers, setTicketTiers] = useState<TicketTier[]>([
-    {
-      id: "platinum-vip",
-      name: "Platinum VIP Experience",
-      badge: "Últimas 12 uds",
-      badgeColor: "bg-amber-100 text-amber-800",
-      description:
-        "Front Stage exclusivo junto al DJ, acceso prioritario sin colas, barra libre premium y acreditación conmemorativa.",
-      price: 120,
-      available: true,
-      quantity: 2, // 2 seleccionadas por defecto como en Stitch
-      colorHex: "#4F46E5",
-    },
-    {
-      id: "general-pista",
-      name: "General Pista",
-      badge: "Disponible",
-      badgeColor: "bg-emerald-100 text-emerald-800",
-      description:
-        "Acceso general al recinto y pista central con visibilidad directa al espectáculo audiovisual Afterlife.",
-      price: 65,
-      available: true,
-      quantity: 0,
-      colorHex: "#7C3AED",
-    },
-    {
-      id: "grada-baja",
-      name: "Grada Baja Numerada",
-      badge: "Disponible",
-      badgeColor: "bg-emerald-100 text-emerald-800",
-      description:
-        "Asiento asignado con excelente ángulo panorámico de la escenografía y sonido envolvente.",
-      price: 45,
-      available: true,
-      quantity: 0,
-      colorHex: "#059669",
-    },
-    {
-      id: "grada-alta",
-      name: "Grada Alta Promocional",
-      badge: "Agotado",
-      badgeColor: "bg-red-100 text-red-800",
-      description: "Entrada económica con vista cenital completa al espectáculo.",
-      price: 30,
-      available: false,
-      quantity: 0,
-      colorHex: "#F59E0B",
-    },
-  ]);
+  // Lista de Funciones y Zonas Dinámicas
+  const [showFunctions, setShowFunctions] = useState<ShowFunction[]>(DEFAULT_SHOW_FUNCTIONS);
+  const [ticketTiers, setTicketTiers] = useState<TicketTier[]>(DEFAULT_TICKET_TIERS);
 
   // Método de pago en Paso 2
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "yape" | "transfer" | "apple_pay" | "google_pay">("card");
+  const [paymentMethod, setPaymentMethod] = useState<
+    "card" | "yape" | "transfer" | "apple_pay" | "google_pay"
+  >("yape");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [forceFailureTest, setForceFailureTest] = useState<boolean>(false);
+  const [checkoutResult, setCheckoutResult] = useState<SimulateCheckoutResponseModel | null>(null);
+
+  // Usuario autenticado en sesión y entradas ya compradas para este evento
+  const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
+  const [alreadyPurchasedTicketsCount, setAlreadyPurchasedTicketsCount] = useState<number>(0);
+
+  // Sincronizar sesión activa del comprador
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("qph_user");
+      if (stored) {
+        setCurrentUser(JSON.parse(stored));
+      }
+    } catch {}
+
+    getCurrentUserUseCase.execute().match(
+      (user) => {
+        setCurrentUser(user);
+      },
+      () => {}
+    );
+  }, []);
+
+  // Consultar historial de entradas ya compradas por el usuario para este evento
+  useEffect(() => {
+    getMyOrdersUseCase.execute().then((res) => {
+      res.match(
+        (orders) => {
+          let count = 0;
+          (orders || []).forEach((o) => {
+            const matchesEvent =
+              (event && o.eventTitle && o.eventTitle.trim().toLowerCase() === event.name.trim().toLowerCase()) ||
+              (eventId && String(o.orderId).includes(eventId));
+            if (matchesEvent) {
+              count += o.ticketCount || o.tickets?.length || 0;
+            }
+          });
+          setAlreadyPurchasedTicketsCount(count);
+        },
+        () => {}
+      );
+    });
+  }, [event, eventId]);
+
+  // Carga de información del evento si viene eventId en la URL
+  useEffect(() => {
+    if (!eventId) {
+      setLoadingEvent(false);
+      return;
+    }
+
+    let isMounted = true;
+    setLoadingEvent(true);
+
+    getEventDetailUseCase.execute(eventId).match(
+      (data) => {
+        if (!isMounted) return;
+        setEvent(data);
+
+        // 1. Mapear funciones si existen
+        if (data.shows && data.shows.length > 0) {
+          const mappedShows: ShowFunction[] = data.shows.map((show) => {
+            const d = new Date(show.startTime);
+            const dateStr = d.toLocaleDateString("es-PE", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            });
+            const timeStr =
+              d.toLocaleTimeString("es-PE", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }) + "h";
+            return {
+              id: show.id,
+              dateStr: dateStr.charAt(0).toUpperCase() + dateStr.slice(1),
+              timeStr,
+              statusText: "Entradas disp.",
+              statusType: "available",
+            };
+          });
+          setShowFunctions(mappedShows);
+          setSelectedFunctionId(mappedShows[0].id);
+        }
+
+        // 2. Mapear zonas con preselección inteligente de zoneId
+        if (data.zones && data.zones.length > 0) {
+          const mappedTiers: TicketTier[] = data.zones.map((zone) => {
+            const isTarget = zoneId ? zone.id === zoneId : false;
+            return {
+              id: zone.id,
+              name: zone.name,
+              badge: zone.activeTierName || "Disponible",
+              badgeColor: zone.isSoldOut
+                ? "bg-red-100 text-red-800"
+                : "bg-emerald-100 text-emerald-800",
+              description:
+                zone.benefits || `Acceso oficial garantizado para la localidad ${zone.name}`,
+              price: Number(zone.currentPrice),
+              available: !zone.isSoldOut,
+              quantity: isTarget && !zone.isSoldOut ? 1 : 0,
+              colorHex: zone.color || "#4F46E5",
+              maxTicketsPerOrder: zone.maxTicketsPerOrder || 6,
+              maxTicketsPerUser: zone.maxTicketsPerUser || 10,
+              remainingTickets: zone.remainingTickets,
+            };
+          });
+
+          // Si vino zoneId pero no coincidió o ninguna tiene cantidad, seleccionar 1 de la primera disponible
+          const hasSelected = mappedTiers.some((t) => t.quantity > 0);
+          if (!hasSelected) {
+            const firstAvail = mappedTiers.find((t) => t.available);
+            if (firstAvail) {
+              firstAvail.quantity = 1;
+            }
+          }
+
+          setTicketTiers(mappedTiers);
+        }
+
+        setLoadingEvent(false);
+      },
+      () => {
+        if (!isMounted) return;
+        setLoadingEvent(false);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+    };
+  }, [eventId, zoneId]);
+
+  // Límites oficiales de entradas por persona
+  const eventUserTicketLimit = event?.userTicketLimit ?? 4;
+  const remainingUserQuotaForEvent = Math.max(0, eventUserTicketLimit - alreadyPurchasedTicketsCount);
 
   // Cuenta regresiva del temporizador
   useEffect(() => {
@@ -127,74 +258,155 @@ export default function PurchaseFlowPageComponent() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")} min`;
   };
 
-  // Manejo de cantidades (+ / -)
+  // Manejo de cantidades (+ / -) con validación estricta de límites por compra y por evento
   const handleQuantityChange = (tierId: string, delta: number) => {
-    setTicketTiers((prev) =>
-      prev.map((tier) => {
-        if (tier.id !== tierId || !tier.available) return tier;
-        const newQty = Math.max(0, Math.min(8, tier.quantity + delta));
-        return { ...tier, quantity: newQty };
-      })
-    );
+    setTicketTiers((prev) => {
+      const target = prev.find((t) => t.id === tierId);
+      if (!target || !target.available) return prev;
+
+      const currentTotalExcludingTarget = prev
+        .filter((t) => t.id !== tierId)
+        .reduce((sum, t) => sum + t.quantity, 0);
+
+      const zoneMaxPerOrder = target.maxTicketsPerOrder ?? 6;
+      const effectiveMaxForThisTier = Math.min(
+        zoneMaxPerOrder,
+        target.remainingTickets ?? 999,
+        Math.max(0, remainingUserQuotaForEvent - currentTotalExcludingTarget)
+      );
+
+      const newQty = Math.max(0, Math.min(effectiveMaxForThisTier, target.quantity + delta));
+      return prev.map((tier) => (tier.id === tierId ? { ...tier, quantity: newQty } : tier));
+    });
   };
 
-  // Cálculos de Totales
+  // Cálculos de Totales en Soles (PEN)
   const totalTickets = ticketTiers.reduce((acc, t) => acc + t.quantity, 0);
   const subtotal = ticketTiers.reduce((acc, t) => acc + t.price * t.quantity, 0);
-  const distributionFee = totalTickets > 0 ? 6 * totalTickets : 0; // 6€ por entrada
-  const vatTax = Math.round((subtotal + distributionFee) * 0.1 * 100) / 100; // 10% IVA
-  const grandTotal = subtotal + distributionFee + vatTax;
+  // El precio de la entrada ya incluye el servicio definido al crear el evento (sin cobro duplicado)
+  const grandTotal = subtotal;
 
-  const selectedFunction = SHOW_FUNCTIONS.find((f) => f.id === selectedFunctionId) || SHOW_FUNCTIONS[1];
+  const selectedFunction =
+    showFunctions.find((f) => f.id === selectedFunctionId) || showFunctions[0];
 
-  // Simulación de Envío de Pago
+  const primarySelectedTier = ticketTiers.find((t) => t.quantity > 0) || ticketTiers[0];
+
+  // Simulación de Envío de Pago mediante la Pasarela Oficial
   const handleSubmitPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (totalTickets === 0) {
-      alert("Por favor selecciona al menos una entrada.");
+      alert("Por favor selecciona al menos una entrada para continuar.");
       return;
     }
+
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      setCurrentStep(3);
-    }, 1600);
+    setPaymentError(null);
+
+    const selectedItems = ticketTiers
+      .filter((t) => t.quantity > 0)
+      .map((t) => ({ zoneId: t.id, quantity: t.quantity }));
+
+    const resolvedCustomerEmail =
+      currentUser?.email || "comprador@queplaneshoy.com";
+    const resolvedCustomerName = currentUser
+      ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+      : "Comprador Oficial QPH";
+
+    simulateCheckoutUseCase
+      .execute({
+        eventId: event ? event.id : eventId || "1",
+        showId: selectedFunctionId,
+        items: selectedItems,
+        paymentMethod,
+        customerEmail: resolvedCustomerEmail,
+        customerName: resolvedCustomerName,
+        forceFailure: forceFailureTest,
+      })
+      .match(
+        (response) => {
+          setIsProcessing(false);
+          setCheckoutResult(response);
+          setCurrentStep(3);
+        },
+        (error) => {
+          setIsProcessing(false);
+          setPaymentError(
+            error.message ||
+              "La transacción ha sido rechazada por la pasarela de pagos. Por favor verifica tu saldo o prueba con otro medio de pago."
+          );
+        }
+      );
   };
 
   const paymentMethodLabel = {
-    card: "Tarjeta de crédito (•••• 4829)",
-    yape: "Yape / Plin Móvil",
-    transfer: "PagoEfectivo / Transferencia CIP",
+    card: "Tarjeta de crédito / débito (•••• 4829)",
+    yape: "Yape / Plin Móvil Oficial",
+    transfer: "PagoEfectivo / CIP Transferencia",
     apple_pay: "Apple Pay",
     google_pay: "Google Pay",
   }[paymentMethod];
 
-  const primarySelectedTier = ticketTiers.find((t) => t.quantity > 0) || ticketTiers[0];
+  // Pantalla de carga si se está cargando el evento
+  if (loadingEvent) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-surface-variant flex items-center justify-center mb-4 animate-pulse">
+          <img
+            src="/logo-qph.svg"
+            alt="queplaneshoy logo"
+            className="w-10 h-10 object-contain"
+          />
+        </div>
+        <div className="w-6 h-6 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-sm font-bold text-deep-slate">Cargando taquilla oficial...</p>
+        <p className="text-xs text-on-surface-variant mt-1">Configurando zonas y accesos del evento</p>
+      </div>
+    );
+  }
 
+  // --- PASO 3: CONFIRMACIÓN EXITOSA ---
   if (currentStep === 3) {
     return (
       <PaymentSuccessScreen
-        orderCode="#QPH-849204"
-        userEmail="usuario@ejemplo.com"
-        eventTitle="Afterlife Madrid: Global Tour 2024"
-        categoryTag="Música Electrónica • World Tour"
-        dateStr={selectedFunction.dateStr}
-        timeStr={selectedFunction.timeStr}
-        venueName="Caja Mágica, Madrid"
-        venueAccess="Puerta C • Front Stage VIP"
-        venueAddress="Cmo. de Perales, 23, 28041 Madrid"
-        zoneName={primarySelectedTier.name}
-        tierBadge={primarySelectedTier.name.includes("VIP") ? "Platinum VIP" : "Acceso General"}
-        ticketCount={totalTickets > 0 ? totalTickets : 2}
-        unitPrice={primarySelectedTier.price}
-        distributionFee={distributionFee > 0 ? distributionFee : 12}
-        vatAmount={vatTax > 0 ? vatTax : 25.2}
-        totalAmount={grandTotal > 0 ? grandTotal : 277.2}
+        orderCode={checkoutResult ? checkoutResult.orderCode : `#QPH-${Math.floor(100000 + Math.random() * 900000)}`}
+        userEmail={currentUser?.email || "comprador@queplaneshoy.com"}
+        customerName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : "Comprador Oficial QPH"}
+        eventTitle={event ? event.name : "Evento Oficial"}
+        categoryTag={event ? `${event.category} • Venta Oficial` : "Música en Vivo • Oficial"}
+        bannerImageUrl={
+          event?.bannerUrl ||
+          "https://lh3.googleusercontent.com/aida-public/AB6AXuB6zlOV5Dky2moZZwBSETqhUT5lhvjwGPa9jJGDrr1krL9Lx8Y4cFqyEjtp_ep-p-XDjKBTdINqn32bKAXlcfVJ0iTnh5Z2nin5LAEEHCum75H9xWBMzSYey9B_8rQxRHEOWCqOizX5JHNzZXbyPQiWaR2DBYAmA7kEL4btLbIxCzLN-_52Xuuk4dYbl8qvh89DpQmSEwN_SYN2pKZSOIl0T-8Ry-WFWoBS8y9Y0uW5XlDwgdnoI0SnVQ"
+        }
+        dateStr={selectedFunction ? selectedFunction.dateStr : "Fecha Confirmada"}
+        timeStr={selectedFunction ? selectedFunction.timeStr : "Horario Oficial"}
+        doorsOpenStr={event?.openingHoursComment || "Apertura 2 hrs antes"}
+        venueName={event ? event.venue || "Recinto Oficial" : "Campo Ferial"}
+        venueAccess={event?.entryRequirements || "Puerta Principal • Control QR Ed25519"}
+        venueAddress={event ? `${event.address || ""}, ${event.city}` : "Ucayali, Perú"}
+        coordinates={event?.coordinates || null}
+        addressReference={event?.addressReference || null}
+        city={event?.city || "Ucayali"}
+        googleMapsUrl={event?.googleMapsUrl || null}
+        zoneName={primarySelectedTier ? primarySelectedTier.name : "Zona General"}
+        tierBadge={primarySelectedTier ? primarySelectedTier.name : "General"}
+        ticketCount={checkoutResult ? checkoutResult.tickets.length : (totalTickets > 0 ? totalTickets : 1)}
+        unitPrice={primarySelectedTier ? primarySelectedTier.price : 65}
+        distributionFee={0}
+        vatAmount={0}
+        totalAmount={checkoutResult ? checkoutResult.totalAmount : (grandTotal > 0 ? grandTotal : (primarySelectedTier ? primarySelectedTier.price : 65))}
         paymentMethodText={paymentMethodLabel}
-        txCode="TX-910403"
+        txCode={checkoutResult ? checkoutResult.txCode : `TX-${Math.floor(100000 + Math.random() * 900000)}`}
+        qrPayload={checkoutResult && checkoutResult.tickets.length > 0 ? checkoutResult.tickets[0].qrPayload : undefined}
+        tickets={checkoutResult ? checkoutResult.tickets : []}
       />
     );
   }
+
+  const eventTitle = event ? event.name : "Bareto en Concierto";
+  const eventVenue = event ? `${event.venue || "Recinto Oficial"}, ${event.city}` : "Campo Ferial, Pucallpa";
+  const eventBanner =
+    event?.bannerUrl ||
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuAvDbqbGnlbfqUeC8z7aI3S9qHtQrEg0HBuv40tjwOWpwyto7jUUN4aK6zHkyjFpgrQuCmYbnML65LyCOmt4qfAeTI0iyr2BVCmLgaCJy5sBpz6YzL3uZFZIH-KYQuDSVFbpbW2Y6TUpo9uKWoJ2zKmlgzeVlfID8YoiQklT8co4xHrZ6sDZeLPqiY-dRNUsdzl8wQ2M9YvHfLR7G5WFio3W-SCX1AidCHyLkxiMeElBOJP2LgUnEYlNJevy2WQSrRm2T5c0o7zVSlx";
 
   return (
     <div className="bg-background font-body-md text-on-background min-h-screen flex flex-col">
@@ -216,7 +428,7 @@ export default function PurchaseFlowPageComponent() {
             </Link>
 
             <Link
-              href="/events"
+              href={event ? `/events/${event.id}` : "/"}
               className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors pl-4 border-l border-surface-variant"
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
@@ -226,12 +438,15 @@ export default function PurchaseFlowPageComponent() {
 
           <div className="flex items-center gap-6">
             <Link
-              href="/events"
+              href="/"
               className="text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors hidden md:inline-block"
             >
-              Eventos
+              Cartelera
             </Link>
-            <button className="flex items-center gap-2 text-on-surface-variant hover:text-electric-indigo transition-colors font-semibold text-xs cursor-pointer">
+            <button
+              onClick={() => alert("Soporte disponible en soporte@queplaneshoy.com")}
+              className="flex items-center gap-2 text-on-surface-variant hover:text-electric-indigo transition-colors font-semibold text-xs cursor-pointer"
+            >
               <span className="material-symbols-outlined text-[20px]">help</span>
               <span className="hidden sm:inline">Centro de Ayuda</span>
             </button>
@@ -244,8 +459,7 @@ export default function PurchaseFlowPageComponent() {
          ========================================================================= */}
       <main className="flex-grow w-full max-w-container-max mx-auto px-4 sm:px-8 py-8 sm:py-12">
         <div className="max-w-container-max mx-auto">
-          
-          {/* STEPPER DE PROGRESO DE 3 PASOS (ESTILO EXACTO Y UNIFORME) */}
+          {/* STEPPER DE PROGRESO DE 3 PASOS */}
           <CheckoutStepper
             currentStep={currentStep}
             onStepClick={(step) => {
@@ -257,26 +471,24 @@ export default function PurchaseFlowPageComponent() {
 
           {/* TIMER ALERT (URGENCIA POSITIVA) */}
           <div className="mb-8 p-3.5 bg-electric-indigo/10 border border-electric-indigo/20 rounded-xl flex items-center justify-between max-w-4xl mx-auto shadow-sm">
-              <div className="flex items-center gap-2.5 text-deep-slate text-xs sm:text-sm font-semibold">
-                <span className="material-symbols-outlined text-electric-indigo text-xl">timer</span>
-                <span>Tus entradas seleccionadas se reservan temporalmente:</span>
-              </div>
-              <div className="bg-white px-3 py-1 rounded-lg border border-electric-indigo/30 font-bold text-electric-indigo text-xs sm:text-sm flex items-center gap-1.5 shadow-sm font-mono">
-                <span className="w-2 h-2 rounded-full bg-vip-gold animate-pulse" />
-                <span>{formatTimer(secondsRemaining)}</span>
-              </div>
+            <div className="flex items-center gap-2.5 text-deep-slate text-xs sm:text-sm font-semibold">
+              <span className="material-symbols-outlined text-electric-indigo text-xl">timer</span>
+              <span>Tus entradas seleccionadas se reservan temporalmente:</span>
             </div>
+            <div className="bg-white px-3 py-1 rounded-lg border border-electric-indigo/30 font-bold text-electric-indigo text-xs sm:text-sm flex items-center gap-1.5 shadow-sm font-mono">
+              <span className="w-2 h-2 rounded-full bg-vip-gold animate-pulse" />
+              <span>{formatTimer(secondsRemaining)}</span>
+            </div>
+          </div>
 
           {/* =====================================================================
               LAYOUT DE DOS COLUMNAS (FORMULARIO PRINCIPAL + SUMMARY STICKY)
              ===================================================================== */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-            
             {/* -------------------------------------------------------------------
-                COLUMNA IZQUIERDA (PASO 1 O PASO 2 O PASO 3)
+                COLUMNA IZQUIERDA (PASO 1 O PASO 2)
                ------------------------------------------------------------------- */}
             <div className="lg:col-span-8 space-y-8">
-              
               {/* =================================================================
                   PASO 1: SELECCIÓN DE ENTRADAS Y ZONAS
                  ================================================================= */}
@@ -288,13 +500,13 @@ export default function PurchaseFlowPageComponent() {
                       <h2 className="text-lg sm:text-xl font-bold text-deep-slate">
                         Selecciona tu Función
                       </h2>
-                      <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
-                        Caja Mágica, Madrid
+                      <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider truncate max-w-xs">
+                        {eventVenue}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {SHOW_FUNCTIONS.map((fn) => {
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {showFunctions.map((fn) => {
                         const isSelected = selectedFunctionId === fn.id;
                         return (
                           <button
@@ -342,174 +554,90 @@ export default function PurchaseFlowPageComponent() {
                     </div>
                   </div>
 
-                  {/* Mapa Esquemático del Recinto (Caja Mágica / Estadio) */}
-                  <div className="bg-white p-6 rounded-2xl border border-surface-variant shadow-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-deep-slate">
-                          Mapa de Zonas y Localidades
-                        </h3>
-                        <p className="text-xs text-on-surface-variant mt-0.5">
-                          Haz referencia al croquis para ubicar tu área ideal en Caja Mágica.
-                        </p>
-                      </div>
+                  {/* Mapa Esquemático del Recinto / Zonas y Localidades (Alineado con Stitch) */}
+                  <VenueZonesMap
+                    venueName={event?.venue || "Recinto Oficial"}
+                    zones={ticketTiers.map((tier) => ({
+                      id: tier.id,
+                      name: tier.name,
+                      price: tier.price,
+                      available: tier.available,
+                      colorHex: tier.colorHex,
+                      badge: tier.badge,
+                    }))}
+                    zoneMapImageUrl={event?.zoneMapUrl}
+                    selectedZoneId={primarySelectedTier?.id}
+                    onSelectZone={(selectedId) => {
+                      setTicketTiers((prev) =>
+                        prev.map((t) => {
+                          if (t.id === selectedId && t.available) {
+                            return { ...t, quantity: t.quantity > 0 ? t.quantity : 1 };
+                          }
+                          return t;
+                        })
+                      );
+                    }}
+                    occupancyPercentage={
+                      event?.zones && event.zones.length > 0
+                        ? Math.min(
+                            98,
+                            Math.max(
+                              52,
+                              Math.round(
+                                ((event.zones.reduce(
+                                  (acc, z) => acc + (z.capacity - z.remainingTickets),
+                                  0
+                                )) /
+                                  (event.zones.reduce((acc, z) => acc + z.capacity, 0) || 1)) *
+                                  100
+                              )
+                            )
+                          )
+                        : 88
+                    }
+                  />
 
-                      <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-on-surface-variant">
-                        <span className="flex items-center gap-1">
-                          <span className="w-2.5 h-2.5 rounded-sm bg-electric-indigo" />
-                          <span>Platinum VIP</span>
+                  {/* Banner Oficial de Límites por Persona / Antirreventa */}
+                  <div className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${
+                    remainingUserQuotaForEvent <= 0
+                      ? "bg-rose-50 border-rose-200 text-rose-900"
+                      : "bg-electric-indigo/5 border-electric-indigo/20 text-deep-slate"
+                  }`}>
+                    <span className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${
+                      remainingUserQuotaForEvent <= 0 ? "text-rose-600" : "text-electric-indigo"
+                    }`}>
+                      {remainingUserQuotaForEvent <= 0 ? "block" : "verified_user"}
+                    </span>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="font-bold">
+                          {remainingUserQuotaForEvent <= 0
+                            ? "Límite Oficial de Entradas Alcanzado"
+                            : "Política Oficial de Venta Antirreventa QPH"}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <span className="w-2.5 h-2.5 rounded-sm bg-purple-600" />
-                          <span>General Pista</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="w-2.5 h-2.5 rounded-sm bg-emerald-600" />
-                          <span>Grada Baja</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="w-2.5 h-2.5 rounded-sm bg-amber-500" />
-                          <span>Grada Alta</span>
+                        <span className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${
+                          remainingUserQuotaForEvent <= 0
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-electric-indigo/10 text-electric-indigo"
+                        }`}>
+                          Tope: {eventUserTicketLimit} entradas por persona
                         </span>
                       </div>
-                    </div>
-
-                    {/* Diagrama SVG Interactivo del Estadio */}
-                    <div className="w-full bg-surface-gray rounded-xl p-4 border border-surface-variant flex flex-col items-center justify-center">
-                      <div className="w-full max-w-lg aspect-[16/9] relative flex items-center justify-center">
-                        <svg className="w-full h-full" viewBox="0 0 500 280">
-                          {/* Grada Alta (Ámbar) */}
-                          <rect
-                            fill="#FEF3C7"
-                            height="250"
-                            rx="24"
-                            stroke="#F59E0B"
-                            strokeDasharray="4 3"
-                            strokeWidth="2"
-                            width="450"
-                            x="25"
-                            y="15"
-                          />
-                          <text
-                            fill="#B45309"
-                            fontFamily="Inter"
-                            fontSize="10"
-                            fontWeight="700"
-                            textAnchor="middle"
-                            x="250"
-                            y="32"
-                          >
-                            GRADA ALTA (30,00€ - AGOTADO)
-                          </text>
-
-                          {/* Grada Baja (Verde Esmeralda) */}
-                          <rect
-                            fill="#D1FAE5"
-                            height="195"
-                            rx="16"
-                            stroke="#059669"
-                            strokeWidth="2"
-                            width="370"
-                            x="65"
-                            y="45"
-                          />
-                          <text
-                            fill="#047857"
-                            fontFamily="Inter"
-                            fontSize="11"
-                            fontWeight="700"
-                            textAnchor="middle"
-                            x="250"
-                            y="62"
-                          >
-                            GRADA BAJA NUMERADA (45,00€)
-                          </text>
-
-                          {/* General Pista (Violeta) */}
-                          <rect
-                            fill="#EDE9FE"
-                            height="135"
-                            rx="12"
-                            stroke="#7C3AED"
-                            strokeWidth="2"
-                            width="280"
-                            x="110"
-                            y="80"
-                          />
-                          <text
-                            fill="#6D28D9"
-                            fontFamily="Inter"
-                            fontSize="11"
-                            fontWeight="700"
-                            textAnchor="middle"
-                            x="250"
-                            y="102"
-                          >
-                            GENERAL PISTA (65,00€)
-                          </text>
-
-                          {/* Platinum VIP Front Stage (Índigo) */}
-                          <rect
-                            fill="#E0E7FF"
-                            height="65"
-                            rx="8"
-                            stroke="#4F46E5"
-                            strokeWidth="2.5"
-                            width="190"
-                            x="155"
-                            y="120"
-                          />
-                          <text
-                            fill="#4338CA"
-                            fontFamily="Inter"
-                            fontSize="11"
-                            fontWeight="800"
-                            textAnchor="middle"
-                            x="250"
-                            y="145"
-                          >
-                            ★ PLATINUM VIP FRONT STAGE ★
-                          </text>
-                          <text
-                            fill="#4338CA"
-                            fontFamily="Inter"
-                            fontSize="10"
-                            fontWeight="600"
-                            textAnchor="middle"
-                            x="250"
-                            y="162"
-                          >
-                            Barra Libre + Acceso Preferente (120,00€)
-                          </text>
-
-                          {/* Stage / Escenario Principal */}
-                          <rect
-                            fill="#0F172A"
-                            height="24"
-                            rx="4"
-                            width="140"
-                            x="180"
-                            y="195"
-                          />
-                          <text
-                            fill="#FFFFFF"
-                            fontFamily="Inter"
-                            fontSize="11"
-                            fontWeight="800"
-                            letterSpacing="1.5"
-                            textAnchor="middle"
-                            x="250"
-                            y="211"
-                          >
-                            ESCENARIO / STAGE
-                          </text>
-                        </svg>
-                      </div>
-
-                      <div className="mt-2 flex items-center justify-between w-full text-xs text-on-surface-variant px-2">
-                        <span>⚡ Zona Acústica Optimizada</span>
-                        <span className="text-electric-indigo font-bold">Aforo en Vivo: 88% completo</span>
-                      </div>
+                      <p className="text-on-surface-variant leading-relaxed">
+                        {remainingUserQuotaForEvent <= 0 ? (
+                          <strong className="text-rose-700 font-semibold block">
+                            Ya cuentas con {alreadyPurchasedTicketsCount} entrada(s) registrada(s) para este evento. Se ha alcanzado el tope máximo permitido por persona ({eventUserTicketLimit}).
+                          </strong>
+                        ) : alreadyPurchasedTicketsCount > 0 ? (
+                          <span>
+                            Ya cuentas con <strong>{alreadyPurchasedTicketsCount} entrada(s)</strong> registrada(s). En esta orden puedes adquirir hasta un máximo de <strong>{remainingUserQuotaForEvent} entrada(s) más</strong>.
+                          </span>
+                        ) : (
+                          <span>
+                            Para garantizar un acceso equitativo y evitar la reventa, cada cliente puede adquirir hasta un máximo de <strong>{eventUserTicketLimit} entradas oficiales</strong> para este evento.
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </div>
 
@@ -521,6 +649,12 @@ export default function PurchaseFlowPageComponent() {
 
                     {ticketTiers.map((tier) => {
                       const isSelected = tier.quantity > 0;
+                      const isPlusDisabled =
+                        totalTickets >= remainingUserQuotaForEvent ||
+                        tier.quantity >= (tier.maxTicketsPerOrder ?? 6) ||
+                        tier.quantity >= (tier.remainingTickets ?? 999) ||
+                        remainingUserQuotaForEvent <= 0;
+
                       return (
                         <div
                           key={tier.id}
@@ -558,9 +692,9 @@ export default function PurchaseFlowPageComponent() {
                                 {tier.description}
                               </p>
                               <div className="text-sm text-electric-indigo font-bold">
-                                {tier.price.toFixed(2)}€{" "}
+                                S/. {tier.price.toFixed(2)}{" "}
                                 <span className="text-xs text-platinum-silver font-normal">
-                                  / entrada
+                                  / entrada oficial
                                 </span>
                               </div>
                             </div>
@@ -584,15 +718,17 @@ export default function PurchaseFlowPageComponent() {
                                     <button
                                       type="button"
                                       onClick={() => handleQuantityChange(tier.id, 1)}
-                                      className="w-9 h-9 rounded-lg bg-electric-indigo text-white hover:bg-primary font-bold flex items-center justify-center shadow-sm transition-all active:scale-95 cursor-pointer"
+                                      disabled={isPlusDisabled}
+                                      className="w-9 h-9 rounded-lg bg-electric-indigo text-white hover:bg-primary font-bold flex items-center justify-center shadow-sm transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                      title={isPlusDisabled ? "Límite de entradas alcanzado" : "Añadir entrada"}
                                     >
                                       +
                                     </button>
                                   </div>
 
-                                  <div className="text-right min-w-[70px]">
+                                  <div className="text-right min-w-[90px]">
                                     <span className="block font-bold text-base text-deep-slate">
-                                      {(tier.price * tier.quantity).toFixed(2)}€
+                                      S/. {(tier.price * tier.quantity).toFixed(2)}
                                     </span>
                                     <span className="text-[11px] text-platinum-silver">
                                       {tier.quantity} entradas
@@ -601,7 +737,7 @@ export default function PurchaseFlowPageComponent() {
                                 </>
                               ) : (
                                 <span className="text-xs font-bold text-red-600 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
-                                  Sold Out
+                                  Agotado
                                 </span>
                               )}
                             </div>
@@ -614,7 +750,7 @@ export default function PurchaseFlowPageComponent() {
               )}
 
               {/* =================================================================
-                  PASO 2: PASARELA DE PAGOS Y MÉTODOS SEGUROS (STITCH MATCH)
+                  PASO 2: PASARELA DE PAGOS Y MÉTODOS SEGUROS
                  ================================================================= */}
               {currentStep === 2 && (
                 <div className="space-y-8 bg-white p-6 sm:p-8 rounded-2xl border border-surface-variant shadow-sm">
@@ -623,38 +759,61 @@ export default function PurchaseFlowPageComponent() {
                       Método de Pago
                     </h1>
                     <p className="text-sm text-on-surface-variant">
-                      Selecciona tu forma de pago preferida para completar la reserva.
+                      Selecciona tu forma de pago preferida para emitir tus entradas oficiales.
                     </p>
+                  </div>
+
+                  {/* Alerta de Transacción Rechazada (Simulación de Fallo) */}
+                  {paymentError && (
+                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-start gap-3">
+                      <span className="material-symbols-outlined text-red-600 text-xl shrink-0 mt-0.5">
+                        error
+                      </span>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-sm">Transacción Rechazada por la Pasarela</h4>
+                        <p className="text-xs text-red-700 mt-1">{paymentError}</p>
+                        <p className="text-xs text-slate-600 mt-2">
+                          💡 <strong>Tus entradas continúan reservadas:</strong> Puedes cambiar de método de pago (por ejemplo, seleccionar <strong>Yape</strong> o <strong>Tarjeta</strong>) y volver a pulsar &quot;Pagar Ahora&quot;.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentError(null)}
+                        className="text-red-500 hover:text-red-800 text-xs font-bold cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Toggle para pruebas de QA / Demostración */}
+                  <div className="p-3 bg-surface-container-low rounded-xl border border-surface-variant/60 flex flex-wrap items-center justify-between text-xs gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                        science
+                      </span>
+                      <span className="font-semibold text-deep-slate">
+                        Simulación de Pasarela
+                      </span>
+                      <span className="text-[11px] text-on-surface-variant">
+                        (80% Éxito / 20% Fallo aleatorio)
+                      </span>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer font-bold text-deep-slate">
+                      <input
+                        type="checkbox"
+                        checked={forceFailureTest}
+                        onChange={(e) => setForceFailureTest(e.target.checked)}
+                        className="rounded text-electric-indigo focus:ring-electric-indigo cursor-pointer"
+                      />
+                      <span className={`text-[11px] ${forceFailureTest ? "text-red-600 font-extrabold" : "text-slate-600"}`}>
+                        {forceFailureTest ? "Forzar fallo bancario" : "Forzar fallo para prueba"}
+                      </span>
+                    </label>
                   </div>
 
                   {/* Opciones de Métodos de Pago */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Tarjeta */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("card")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "card"
-                          ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
-                          : "border-surface-variant bg-white hover:bg-surface-gray"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-electric-indigo/20 flex items-center justify-center text-electric-indigo">
-                          <span className="material-symbols-outlined text-2xl">credit_card</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">
-                            Tarjeta de Crédito / Débito
-                          </span>
-                          <span className="text-xs text-on-surface-variant">Visa, Mastercard, Amex</span>
-                        </div>
-                      </div>
-                      {paymentMethod === "card" && (
-                        <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
-                      )}
-                    </button>
-
                     {/* Yape / Plin */}
                     <button
                       type="button"
@@ -671,10 +830,36 @@ export default function PurchaseFlowPageComponent() {
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-deep-slate">Yape / Plin</span>
-                          <span className="text-xs text-on-surface-variant">Billeteras móviles instantáneas QR</span>
+                          <span className="text-xs text-on-surface-variant">Billetera móvil QR instantánea</span>
                         </div>
                       </div>
                       {paymentMethod === "yape" && (
+                        <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
+                      )}
+                    </button>
+
+                    {/* Tarjeta */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("card")}
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${
+                        paymentMethod === "card"
+                          ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
+                          : "border-surface-variant bg-white hover:bg-surface-gray"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-electric-indigo/20 flex items-center justify-center text-electric-indigo">
+                          <span className="material-symbols-outlined text-2xl">credit_card</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm text-deep-slate">
+                            Tarjeta de Débito / Crédito
+                          </span>
+                          <span className="text-xs text-on-surface-variant">Visa, Mastercard, Diners, Amex</span>
+                        </div>
+                      </div>
+                      {paymentMethod === "card" && (
                         <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
                       )}
                     </button>
@@ -695,9 +880,9 @@ export default function PurchaseFlowPageComponent() {
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-deep-slate">
-                            PagoEfectivo / Transferencia
+                            PagoEfectivo / Agentes
                           </span>
-                          <span className="text-xs text-on-surface-variant">Banca online y puntos autorizados</span>
+                          <span className="text-xs text-on-surface-variant">Código CIP para banca móvil y agentes</span>
                         </div>
                       </div>
                       {paymentMethod === "transfer" && (
@@ -721,59 +906,72 @@ export default function PurchaseFlowPageComponent() {
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-deep-slate">Apple Pay</span>
-                          <span className="text-xs text-on-surface-variant">Pago con Touch ID o Face ID</span>
+                          <span className="text-xs text-on-surface-variant">Pago exprés con Face ID / Touch ID</span>
                         </div>
                       </div>
                       {paymentMethod === "apple_pay" && (
                         <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
                       )}
                     </button>
+                  </div>
 
-                    {/* Google Pay */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("google_pay")}
-                      className={`sm:col-span-2 flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "google_pay"
-                          ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
-                          : "border-surface-variant bg-white hover:bg-surface-gray"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-surface-gray flex items-center justify-center text-on-surface-variant">
-                          <span className="material-symbols-outlined text-2xl">wallet</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">Google Pay</span>
-                          <span className="text-xs text-on-surface-variant">Pago seguro con tu cuenta Google</span>
-                        </div>
+                  {/* Datos del Titular de la Orden (Usuario en Sesión) */}
+                  <div className="p-4 bg-surface-container-lowest rounded-xl border border-surface-variant flex items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-electric-indigo/10 text-electric-indigo flex items-center justify-center font-bold text-sm">
+                        <span className="material-symbols-outlined text-[20px]">person</span>
                       </div>
-                      {paymentMethod === "google_pay" && (
-                        <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
-                      )}
-                    </button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[11px] font-bold text-electric-indigo uppercase tracking-wider">
+                            Titular de las entradas
+                          </p>
+                          {currentUser && (
+                            <span className="inline-block px-2 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">
+                              Sesión Activa
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold text-deep-slate">
+                          {currentUser
+                            ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+                            : "Usuario Invitado"}
+                        </p>
+                        <p className="text-xs text-on-surface-variant">
+                          {currentUser?.email || "Las entradas se emitirán a tu cuenta"}
+                        </p>
+                      </div>
+                    </div>
+                    {!currentUser && (
+                      <Link
+                        href="/auth/login"
+                        className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1"
+                      >
+                        Iniciar sesión <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                      </Link>
+                    )}
                   </div>
 
                   {/* Formulario y Caja de Protección */}
                   <form onSubmit={handleSubmitPayment} className="space-y-6 pt-4">
                     <div className="p-6 bg-surface-container-low rounded-xl border border-surface-variant space-y-4">
                       <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo flex-shrink-0">
+                        <div className="w-12 h-12 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0">
                           <span className="material-symbols-outlined text-[24px]">verified_user</span>
                         </div>
                         <div className="space-y-1">
                           <h3 className="text-deep-slate text-sm font-bold">
-                            Pasarela de pago protegida y cifrada
+                            Pasarela de pago oficial protegida y cifrada
                           </h3>
                           <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed">
-                            Serás redirigido a la pasarela segura o se abrirá el modal oficial de pago para completar la transacción de forma 100% protegida.
+                            Al confirmar, tus entradas se reservarán y se emitirán con garantía de acceso criptográfico Ed25519 intransferible.
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-3 pt-3 text-xs text-on-surface-variant border-t border-surface-variant">
                         <span className="material-symbols-outlined text-sm text-electric-indigo">lock</span>
-                        <span>Conexión cifrada de 256 bits con autenticación en dos pasos 3D Secure</span>
+                        <span>Cifrado TLS de 256 bits y certificación PCI DSS de máxima seguridad</span>
                       </div>
                     </div>
 
@@ -785,38 +983,22 @@ export default function PurchaseFlowPageComponent() {
                       {isProcessing ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Procesando pago seguro...</span>
+                          <span>Emitiendo entradas oficiales...</span>
                         </>
                       ) : (
                         <>
                           <span className="material-symbols-outlined">lock</span>
-                          <span>Pagar Ahora • {grandTotal.toFixed(2)}€</span>
+                          <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
                         </>
                       )}
                     </button>
                   </form>
-
-                  {/* Sellos de Confianza */}
-                  <div className="flex flex-wrap items-center justify-center gap-8 pt-6 border-t border-surface-variant opacity-75">
-                    <div className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      <span className="material-symbols-outlined text-base">lock</span>
-                      <span>Pago Seguro SSL</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      <span className="material-symbols-outlined text-base">verified_user</span>
-                      <span>Garantía de entradas</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                      <span className="material-symbols-outlined text-base">shield</span>
-                      <span>PCI Compliance</span>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
 
             {/* -------------------------------------------------------------------
-                COLUMNA DERECHA: STICKY ORDER SUMMARY (STITCH EXACT MATCH)
+                COLUMNA DERECHA: STICKY ORDER SUMMARY
                ------------------------------------------------------------------- */}
             <div className="lg:col-span-4">
               <div className="sticky top-28 space-y-6">
@@ -824,17 +1006,17 @@ export default function PurchaseFlowPageComponent() {
                   {/* Mini Banner del Evento */}
                   <div className="relative h-32 overflow-hidden">
                     <img
-                      alt="Afterlife Madrid"
+                      alt={eventTitle}
                       className="w-full h-full object-cover"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnd8-6_1mxS3dZFtHk9XFlFw3P0KN3s3jBI7R0CsQGAd5qSojJImmoWKoQAequo_GBLwop9XD2E7G5q3GK-5CoO6-NBQ_QRd9sZuxPW5LA82L-X5_Wvmq0B4H_dbbi19Zt7skdIljIs-uTI2zIboIarNOLbbQmLhUk1ZO5UWbuwr5maC8WfWwH_lYm3OaAxPNBn8SvnH-lbOXUaXsTsWxTqBxNYhtCtb0NZV8H1tajvL8hMzjePt5C_qhvS19rf5BN3oRIFjdDXiU8"
+                      src={eventBanner}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-deep-slate to-transparent opacity-70" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-deep-slate to-transparent opacity-80" />
                     <div className="absolute bottom-3 left-4 right-4 text-white">
                       <span className="inline-block bg-electric-indigo text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase mb-1">
-                        Concierto Exclusivo
+                        {event?.category || "Venta Oficial"}
                       </span>
                       <h3 className="text-base text-white font-bold leading-tight line-clamp-1">
-                        Afterlife Madrid: Global Tour 2024
+                        {eventTitle}
                       </h3>
                     </div>
                   </div>
@@ -846,7 +1028,7 @@ export default function PurchaseFlowPageComponent() {
                         <span className="material-symbols-outlined text-electric-indigo text-[18px]">
                           calendar_month
                         </span>
-                        <span>
+                        <span className="capitalize">
                           {selectedFunction.dateStr} • {selectedFunction.timeStr}
                         </span>
                       </div>
@@ -854,7 +1036,7 @@ export default function PurchaseFlowPageComponent() {
                         <span className="material-symbols-outlined text-electric-indigo text-[18px]">
                           location_on
                         </span>
-                        <span>Caja Mágica, Madrid</span>
+                        <span className="truncate">{eventVenue}</span>
                       </div>
                       <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
                         <span className="material-symbols-outlined text-electric-indigo text-[18px]">
@@ -862,12 +1044,12 @@ export default function PurchaseFlowPageComponent() {
                         </span>
                         <span>
                           Zona:{" "}
-                          {ticketTiers.find((t) => t.quantity > 0)?.name || "Ninguna zona elegida"}
+                          {ticketTiers.find((t) => t.quantity > 0)?.name || "Ninguna zona seleccionada"}
                         </span>
                       </div>
                     </div>
 
-                    {/* Desglose de Precios */}
+                    {/* Desglose de Precios en Soles */}
                     <div className="py-5 border-b border-surface-variant space-y-3">
                       {ticketTiers
                         .filter((t) => t.quantity > 0)
@@ -878,11 +1060,11 @@ export default function PurchaseFlowPageComponent() {
                                 {t.quantity}x {t.name}
                               </span>
                               <span className="text-xs text-on-surface-variant">
-                                {t.price.toFixed(2)}€ por entrada
+                                S/. {t.price.toFixed(2)} por entrada
                               </span>
                             </div>
                             <span className="font-bold text-deep-slate">
-                              {(t.price * t.quantity).toFixed(2)}€
+                              S/. {(t.price * t.quantity).toFixed(2)}
                             </span>
                           </div>
                         ))}
@@ -892,16 +1074,6 @@ export default function PurchaseFlowPageComponent() {
                           Aún no has añadido entradas a tu reserva.
                         </p>
                       )}
-
-                      <div className="flex justify-between items-center text-sm text-on-surface-variant">
-                        <span>Gastos de distribución</span>
-                        <span>{distributionFee.toFixed(2)}€</span>
-                      </div>
-
-                      <div className="flex justify-between items-center text-sm text-on-surface-variant">
-                        <span>IVA (10% incluido)</span>
-                        <span>{vatTax.toFixed(2)}€</span>
-                      </div>
                     </div>
 
                     {/* Total Final */}
@@ -909,12 +1081,12 @@ export default function PurchaseFlowPageComponent() {
                       <div className="flex flex-col">
                         <span className="text-deep-slate text-xl font-bold">Total</span>
                         <span className="text-[11px] text-platinum-silver">
-                          Impuestos y tasas incluidos
+                          IGV y emisión digital incluidos
                         </span>
                       </div>
                       <div className="text-right">
                         <span className="text-3xl font-black text-electric-indigo">
-                          {grandTotal.toFixed(2)}€
+                          S/. {grandTotal.toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -928,15 +1100,27 @@ export default function PurchaseFlowPageComponent() {
                             alert("Por favor selecciona al menos una entrada para continuar.");
                             return;
                           }
+                          if (totalTickets > remainingUserQuotaForEvent) {
+                            alert(
+                              `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`
+                            );
+                            return;
+                          }
                           setCurrentStep(2);
                         }}
-                        disabled={totalTickets === 0}
-                        className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-50 text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
+                        disabled={totalTickets === 0 || remainingUserQuotaForEvent <= 0}
+                        className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
                       >
-                        <span>Continuar al Paso de Pago</span>
-                        <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
-                          arrow_forward
+                        <span>
+                          {remainingUserQuotaForEvent <= 0
+                            ? "Límite Oficial Alcanzado"
+                            : "Continuar al Paso de Pago"}
                         </span>
+                        {remainingUserQuotaForEvent > 0 && (
+                          <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
+                            arrow_forward
+                          </span>
+                        )}
                       </button>
                     )}
 
@@ -949,16 +1133,19 @@ export default function PurchaseFlowPageComponent() {
                         className="w-full py-4 bg-electric-indigo hover:bg-primary text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
                       >
                         <span className="material-symbols-outlined">lock</span>
-                        <span>Confirmar y Pagar {grandTotal.toFixed(2)}€</span>
+                        <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
                       </button>
                     )}
 
                     {/* Métodos Aceptados */}
                     <div className="mt-5 pt-4 border-t border-surface-variant">
                       <div className="text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
-                        Métodos de pago aceptados:
+                        Métodos oficiales aceptados:
                       </div>
                       <div className="flex flex-wrap items-center justify-center gap-2">
+                        <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-purple-700 border border-surface-variant">
+                          Yape / Plin
+                        </span>
                         <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
                           💳 VISA / Mastercard
                         </span>
@@ -967,9 +1154,6 @@ export default function PurchaseFlowPageComponent() {
                         </span>
                         <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
                           Google Pay
-                        </span>
-                        <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-purple-700 border border-surface-variant">
-                          Yape / Plin
                         </span>
                       </div>
                     </div>
@@ -982,13 +1166,13 @@ export default function PurchaseFlowPageComponent() {
                     <span className="material-symbols-outlined text-electric-indigo text-lg">
                       verified_user
                     </span>
-                    <span>Garantía de entradas 100% auténticas</span>
+                    <span>Garantía de entradas 100% auténticas QPH</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
                     <span className="material-symbols-outlined text-electric-indigo text-lg">
                       lock
                     </span>
-                    <span>Reserva segura cifrada SSL de extremo a extremo</span>
+                    <span>Reserva segura cifrada de extremo a extremo</span>
                   </div>
                 </div>
               </div>
@@ -1010,7 +1194,7 @@ export default function PurchaseFlowPageComponent() {
               </span>
             </div>
             <p className="text-platinum-silver text-xs">
-              Tu puerta de entrada a los mejores eventos, conciertos y experiencias en directo.
+              Tu puerta de entrada a los mejores eventos, conciertos y experiencias en directo en todo el Perú.
             </p>
           </div>
 
@@ -1019,10 +1203,10 @@ export default function PurchaseFlowPageComponent() {
               Eventos
             </h4>
             <ul className="space-y-2 text-xs text-platinum-silver">
-              <li><Link href="/events" className="hover:text-white transition-colors">Conciertos</Link></li>
-              <li><Link href="/events" className="hover:text-white transition-colors">Festivales</Link></li>
-              <li><Link href="/events" className="hover:text-white transition-colors">Teatro y Musicales</Link></li>
-              <li><Link href="/events" className="hover:text-white transition-colors">Deportes</Link></li>
+              <li><Link href="/" className="hover:text-white transition-colors">Conciertos</Link></li>
+              <li><Link href="/" className="hover:text-white transition-colors">Festivales</Link></li>
+              <li><Link href="/" className="hover:text-white transition-colors">Teatro y Shows</Link></li>
+              <li><Link href="/" className="hover:text-white transition-colors">Deportes</Link></li>
             </ul>
           </div>
 
@@ -1033,7 +1217,7 @@ export default function PurchaseFlowPageComponent() {
             <ul className="space-y-2 text-xs text-platinum-silver">
               <li><a href="#" className="hover:text-white transition-colors">Centro de Ayuda</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Contacto y Dudas</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Políticas de Cancelación</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Políticas de Devolución</a></li>
             </ul>
           </div>
 
@@ -1044,13 +1228,13 @@ export default function PurchaseFlowPageComponent() {
             <ul className="space-y-2 text-xs text-platinum-silver">
               <li><a href="#" className="hover:text-white transition-colors">Términos y Condiciones</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Política de Privacidad</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Condiciones de Venta</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Libro de Reclamaciones</a></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/10 w-full px-4 sm:px-8 py-6 text-center text-platinum-silver text-xs">
-          © 2024 queplaneshoy. Todos los derechos reservados. Compra segura con tecnología certificada.
+          © 2026 queplaneshoy. Todos los derechos reservados. Boletería oficial con tecnología criptográfica.
         </div>
       </footer>
     </div>
