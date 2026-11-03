@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import { DesktopHeader } from "../common/components/desktop-header";
 
@@ -10,7 +10,9 @@ export default function MainLayout({
   return (
     <>
       {/* Header (TopNavBar) - Desktop con reemplazo dinámico de categorías por buscador en scroll */}
-      <DesktopHeader />
+      <Suspense fallback={null}>
+        <DesktopHeader />
+      </Suspense>
 
       {/* Header (TopNavBar) - Mobile (Stitch Style) */}
       <header className="qph-mobile-header md:hidden bg-white sticky top-0 z-50 h-16 flex items-center px-4 justify-between transition-all duration-300 shadow-sm border-b border-outline-variant/5">
