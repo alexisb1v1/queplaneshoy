@@ -423,7 +423,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                       </div>
 
                       <Link
-                        href={`/checkout?eventId=${event.id}&zoneId=${zone.id}`}
+                        href={`/checkout?eventId=${event.publicUuid || event.slug || event.id}&zoneId=${zone.publicUuid || zone.id}`}
                         style={{ backgroundColor: theme.primaryColor }}
                         className="px-5 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-wide hover:opacity-95 hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-1.5"
                       >

@@ -182,7 +182,7 @@ export default function PurchaseFlowPageComponent() {
                 minute: "2-digit",
               }) + "h";
             return {
-              id: show.id,
+              id: show.publicUuid || show.id,
               dateStr: dateStr.charAt(0).toUpperCase() + dateStr.slice(1),
               timeStr,
               statusText: "Entradas disp.",
@@ -193,12 +193,12 @@ export default function PurchaseFlowPageComponent() {
           setSelectedFunctionId(mappedShows[0].id);
         }
 
-        // 2. Mapear zonas con preselección inteligente de zoneId
+        // 2. Mapear zonas con preselección inteligente de zoneId (soporta publicUuid o ID)
         if (data.zones && data.zones.length > 0) {
           const mappedTiers: TicketTier[] = data.zones.map((zone) => {
-            const isTarget = zoneId ? zone.id === zoneId : false;
+            const isTarget = zoneId ? (zone.id === zoneId || zone.publicUuid === zoneId) : false;
             return {
-              id: zone.id,
+              id: zone.publicUuid || zone.id,
               name: zone.name,
               badge: zone.activeTierName || "Disponible",
               badgeColor: zone.isSoldOut
