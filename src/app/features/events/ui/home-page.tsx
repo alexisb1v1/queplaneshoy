@@ -86,6 +86,7 @@ function homeCardToEventCardProps(item: HomeEventCardItem): EventCardProps {
   const cat = getCategoryById(item.category);
   return {
     id: item.id,
+    publicUuid: item.publicUuid,
     slug: item.slug,
     hasLandingPage: item.hasLandingPage,
     title: item.title,
@@ -301,7 +302,8 @@ export default function HomePage() {
           ) : mobileFeaturedList.length > 0 ? (
             <div className="flex overflow-x-auto snap-x snap-mandatory qph-hide-scrollbar px-4 gap-4 pb-4">
               {mobileFeaturedList.slice(0, 5).map((event) => {
-                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${event.id}`;
+                const secureId = event.publicUuid || event.slug || event.id;
+                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
                 return (
                   <div
                     key={event.id}
@@ -397,7 +399,8 @@ export default function HomePage() {
               ))
             ) : filteredMobileEvents.length > 0 ? (
               filteredMobileEvents.map((event) => {
-                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${event.id}`;
+                const secureId = event.publicUuid || event.slug || event.id;
+                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
                 return (
                   <Link
                     key={event.id}

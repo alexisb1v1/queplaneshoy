@@ -5,6 +5,7 @@ import Link from "next/link";
 
 export interface EventCardProps {
   id: string | number;
+  publicUuid?: string;
   slug?: string;
   hasLandingPage?: boolean;
   title: string;
@@ -24,6 +25,7 @@ export interface EventCardProps {
 
 export function EventCard({
   id,
+  publicUuid,
   slug,
   hasLandingPage = false,
   title,
@@ -106,8 +108,9 @@ export function EventCard({
     }
   };
 
-  // Navegación inteligente: si tiene landing dedicada va a /e/[slug], si no a /events/[id]
-  const ctaHref = hasLandingPage && slug ? `/e/${slug}` : `/events/${id}`;
+  // Navegación inteligente y segura: si tiene landing va a /e/[slug], si no a /events/[publicUuid] (previniendo BOLA/IDOR)
+  const secureIdentifier = publicUuid || slug || id;
+  const ctaHref = hasLandingPage && slug ? `/e/${slug}` : `/events/${secureIdentifier}`;
   const ctaText = hasLandingPage && slug ? "Ver Experiencia" : "Comprar Entradas";
 
   return (

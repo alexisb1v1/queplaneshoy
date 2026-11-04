@@ -42,7 +42,7 @@ export function WatchlistSection() {
           <div className="flex-1 grid grid-cols-2 gap-4 w-full">
             {/* Tarjeta 1 */}
             <Link
-              href="/events/1"
+              href="/events"
               className="bg-white p-4 rounded-2xl border border-surface-variant shadow-xs rotate-3 hover:rotate-0 transition-transform duration-500 cursor-pointer block group"
             >
               <div className="w-full aspect-square rounded-xl overflow-hidden mb-3 relative">
@@ -62,7 +62,7 @@ export function WatchlistSection() {
 
             {/* Tarjeta 2 */}
             <Link
-              href="/events/4"
+              href="/events"
               className="bg-white p-4 rounded-2xl border border-surface-variant shadow-xs -rotate-2 hover:rotate-0 transition-transform duration-500 cursor-pointer mt-8 block group"
             >
               <div className="w-full aspect-square rounded-xl overflow-hidden mb-3 relative">

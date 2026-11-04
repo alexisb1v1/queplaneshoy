@@ -56,8 +56,9 @@ export function HeroCarousel() {
           if (featured && featured.length > 0) {
             resolvedSlides = featured.map((item) => {
               const categoryInfo = getCategoryById(item.category);
+              const secureId = item.publicUuid || item.slug || item.id;
               const targetUrl =
-                item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${item.id}`;
+                item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${secureId}`;
 
               return {
                 id: item.id,
@@ -85,8 +86,9 @@ export function HeroCarousel() {
             if (upcoming && upcoming.length > 0) {
               resolvedSlides = upcoming.slice(0, 3).map((item) => {
                 const categoryInfo = getCategoryById(item.category);
+                const secureId = item.publicUuid || item.slug || item.id;
                 const targetUrl =
-                  item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${item.id}`;
+                  item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${secureId}`;
 
                 return {
                   id: item.id,

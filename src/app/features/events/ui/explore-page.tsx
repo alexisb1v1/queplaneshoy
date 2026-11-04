@@ -942,7 +942,8 @@ export default function ExploreEventsPageComponent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredAndSortedEvents.map((ev) => {
               const isFav = !!favorites[ev.id];
-              const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${ev.id}`;
+              const secureId = ev.publicUuid || ev.slug || ev.id;
+              const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
               const ctaText = ev.hasLandingPage && ev.slug ? "Ver Experiencia" : "Comprar";
               const fallbackImage =
                 "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80";

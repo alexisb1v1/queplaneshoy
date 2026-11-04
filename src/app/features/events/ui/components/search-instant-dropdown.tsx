@@ -209,9 +209,10 @@ export function SearchInstantDropdown({
           {results.length > 0 ? (
             <div className="divide-y divide-surface-variant/40 max-h-80 overflow-y-auto">
               {results.map((item) => {
+                const secureId = item.publicUuid || item.slug || item.id;
                 const targetUrl = item.hasLandingPage && item.slug
                   ? `/e/${item.slug}`
-                  : `/events/${item.id}`;
+                  : `/events/${secureId}`;
 
                 return (
                   <Link

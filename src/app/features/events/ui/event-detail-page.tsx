@@ -112,9 +112,10 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
 
   const handleBuyTickets = (zoneId?: string) => {
     if (!event) return;
+    const targetEventId = event.publicUuid || event.id;
     const url = zoneId
-      ? `/checkout?eventId=${event.id}&zoneId=${zoneId}`
-      : `/checkout?eventId=${event.id}`;
+      ? `/checkout?eventId=${targetEventId}&zoneId=${zoneId}`
+      : `/checkout?eventId=${targetEventId}`;
     router.push(url);
   };
 

@@ -10,6 +10,7 @@ import { getEventDetailUseCase } from "../../events";
 import { EventDetailModel } from "../../events/models/event-detail.model";
 import { getCurrentUserUseCase } from "../../auth";
 import { UserModel } from "../../auth/models/user.model";
+import { apiClient } from "@/app/common/services/api-client";
 import { simulateCheckoutUseCase, getMyOrdersUseCase, SimulateCheckoutResponseModel } from "../index";
 
 interface TicketTier {
@@ -111,6 +112,7 @@ export default function PurchaseFlowPageComponent() {
   // Usuario autenticado en sesión y entradas ya compradas para este evento
   const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
   const [alreadyPurchasedTicketsCount, setAlreadyPurchasedTicketsCount] = useState<number>(0);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
   // Sincronizar sesión activa del comprador
   useEffect(() => {
@@ -119,13 +121,13 @@ export default function PurchaseFlowPageComponent() {
       if (stored) {
         setCurrentUser(JSON.parse(stored));
       }
-    } catch {}
+    } catch { }
 
     getCurrentUserUseCase.execute().match(
       (user) => {
         setCurrentUser(user);
       },
-      () => {}
+      () => { }
     );
   }, []);
 
@@ -145,7 +147,7 @@ export default function PurchaseFlowPageComponent() {
           });
           setAlreadyPurchasedTicketsCount(count);
         },
-        () => {}
+        () => { }
       );
     });
   }, [event, eventId]);
@@ -299,6 +301,13 @@ export default function PurchaseFlowPageComponent() {
       return;
     }
 
+    // Exigir autenticación activa antes de proceder al pago
+    const activeToken = apiClient.getToken();
+    if (!activeToken || !currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     setPaymentError(null);
 
@@ -306,15 +315,12 @@ export default function PurchaseFlowPageComponent() {
       .filter((t) => t.quantity > 0)
       .map((t) => ({ zoneId: t.id, quantity: t.quantity }));
 
-    const resolvedCustomerEmail =
-      currentUser?.email || "comprador@queplaneshoy.com";
-    const resolvedCustomerName = currentUser
-      ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
-      : "Comprador Oficial QPH";
+    const resolvedCustomerEmail = currentUser.email;
+    const resolvedCustomerName = `${currentUser.firstName} ${currentUser.lastName}`.trim() || currentUser.email;
 
     simulateCheckoutUseCase
       .execute({
-        eventId: event ? event.id : eventId || "1",
+        eventId: event ? (event.publicUuid || event.id) : eventId || "1",
         showId: selectedFunctionId,
         items: selectedItems,
         paymentMethod,
@@ -330,9 +336,13 @@ export default function PurchaseFlowPageComponent() {
         },
         (error) => {
           setIsProcessing(false);
+          if (error.code === 'UNAUTHORIZED' || error.message?.toLowerCase().includes('sesión')) {
+            setShowAuthModal(true);
+            return;
+          }
           setPaymentError(
             error.message ||
-              "La transacción ha sido rechazada por la pasarela de pagos. Por favor verifica tu saldo o prueba con otro medio de pago."
+            "La transacción ha sido rechazada por la pasarela de pagos. Por favor verifica tu saldo o prueba con otro medio de pago."
           );
         }
       );
@@ -428,7 +438,7 @@ export default function PurchaseFlowPageComponent() {
             </Link>
 
             <Link
-              href={event ? `/events/${event.id}` : "/"}
+              href={event ? `/events/${event.publicUuid || event.slug || event.id}` : "/"}
               className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors pl-4 border-l border-surface-variant"
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
@@ -513,11 +523,10 @@ export default function PurchaseFlowPageComponent() {
                             key={fn.id}
                             type="button"
                             onClick={() => setSelectedFunctionId(fn.id)}
-                            className={`p-3.5 rounded-xl text-left transition-all relative cursor-pointer ${
-                              isSelected
+                            className={`p-3.5 rounded-xl text-left transition-all relative cursor-pointer ${isSelected
                                 ? "border-2 border-electric-indigo bg-electric-indigo/5 shadow-md shadow-electric-indigo/10"
                                 : "border border-surface-variant hover:border-electric-indigo bg-surface-container-low/50 hover:bg-surface-gray"
-                            }`}
+                              }`}
                           >
                             {isSelected && (
                               <span className="absolute -top-2.5 right-3 bg-electric-indigo text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
@@ -525,9 +534,8 @@ export default function PurchaseFlowPageComponent() {
                               </span>
                             )}
                             <div
-                              className={`text-xs font-bold ${
-                                isSelected ? "text-electric-indigo" : "text-on-surface-variant"
-                              }`}
+                              className={`text-xs font-bold ${isSelected ? "text-electric-indigo" : "text-on-surface-variant"
+                                }`}
                             >
                               {fn.dateStr}
                             </div>
@@ -536,9 +544,8 @@ export default function PurchaseFlowPageComponent() {
                             </div>
                             <div className="text-[11px] mt-1 flex items-center gap-1 font-medium">
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  fn.statusType === "last_passes" ? "bg-vip-gold" : "bg-emerald-500"
-                                }`}
+                                className={`w-1.5 h-1.5 rounded-full ${fn.statusType === "last_passes" ? "bg-vip-gold" : "bg-emerald-500"
+                                  }`}
                               />
                               <span
                                 className={
@@ -580,32 +587,30 @@ export default function PurchaseFlowPageComponent() {
                     occupancyPercentage={
                       event?.zones && event.zones.length > 0
                         ? Math.min(
-                            98,
-                            Math.max(
-                              52,
-                              Math.round(
-                                ((event.zones.reduce(
-                                  (acc, z) => acc + (z.capacity - z.remainingTickets),
-                                  0
-                                )) /
-                                  (event.zones.reduce((acc, z) => acc + z.capacity, 0) || 1)) *
-                                  100
-                              )
+                          98,
+                          Math.max(
+                            52,
+                            Math.round(
+                              ((event.zones.reduce(
+                                (acc, z) => acc + (z.capacity - z.remainingTickets),
+                                0
+                              )) /
+                                (event.zones.reduce((acc, z) => acc + z.capacity, 0) || 1)) *
+                              100
                             )
                           )
+                        )
                         : 88
                     }
                   />
 
                   {/* Banner Oficial de Límites por Persona / Antirreventa */}
-                  <div className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${
-                    remainingUserQuotaForEvent <= 0
+                  <div className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${remainingUserQuotaForEvent <= 0
                       ? "bg-rose-50 border-rose-200 text-rose-900"
                       : "bg-electric-indigo/5 border-electric-indigo/20 text-deep-slate"
-                  }`}>
-                    <span className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${
-                      remainingUserQuotaForEvent <= 0 ? "text-rose-600" : "text-electric-indigo"
                     }`}>
+                    <span className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${remainingUserQuotaForEvent <= 0 ? "text-rose-600" : "text-electric-indigo"
+                      }`}>
                       {remainingUserQuotaForEvent <= 0 ? "block" : "verified_user"}
                     </span>
                     <div className="flex-1 space-y-1">
@@ -615,11 +620,10 @@ export default function PurchaseFlowPageComponent() {
                             ? "Límite Oficial de Entradas Alcanzado"
                             : "Política Oficial de Venta Antirreventa QPH"}
                         </span>
-                        <span className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${
-                          remainingUserQuotaForEvent <= 0
+                        <span className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${remainingUserQuotaForEvent <= 0
                             ? "bg-rose-100 text-rose-700"
                             : "bg-electric-indigo/10 text-electric-indigo"
-                        }`}>
+                          }`}>
                           Tope: {eventUserTicketLimit} entradas por persona
                         </span>
                       </div>
@@ -658,13 +662,12 @@ export default function PurchaseFlowPageComponent() {
                       return (
                         <div
                           key={tier.id}
-                          className={`p-5 rounded-2xl border-2 transition-all relative ${
-                            !tier.available
+                          className={`p-5 rounded-2xl border-2 transition-all relative ${!tier.available
                               ? "bg-white/60 border-surface-variant/70 opacity-70"
                               : isSelected
-                              ? "bg-white border-electric-indigo shadow-md shadow-electric-indigo/10"
-                              : "bg-white border-surface-variant hover:border-outline-variant"
-                          }`}
+                                ? "bg-white border-electric-indigo shadow-md shadow-electric-indigo/10"
+                                : "bg-white border-surface-variant hover:border-outline-variant"
+                            }`}
                         >
                           {isSelected && tier.available && (
                             <span className="absolute -top-3 right-4 bg-electric-indigo text-white text-[11px] font-bold px-3 py-0.5 rounded-full shadow-sm">
@@ -818,11 +821,10 @@ export default function PurchaseFlowPageComponent() {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("yape")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "yape"
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${paymentMethod === "yape"
                           ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
                           : "border-surface-variant bg-white hover:bg-surface-gray"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-700">
@@ -842,11 +844,10 @@ export default function PurchaseFlowPageComponent() {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("card")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "card"
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${paymentMethod === "card"
                           ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
                           : "border-surface-variant bg-white hover:bg-surface-gray"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-electric-indigo/20 flex items-center justify-center text-electric-indigo">
@@ -868,11 +869,10 @@ export default function PurchaseFlowPageComponent() {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("transfer")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "transfer"
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${paymentMethod === "transfer"
                           ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
                           : "border-surface-variant bg-white hover:bg-surface-gray"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-surface-gray flex items-center justify-center text-on-surface-variant">
@@ -894,11 +894,10 @@ export default function PurchaseFlowPageComponent() {
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("apple_pay")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "apple_pay"
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${paymentMethod === "apple_pay"
                           ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
                           : "border-surface-variant bg-white hover:bg-surface-gray"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-surface-gray flex items-center justify-center text-on-surface-variant">
@@ -943,248 +942,254 @@ export default function PurchaseFlowPageComponent() {
                       </div>
                     </div>
                     {!currentUser && (
-                      <Link
-                        href="/auth/login"
-                        className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1"
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthModal(true)}
+                        className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         Iniciar sesión <span className="material-symbols-outlined text-xs">arrow_forward</span>
-                      </Link>
+                      </button>
                     )}
-                  </div>
+                </div>
 
                   {/* Formulario y Caja de Protección */}
-                  <form onSubmit={handleSubmitPayment} className="space-y-6 pt-4">
-                    <div className="p-6 bg-surface-container-low rounded-xl border border-surface-variant space-y-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0">
-                          <span className="material-symbols-outlined text-[24px]">verified_user</span>
-                        </div>
-                        <div className="space-y-1">
-                          <h3 className="text-deep-slate text-sm font-bold">
-                            Pasarela de pago oficial protegida y cifrada
-                          </h3>
-                          <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed">
-                            Al confirmar, tus entradas se reservarán y se emitirán con garantía de acceso criptográfico Ed25519 intransferible.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 pt-3 text-xs text-on-surface-variant border-t border-surface-variant">
-                        <span className="material-symbols-outlined text-sm text-electric-indigo">lock</span>
-                        <span>Cifrado TLS de 256 bits y certificación PCI DSS de máxima seguridad</span>
-                      </div>
+              <form onSubmit={handleSubmitPayment} className="space-y-6 pt-4">
+                <div className="p-6 bg-surface-container-low rounded-xl border border-surface-variant space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0">
+                      <span className="material-symbols-outlined text-[24px]">verified_user</span>
                     </div>
+                    <div className="space-y-1">
+                      <h3 className="text-deep-slate text-sm font-bold">
+                        Pasarela de pago oficial protegida y cifrada
+                      </h3>
+                      <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed">
+                        Al confirmar, tus entradas se reservarán y se emitirán con garantía de acceso criptográfico Ed25519 intransferible.
+                      </p>
+                    </div>
+                  </div>
 
-                    <button
-                      type="submit"
-                      disabled={isProcessing || totalTickets === 0}
-                      className="w-full py-4 bg-electric-indigo hover:bg-primary text-white rounded-xl font-bold text-base sm:text-lg transition-all shadow-lg shadow-electric-indigo/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Emitiendo entradas oficiales...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined">lock</span>
-                          <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
+                  <div className="flex items-center gap-3 pt-3 text-xs text-on-surface-variant border-t border-surface-variant">
+                    <span className="material-symbols-outlined text-sm text-electric-indigo">lock</span>
+                    <span>Cifrado TLS de 256 bits y certificación PCI DSS de máxima seguridad</span>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* -------------------------------------------------------------------
+                <button
+                  type="submit"
+                  disabled={isProcessing || totalTickets === 0}
+                  className="w-full py-4 bg-electric-indigo hover:bg-primary text-white rounded-xl font-bold text-base sm:text-lg transition-all shadow-lg shadow-electric-indigo/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Emitiendo entradas oficiales...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined">lock</span>
+                      <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+              )}
+          </div>
+
+          {/* -------------------------------------------------------------------
                 COLUMNA DERECHA: STICKY ORDER SUMMARY
                ------------------------------------------------------------------- */}
-            <div className="lg:col-span-4">
-              <div className="sticky top-28 space-y-6">
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-surface-variant">
-                  {/* Mini Banner del Evento */}
-                  <div className="relative h-32 overflow-hidden">
-                    <img
-                      alt={eventTitle}
-                      className="w-full h-full object-cover"
-                      src={eventBanner}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-deep-slate to-transparent opacity-80" />
-                    <div className="absolute bottom-3 left-4 right-4 text-white">
-                      <span className="inline-block bg-electric-indigo text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase mb-1">
-                        {event?.category || "Venta Oficial"}
-                      </span>
-                      <h3 className="text-base text-white font-bold leading-tight line-clamp-1">
-                        {eventTitle}
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    {/* Info del Show Seleccionado */}
-                    <div className="space-y-2 pb-5 border-b border-surface-variant text-xs">
-                      <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
-                        <span className="material-symbols-outlined text-electric-indigo text-[18px]">
-                          calendar_month
-                        </span>
-                        <span className="capitalize">
-                          {selectedFunction.dateStr} • {selectedFunction.timeStr}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
-                        <span className="material-symbols-outlined text-electric-indigo text-[18px]">
-                          location_on
-                        </span>
-                        <span className="truncate">{eventVenue}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
-                        <span className="material-symbols-outlined text-electric-indigo text-[18px]">
-                          airline_seat_recline_extra
-                        </span>
-                        <span>
-                          Zona:{" "}
-                          {ticketTiers.find((t) => t.quantity > 0)?.name || "Ninguna zona seleccionada"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Desglose de Precios en Soles */}
-                    <div className="py-5 border-b border-surface-variant space-y-3">
-                      {ticketTiers
-                        .filter((t) => t.quantity > 0)
-                        .map((t) => (
-                          <div key={t.id} className="flex justify-between items-start text-sm">
-                            <div className="flex flex-col">
-                              <span className="font-bold text-deep-slate">
-                                {t.quantity}x {t.name}
-                              </span>
-                              <span className="text-xs text-on-surface-variant">
-                                S/. {t.price.toFixed(2)} por entrada
-                              </span>
-                            </div>
-                            <span className="font-bold text-deep-slate">
-                              S/. {(t.price * t.quantity).toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-
-                      {totalTickets === 0 && (
-                        <p className="text-xs text-platinum-silver italic">
-                          Aún no has añadido entradas a tu reserva.
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Total Final */}
-                    <div className="py-5 flex justify-between items-center">
-                      <div className="flex flex-col">
-                        <span className="text-deep-slate text-xl font-bold">Total</span>
-                        <span className="text-[11px] text-platinum-silver">
-                          IGV y emisión digital incluidos
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-3xl font-black text-electric-indigo">
-                          S/. {grandTotal.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Botón CTA al Paso de Pago (En Paso 1) */}
-                    {currentStep === 1 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (totalTickets === 0) {
-                            alert("Por favor selecciona al menos una entrada para continuar.");
-                            return;
-                          }
-                          if (totalTickets > remainingUserQuotaForEvent) {
-                            alert(
-                              `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`
-                            );
-                            return;
-                          }
-                          setCurrentStep(2);
-                        }}
-                        disabled={totalTickets === 0 || remainingUserQuotaForEvent <= 0}
-                        className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
-                      >
-                        <span>
-                          {remainingUserQuotaForEvent <= 0
-                            ? "Límite Oficial Alcanzado"
-                            : "Continuar al Paso de Pago"}
-                        </span>
-                        {remainingUserQuotaForEvent > 0 && (
-                          <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
-                            arrow_forward
-                          </span>
-                        )}
-                      </button>
-                    )}
-
-                    {/* Botón CTA de Pago (En Paso 2) */}
-                    {currentStep === 2 && (
-                      <button
-                        type="button"
-                        onClick={handleSubmitPayment}
-                        disabled={isProcessing || totalTickets === 0}
-                        className="w-full py-4 bg-electric-indigo hover:bg-primary text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined">lock</span>
-                        <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
-                      </button>
-                    )}
-
-                    {/* Métodos Aceptados */}
-                    <div className="mt-5 pt-4 border-t border-surface-variant">
-                      <div className="text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
-                        Métodos oficiales aceptados:
-                      </div>
-                      <div className="flex flex-wrap items-center justify-center gap-2">
-                        <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-purple-700 border border-surface-variant">
-                          Yape / Plin
-                        </span>
-                        <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
-                          💳 VISA / Mastercard
-                        </span>
-                        <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
-                          Apple Pay
-                        </span>
-                        <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
-                          Google Pay
-                        </span>
-                      </div>
-                    </div>
+          <div className="lg:col-span-4">
+            <div className="sticky top-28 space-y-6">
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-surface-variant">
+                {/* Mini Banner del Evento */}
+                <div className="relative h-32 overflow-hidden">
+                  <img
+                    alt={eventTitle}
+                    className="w-full h-full object-cover"
+                    src={eventBanner}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep-slate to-transparent opacity-80" />
+                  <div className="absolute bottom-3 left-4 right-4 text-white">
+                    <span className="inline-block bg-electric-indigo text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase mb-1">
+                      {event?.category || "Venta Oficial"}
+                    </span>
+                    <h3 className="text-base text-white font-bold leading-tight line-clamp-1">
+                      {eventTitle}
+                    </h3>
                   </div>
                 </div>
 
-                {/* Sellos de Seguridad */}
-                <div className="p-4 border border-surface-variant rounded-xl border-dashed bg-surface-container-low/50 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
-                    <span className="material-symbols-outlined text-electric-indigo text-lg">
-                      verified_user
-                    </span>
-                    <span>Garantía de entradas 100% auténticas QPH</span>
+                <div className="p-6">
+                  {/* Info del Show Seleccionado */}
+                  <div className="space-y-2 pb-5 border-b border-surface-variant text-xs">
+                    <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
+                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                        calendar_month
+                      </span>
+                      <span className="capitalize">
+                        {selectedFunction.dateStr} • {selectedFunction.timeStr}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
+                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                        location_on
+                      </span>
+                      <span className="truncate">{eventVenue}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
+                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                        airline_seat_recline_extra
+                      </span>
+                      <span>
+                        Zona:{" "}
+                        {ticketTiers.find((t) => t.quantity > 0)?.name || "Ninguna zona seleccionada"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
-                    <span className="material-symbols-outlined text-electric-indigo text-lg">
-                      lock
-                    </span>
-                    <span>Reserva segura cifrada de extremo a extremo</span>
+
+                  {/* Desglose de Precios en Soles */}
+                  <div className="py-5 border-b border-surface-variant space-y-3">
+                    {ticketTiers
+                      .filter((t) => t.quantity > 0)
+                      .map((t) => (
+                        <div key={t.id} className="flex justify-between items-start text-sm">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-deep-slate">
+                              {t.quantity}x {t.name}
+                            </span>
+                            <span className="text-xs text-on-surface-variant">
+                              S/. {t.price.toFixed(2)} por entrada
+                            </span>
+                          </div>
+                          <span className="font-bold text-deep-slate">
+                            S/. {(t.price * t.quantity).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+
+                    {totalTickets === 0 && (
+                      <p className="text-xs text-platinum-silver italic">
+                        Aún no has añadido entradas a tu reserva.
+                      </p>
+                    )}
                   </div>
+
+                  {/* Total Final */}
+                  <div className="py-5 flex justify-between items-center">
+                    <div className="flex flex-col">
+                      <span className="text-deep-slate text-xl font-bold">Total</span>
+                      <span className="text-[11px] text-platinum-silver">
+                        IGV y emisión digital incluidos
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-3xl font-black text-electric-indigo">
+                        S/. {grandTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Botón CTA al Paso de Pago (En Paso 1) */}
+                  {currentStep === 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (totalTickets === 0) {
+                          alert("Por favor selecciona al menos una entrada para continuar.");
+                          return;
+                        }
+                        if (totalTickets > remainingUserQuotaForEvent) {
+                          alert(
+                            `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`
+                          );
+                          return;
+                        }
+                        const activeToken = apiClient.getToken();
+                        if (!activeToken || !currentUser) {
+                          setShowAuthModal(true);
+                          return;
+                        }
+                        setCurrentStep(2);
+                      }}
+                      disabled={totalTickets === 0 || remainingUserQuotaForEvent <= 0}
+                      className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
+                    >
+                      <span>
+                        {remainingUserQuotaForEvent <= 0
+                          ? "Límite Oficial Alcanzado"
+                          : "Continuar al Paso de Pago"}
+                      </span>
+                      {remainingUserQuotaForEvent > 0 && (
+                        <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
+                          arrow_forward
+                        </span>
+                      )}
+                    </button>
+                  )}
+
+                  {/* Botón CTA de Pago (En Paso 2) */}
+                  {currentStep === 2 && (
+                    <button
+                      type="button"
+                      onClick={handleSubmitPayment}
+                      disabled={isProcessing || totalTickets === 0}
+                      className="w-full py-4 bg-electric-indigo hover:bg-primary text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined">lock</span>
+                      <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
+                    </button>
+                  )}
+
+                  {/* Métodos Aceptados */}
+                  <div className="mt-5 pt-4 border-t border-surface-variant">
+                    <div className="text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
+                      Métodos oficiales aceptados:
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-purple-700 border border-surface-variant">
+                        Yape / Plin
+                      </span>
+                      <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
+                        💳 VISA / Mastercard
+                      </span>
+                      <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
+                        Apple Pay
+                      </span>
+                      <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
+                        Google Pay
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sellos de Seguridad */}
+              <div className="p-4 border border-surface-variant rounded-xl border-dashed bg-surface-container-low/50 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
+                  <span className="material-symbols-outlined text-electric-indigo text-lg">
+                    verified_user
+                  </span>
+                  <span>Garantía de entradas 100% auténticas QPH</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
+                  <span className="material-symbols-outlined text-electric-indigo text-lg">
+                    lock
+                  </span>
+                  <span>Reserva segura cifrada de extremo a extremo</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </main>
+    </div>
+      </main >
 
-      {/* =========================================================================
+  {/* =========================================================================
           FOOTER DEL PROCESO DE COMPRA
          ========================================================================= */}
-      <footer className="bg-deep-slate text-surface-container-lowest mt-16 border-t border-white/10">
+    < footer className = "bg-deep-slate text-surface-container-lowest mt-16 border-t border-white/10" >
         <div className="w-full py-12 px-4 sm:px-8 max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -1236,7 +1241,54 @@ export default function PurchaseFlowPageComponent() {
         <div className="border-t border-white/10 w-full px-4 sm:px-8 py-6 text-center text-platinum-silver text-xs">
           © 2026 queplaneshoy. Todos los derechos reservados. Boletería oficial con tecnología criptográfica.
         </div>
-      </footer>
-    </div>
+      </footer >
+
+    {/* MODAL: IDENTIFICACIÓN OBLIGATORIA PARA COMPRA Y EMISIÓN DE TICKETS */ }
+  {
+    showAuthModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-surface-variant space-y-5 text-center">
+          <div className="w-16 h-16 bg-electric-indigo/10 text-electric-indigo rounded-2xl flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-3xl">badge</span>
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-deep-slate tracking-tight mb-2">
+              Inicia sesión para emitir tus entradas 🎟️
+            </h3>
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              Por seguridad y para garantizar la validez legal de tus boletos con código QR único e intransferible, tus entradas deben asociarse directamente a tu cuenta oficial.
+            </p>
+          </div>
+          <div className="space-y-2.5 pt-2">
+            <Link
+              href={`/login?redirect=${encodeURIComponent(
+                typeof window !== 'undefined' ? window.location.pathname + window.location.search : ''
+              )}`}
+              className="w-full qph-btn-primary py-3 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            >
+              <span className="material-symbols-outlined text-[18px]">login</span>
+              <span>Iniciar Sesión</span>
+            </Link>
+            <Link
+              href={`/register?redirect=${encodeURIComponent(
+                typeof window !== 'undefined' ? window.location.pathname + window.location.search : ''
+              )}`}
+              className="w-full py-2.5 px-4 rounded-xl bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Crear Cuenta Nueva</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowAuthModal(false)}
+              className="w-full py-2 text-xs font-semibold text-on-surface-variant hover:text-deep-slate transition-colors cursor-pointer"
+            >
+              Volver a la selección de entradas
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+    </div >
   );
 }

@@ -9,6 +9,8 @@ const USER_STORAGE_KEY = 'qph_user';
 interface AuthResponseDto {
   token: string;
   accessToken?: string;
+  refreshToken?: string;
+  expiresInSeconds?: number;
   user: {
     id: string;
     email: string;
@@ -150,7 +152,7 @@ export class AuthRepositoryImpl implements AuthRepository {
   logout(): ResultAsync<void, DomainError> {
     return ResultAsync.fromPromise(
       Promise.resolve().then(() => {
-        apiClient.clearToken();
+        apiClient.clearTokens();
         if (typeof window !== 'undefined') {
           localStorage.removeItem(USER_STORAGE_KEY);
         }
