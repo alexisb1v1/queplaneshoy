@@ -335,7 +335,7 @@ export function MobileBottomNav() {
                           </h4>
                           <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
                             <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
-                            <span className="truncate">{ev.venue || ev.address || "Perú"}</span>
+                            <span className="truncate">{ev.venue || ev.city || "Perú"}</span>
                           </p>
                         </div>
 
