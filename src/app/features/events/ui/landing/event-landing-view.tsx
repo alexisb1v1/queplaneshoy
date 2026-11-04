@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { EventLandingModel } from "../../models/event-landing.model";
+import { formatAgeRestriction } from "../../utils/age-restriction";
 import { LandingPreloader } from "./components/landing-preloader";
 import { LandingHeader } from "./components/landing-header";
 import { VideoTeaserModal } from "./components/video-teaser-modal";
@@ -94,6 +95,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
         minute: "2-digit",
       })
     : null;
+
+  // Badge humanizado de restricción de edad
+  const ageBadge = formatAgeRestriction(event.ageRestriction);
 
   // Copiar enlace oficial
   const handleCopyLink = () => {
@@ -497,19 +501,19 @@ export function EventLandingView({ event }: EventLandingViewProps) {
             )}
 
             {/* Barra de 1 Clic para Copiar Enlace Oficial */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/80 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="space-y-0.5 text-center sm:text-left">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="w-full max-w-full overflow-hidden p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+              <div className="w-full min-w-0 flex-1 text-center sm:text-left space-y-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                   Enlace Oficial del Espectáculo
                 </span>
-                <p className="font-mono text-xs text-white/90 truncate max-w-md sm:max-w-lg">
+                <p className="font-mono text-xs text-white/90 break-all select-all leading-relaxed bg-black/40 px-3 py-2 rounded-lg border border-white/5">
                   queplaneshoy.com/e/{event.slug}
                 </p>
               </div>
 
               <button
                 onClick={handleCopyLink}
-                className="shrink-0 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer border border-white/10 active:scale-95"
+                className="w-full sm:w-auto shrink-0 justify-center px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer border border-white/10 active:scale-95 shadow-sm"
               >
                 <span className="material-symbols-outlined text-base">
                   {isCopied ? "done" : "content_copy"}
@@ -526,23 +530,40 @@ export function EventLandingView({ event }: EventLandingViewProps) {
            ============================================================== */}
         <section
           id="landing-legales"
-          className="w-full py-6 bg-black/60 border-t border-white/10 text-xs text-slate-400"
+          className="w-full py-8 bg-black/80 border-t border-white/10 text-xs text-slate-300"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-electric-indigo">info</span>
-              Restricción: <strong className="text-white/90">{event.ageRestriction || "Toda edad"}</strong>
-            </span>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Recuadro / Badge Amigable de Restricción */}
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+              <span className="text-slate-400 font-medium">Restricción de acceso:</span>
+              <div
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold text-xs border shadow-sm ${
+                  ageBadge.variant === "green"
+                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                    : ageBadge.variant === "amber"
+                    ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                    : ageBadge.variant === "indigo"
+                    ? "bg-electric-indigo/20 text-indigo-200 border-electric-indigo/40"
+                    : "bg-white/10 text-white/90 border-white/20"
+                }`}
+                title={ageBadge.description}
+              >
+                <span className="material-symbols-outlined text-base">
+                  {ageBadge.icon}
+                </span>
+                <span>{ageBadge.label}</span>
+              </div>
+            </div>
 
             {event.termsAndConditionsUrl && (
               <a
                 href={event.termsAndConditionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-electric-indigo hover:underline flex items-center gap-1 font-semibold"
+                className="text-electric-indigo hover:text-white hover:underline flex items-center gap-1.5 font-bold transition-colors"
               >
-                <span className="material-symbols-outlined text-sm">description</span>
-                Términos y Bases Legales (PDF)
+                <span className="material-symbols-outlined text-base">description</span>
+                <span>Términos y Bases Legales (PDF)</span>
               </a>
             )}
           </div>

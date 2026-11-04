@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PaymentSuccessScreen from "./payment-success-screen";
@@ -293,6 +293,85 @@ export default function PurchaseFlowPageComponent() {
 
   const primarySelectedTier = ticketTiers.find((t) => t.quantity > 0) || ticketTiers[0];
 
+  // Referencia al contenedor del botón de acción del resumen para detectar visibilidad en móvil (Paso 1 y Paso 2)
+  const summaryCtaContainerRef = useRef<HTMLDivElement | null>(null);
+  const [isSummaryCtaVisible, setIsSummaryCtaVisible] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (currentStep === 3) {
+      setIsSummaryCtaVisible(false);
+      return;
+    }
+
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+      return;
+    }
+
+    const target = summaryCtaContainerRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSummaryCtaVisible(entry.isIntersecting);
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "0px",
+      }
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [currentStep, ticketTiers, loadingEvent]);
+
+  // Mostrar el footer flotante en móvil en pasos 1 y 2 mientras no sea visible el botón oficial del resumen
+  const showMobileOrderFooter = (currentStep === 1 || currentStep === 2) && !isSummaryCtaVisible;
+
+  // Auto-scroll hacia la sección de método de pago al ingresar al Paso 2
+  useEffect(() => {
+    if (currentStep === 2) {
+      const timer = setTimeout(() => {
+        const paymentSection = document.getElementById("payment-methods-section");
+        if (paymentSection) {
+          paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Lógica para avanzar al Paso 2 desde el botón nativo o desde el footer flotante móvil
+  const handleProceedToStep2 = () => {
+    if (totalTickets === 0) {
+      alert("Por favor selecciona al menos una entrada para continuar.");
+      return;
+    }
+    if (totalTickets > remainingUserQuotaForEvent) {
+      alert(
+        `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`
+      );
+      return;
+    }
+    const activeToken = apiClient.getToken();
+    if (!activeToken || !currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
+    setCurrentStep(2);
+    setTimeout(() => {
+      const paymentSection = document.getElementById("payment-methods-section");
+      if (paymentSection) {
+        paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 50);
+  };
+
   // Simulación de Envío de Pago mediante la Pasarela Oficial
   const handleSubmitPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -467,7 +546,7 @@ export default function PurchaseFlowPageComponent() {
       {/* =========================================================================
           CONTENIDO PRINCIPAL
          ========================================================================= */}
-      <main className="flex-grow w-full max-w-container-max mx-auto px-4 sm:px-8 py-8 sm:py-12">
+      <main className="flex-grow w-full max-w-container-max mx-auto px-4 sm:px-8 pt-8 sm:pt-12 pb-28 lg:pb-12">
         <div className="max-w-container-max mx-auto">
           {/* STEPPER DE PROGRESO DE 3 PASOS */}
           <CheckoutStepper
@@ -646,7 +725,7 @@ export default function PurchaseFlowPageComponent() {
                   </div>
 
                   {/* Selector de Tipos de Entradas y Cantidades */}
-                  <div className="space-y-4">
+                  <div id="tickets-selector-section" className="space-y-4">
                     <h3 className="text-lg font-bold text-deep-slate">
                       Selecciona tus Entradas
                     </h3>
@@ -756,7 +835,10 @@ export default function PurchaseFlowPageComponent() {
                   PASO 2: PASARELA DE PAGOS Y MÉTODOS SEGUROS
                  ================================================================= */}
               {currentStep === 2 && (
-                <div className="space-y-8 bg-white p-6 sm:p-8 rounded-2xl border border-surface-variant shadow-sm">
+                <div
+                  id="payment-methods-section"
+                  className="space-y-8 bg-white p-6 sm:p-8 rounded-2xl border border-surface-variant shadow-sm scroll-mt-24 md:scroll-mt-28"
+                >
                   <div>
                     <h1 className="text-2xl font-black text-deep-slate mb-2">
                       Método de Pago
@@ -952,55 +1034,35 @@ export default function PurchaseFlowPageComponent() {
                     )}
                 </div>
 
-                  {/* Formulario y Caja de Protección */}
-              <form onSubmit={handleSubmitPayment} className="space-y-6 pt-4">
-                <div className="p-6 bg-surface-container-low rounded-xl border border-surface-variant space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0">
-                      <span className="material-symbols-outlined text-[24px]">verified_user</span>
+                  {/* Caja Informativa de Protección y Cifrado */}
+                  <div className="p-6 bg-surface-container-low rounded-xl border border-surface-variant space-y-4 pt-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0">
+                        <span className="material-symbols-outlined text-[24px]">verified_user</span>
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-deep-slate text-sm font-bold">
+                          Pasarela de pago oficial protegida y cifrada
+                        </h3>
+                        <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed">
+                          Al confirmar, tus entradas se reservarán y se emitirán con garantía de acceso criptográfico Ed25519 intransferible.
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="text-deep-slate text-sm font-bold">
-                        Pasarela de pago oficial protegida y cifrada
-                      </h3>
-                      <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed">
-                        Al confirmar, tus entradas se reservarán y se emitirán con garantía de acceso criptográfico Ed25519 intransferible.
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 pt-3 text-xs text-on-surface-variant border-t border-surface-variant">
-                    <span className="material-symbols-outlined text-sm text-electric-indigo">lock</span>
-                    <span>Cifrado TLS de 256 bits y certificación PCI DSS de máxima seguridad</span>
+                    <div className="flex items-center gap-3 pt-3 text-xs text-on-surface-variant border-t border-surface-variant">
+                      <span className="material-symbols-outlined text-sm text-electric-indigo">lock</span>
+                      <span>Cifrado TLS de 256 bits y certificación PCI DSS de máxima seguridad</span>
+                    </div>
                   </div>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={isProcessing || totalTickets === 0}
-                  className="w-full py-4 bg-electric-indigo hover:bg-primary text-white rounded-xl font-bold text-base sm:text-lg transition-all shadow-lg shadow-electric-indigo/20 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Emitiendo entradas oficiales...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="material-symbols-outlined">lock</span>
-                      <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
               )}
-          </div>
+            </div>
 
-          {/* -------------------------------------------------------------------
+            {/* -------------------------------------------------------------------
                 COLUMNA DERECHA: STICKY ORDER SUMMARY
                ------------------------------------------------------------------- */}
-          <div className="lg:col-span-4">
+            <div className="lg:col-span-4">
             <div className="sticky top-28 space-y-6">
               <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-surface-variant">
                 {/* Mini Banner del Evento */}
@@ -1091,56 +1153,51 @@ export default function PurchaseFlowPageComponent() {
                     </div>
                   </div>
 
-                  {/* Botón CTA al Paso de Pago (En Paso 1) */}
-                  {currentStep === 1 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (totalTickets === 0) {
-                          alert("Por favor selecciona al menos una entrada para continuar.");
-                          return;
-                        }
-                        if (totalTickets > remainingUserQuotaForEvent) {
-                          alert(
-                            `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`
-                          );
-                          return;
-                        }
-                        const activeToken = apiClient.getToken();
-                        if (!activeToken || !currentUser) {
-                          setShowAuthModal(true);
-                          return;
-                        }
-                        setCurrentStep(2);
-                      }}
-                      disabled={totalTickets === 0 || remainingUserQuotaForEvent <= 0}
-                      className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
-                    >
-                      <span>
-                        {remainingUserQuotaForEvent <= 0
-                          ? "Límite Oficial Alcanzado"
-                          : "Continuar al Paso de Pago"}
-                      </span>
-                      {remainingUserQuotaForEvent > 0 && (
-                        <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
-                          arrow_forward
+                  {/* Contenedor Observable del Botón de Acción del Resumen (Paso 1 y Paso 2) */}
+                  <div ref={summaryCtaContainerRef} className="w-full">
+                    {/* Botón CTA al Paso de Pago (En Paso 1) */}
+                    {currentStep === 1 && (
+                      <button
+                        type="button"
+                        onClick={handleProceedToStep2}
+                        disabled={totalTickets === 0 || remainingUserQuotaForEvent <= 0}
+                        className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
+                      >
+                        <span>
+                          {remainingUserQuotaForEvent <= 0
+                            ? "Límite Oficial Alcanzado"
+                            : "Continuar al Paso de Pago"}
                         </span>
-                      )}
-                    </button>
-                  )}
+                        {remainingUserQuotaForEvent > 0 && (
+                          <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
+                            arrow_forward
+                          </span>
+                        )}
+                      </button>
+                    )}
 
-                  {/* Botón CTA de Pago (En Paso 2) */}
-                  {currentStep === 2 && (
-                    <button
-                      type="button"
-                      onClick={handleSubmitPayment}
-                      disabled={isProcessing || totalTickets === 0}
-                      className="w-full py-4 bg-electric-indigo hover:bg-primary text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined">lock</span>
-                      <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
-                    </button>
-                  )}
+                    {/* Botón CTA de Pago (En Paso 2 - Lado Derecho en Web) */}
+                    {currentStep === 2 && (
+                      <button
+                        type="button"
+                        onClick={handleSubmitPayment}
+                        disabled={isProcessing || totalTickets === 0}
+                        className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-50 text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Emitiendo entradas oficiales...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined">lock</span>
+                            <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
 
                   {/* Métodos Aceptados */}
                   <div className="mt-5 pt-4 border-t border-surface-variant">
@@ -1183,13 +1240,13 @@ export default function PurchaseFlowPageComponent() {
             </div>
           </div>
         </div>
-    </div>
-      </main >
+      </div>
+    </main>
 
-  {/* =========================================================================
+      {/* =========================================================================
           FOOTER DEL PROCESO DE COMPRA
          ========================================================================= */}
-    < footer className = "bg-deep-slate text-surface-container-lowest mt-16 border-t border-white/10" >
+      <footer className="bg-deep-slate text-surface-container-lowest mt-16 border-t border-white/10">
         <div className="w-full py-12 px-4 sm:px-8 max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -1241,11 +1298,10 @@ export default function PurchaseFlowPageComponent() {
         <div className="border-t border-white/10 w-full px-4 sm:px-8 py-6 text-center text-platinum-silver text-xs">
           © 2026 queplaneshoy. Todos los derechos reservados. Boletería oficial con tecnología criptográfica.
         </div>
-      </footer >
+      </footer>
 
-    {/* MODAL: IDENTIFICACIÓN OBLIGATORIA PARA COMPRA Y EMISIÓN DE TICKETS */ }
-  {
-    showAuthModal && (
+      {/* MODAL: IDENTIFICACIÓN OBLIGATORIA PARA COMPRA Y EMISIÓN DE TICKETS */}
+      {showAuthModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
         <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-surface-variant space-y-5 text-center">
           <div className="w-16 h-16 bg-electric-indigo/10 text-electric-indigo rounded-2xl flex items-center justify-center mx-auto">
@@ -1289,6 +1345,79 @@ export default function PurchaseFlowPageComponent() {
       </div>
     )
   }
-    </div >
+
+      {/* =========================================================================
+          FOOTER FLOTANTE MÓVIL: TOTAL DE COMPRA SEGÚN SELECCIÓN (SOLO MÓVIL)
+          Muestra el total en tiempo real y desaparece automáticamente cuando el
+          botón "Continuar al Paso de Pago" entra en pantalla (IntersectionObserver).
+         ========================================================================= */}
+      <aside
+        aria-label="Total de la compra en versión móvil"
+        className={`fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-md border-t border-surface-variant shadow-[0_-4px_25px_rgba(0,0,0,0.12)] px-4 py-3 transition-all duration-300 ease-in-out ${
+          showMobileOrderFooter
+            ? "translate-y-0 opacity-100 pointer-events-auto"
+            : "translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+              Total de la orden
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-black text-electric-indigo tracking-tight">
+                S/. {grandTotal.toFixed(2)}
+              </span>
+              <span className="text-[11px] text-platinum-silver font-medium">
+                ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
+              </span>
+            </div>
+          </div>
+
+          {/* Botón CTA en Móvil según el Paso Actual */}
+          {currentStep === 1 ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (totalTickets === 0) {
+                  const selector = document.getElementById("tickets-selector-section");
+                  if (selector) {
+                    selector.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                  return;
+                }
+                summaryCtaContainerRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }}
+              className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer"
+            >
+              <span>{totalTickets === 0 ? "Elegir entradas" : "Continuar"}</span>
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmitPayment}
+              disabled={isProcessing || totalTickets === 0}
+              className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Procesando...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-base">lock</span>
+                  <span>Confirmar y Pagar</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </aside>
+    </div>
   );
 }

@@ -521,21 +521,21 @@ export default function ExploreEventsPageComponent() {
          ========================================================================= */}
       <div
         ref={filterBarRef}
-        className="sticky top-20 z-40 bg-white/95 backdrop-blur-md border-b border-surface-variant/80 py-3 shadow-xs"
+        className="sticky top-16 md:top-20 z-40 bg-white/95 backdrop-blur-md border-b border-surface-variant/80 py-2.5 sm:py-3 shadow-xs"
       >
-        <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3">
+        <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 overflow-x-auto sm:overflow-visible qph-hide-scrollbar">
           
-          {/* Grupo de Filtros Desplegables (Pills) */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Grupo de Filtros Desplegables (Pills en 1 fila horizontal deslizable en móvil) */}
+          <div className="flex items-center gap-2 flex-nowrap sm:flex-wrap flex-shrink-0">
             
             {/* PILL 1: CUÁNDO (FECHAS) */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 type="button"
                 onClick={() =>
                   setActiveDropdown(activeDropdown === "date" ? null : "date")
                 }
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap ${
                   dateFilter !== "all"
                     ? "bg-electric-indigo text-white border-electric-indigo shadow-sm shadow-electric-indigo/25"
                     : "bg-surface-gray hover:bg-surface-container text-deep-slate border-surface-variant"
@@ -633,13 +633,13 @@ export default function ExploreEventsPageComponent() {
             </div>
 
             {/* PILL 2: CATEGORÍA (DESPLEGABLE) */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 type="button"
                 onClick={() =>
                   setActiveDropdown(activeDropdown === "category" ? null : "category")
                 }
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap ${
                   selectedCategory !== "TODOS"
                     ? "bg-electric-indigo text-white border-electric-indigo shadow-sm shadow-electric-indigo/25"
                     : "bg-surface-gray hover:bg-surface-container text-deep-slate border-surface-variant"
@@ -692,13 +692,13 @@ export default function ExploreEventsPageComponent() {
             </div>
 
             {/* PILL 3: UBICACIÓN (CIUDADES DE PERÚ) */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 type="button"
                 onClick={() =>
                   setActiveDropdown(activeDropdown === "city" ? null : "city")
                 }
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap ${
                   selectedCity !== "Todas" && selectedCity !== "Todos"
                     ? "bg-electric-indigo text-white border-electric-indigo shadow-sm shadow-electric-indigo/25"
                     : "bg-surface-gray hover:bg-surface-container text-deep-slate border-surface-variant"
@@ -769,13 +769,13 @@ export default function ExploreEventsPageComponent() {
             </div>
 
             {/* PILL 4: PRESUPUESTO / PRECIO */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 type="button"
                 onClick={() =>
                   setActiveDropdown(activeDropdown === "price" ? null : "price")
                 }
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap ${
                   minPrice > 0 || maxPrice < 500
                     ? "bg-electric-indigo text-white border-electric-indigo shadow-sm shadow-electric-indigo/25"
                     : "bg-surface-gray hover:bg-surface-container text-deep-slate border-surface-variant"
@@ -854,7 +854,7 @@ export default function ExploreEventsPageComponent() {
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-label-bold text-electric-indigo hover:bg-electric-indigo/10 border border-electric-indigo/20 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-label-bold text-electric-indigo hover:bg-electric-indigo/10 border border-electric-indigo/20 transition-colors cursor-pointer flex-shrink-0 whitespace-nowrap"
               >
                 <span className="material-symbols-outlined text-[15px]">close</span>
                 <span>Limpiar filtros ({activeFiltersCount})</span>
@@ -864,15 +864,15 @@ export default function ExploreEventsPageComponent() {
           </div>
 
           {/* Lado Derecho: Ordenamiento */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-[11px] font-label-bold text-on-surface-variant uppercase hidden sm:inline">
               Ordenar por:
             </span>
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortByType)}
-                className="bg-surface-gray hover:bg-surface-container border border-surface-variant rounded-xl py-2 pl-3 pr-7 text-xs font-bold text-deep-slate focus:outline-none cursor-pointer appearance-none shadow-2xs"
+                className="bg-surface-gray hover:bg-surface-container border border-surface-variant rounded-xl py-2 pl-3 pr-7 text-xs font-bold text-deep-slate focus:outline-none cursor-pointer appearance-none shadow-2xs whitespace-nowrap"
               >
                 <option value="date_asc">Más próximos</option>
                 <option value="price_asc">Precio: Menor a Mayor</option>
@@ -891,7 +891,7 @@ export default function ExploreEventsPageComponent() {
       {/* =========================================================================
           3. CATÁLOGO A PANTALLA COMPLETA (FULL-WIDTH GRID - 3 A 4 COLUMNAS)
          ========================================================================= */}
-      <main className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <main className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-32 sm:py-10">
         
         {/* Chip de búsqueda por texto activa si viene desde el Navbar */}
         {searchTerm && (
@@ -914,134 +914,244 @@ export default function ExploreEventsPageComponent() {
           </div>
         )}
 
-        {/* ESTADO: CARGANDO (SKELETONS FULL-WIDTH) */}
+        {/* ESTADO: CARGANDO (SKELETONS RESPONSIVOS) */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, idx) => (
-              <div
-                key={`skel-${idx}`}
-                className="bg-white rounded-2xl overflow-hidden border border-surface-variant shadow-xs flex flex-col justify-between animate-pulse"
-              >
-                <div className="aspect-16/10 bg-surface-variant/50 relative" />
-                <div className="p-4 flex-1 flex flex-col justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="h-3.5 bg-surface-variant/40 rounded w-1/3" />
-                    <div className="h-5 bg-surface-variant/60 rounded w-4/5" />
-                    <div className="h-3 bg-surface-variant/30 rounded w-full" />
-                  </div>
-                  <div className="pt-3 border-t border-surface-variant flex justify-between items-center">
-                    <div className="h-4 bg-surface-variant/50 rounded w-1/4" />
-                    <div className="h-8 bg-surface-variant/60 rounded-xl w-1/3" />
+          <>
+            {/* Skeletons en Filas para Móvil */}
+            <div className="block sm:hidden flex flex-col divide-y divide-surface-variant bg-white rounded-2xl border border-surface-variant overflow-hidden mb-8">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div key={`mob-skel-${idx}`} className="p-3 flex items-center gap-3.5 animate-pulse">
+                  <div className="w-24 h-24 flex-shrink-0 rounded-xl bg-slate-200" />
+                  <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                    <div className="h-3 w-28 bg-slate-200 rounded mb-2" />
+                    <div className="h-4 w-3/4 bg-slate-200 rounded mb-2" />
+                    <div className="h-3 w-1/2 bg-slate-100 rounded mb-3" />
+                    <div className="flex justify-between items-center pt-1 border-t border-slate-100">
+                      <div className="h-3 w-16 bg-slate-200 rounded" />
+                      <div className="h-6 w-16 bg-slate-200 rounded-lg" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredAndSortedEvents.length > 0 ? (
-          /* GRID DE EVENTOS REALES (FULL-WIDTH 3-4 COLS) */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredAndSortedEvents.map((ev) => {
-              const isFav = !!favorites[ev.id];
-              const secureId = ev.publicUuid || ev.slug || ev.id;
-              const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
-              const ctaText = ev.hasLandingPage && ev.slug ? "Ver Experiencia" : "Comprar";
-              const fallbackImage =
-                "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80";
+              ))}
+            </div>
 
-              return (
-                <article
-                  key={ev.id}
-                  className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between border border-surface-variant"
+            {/* Skeletons en Grid para Tablet y Escritorio */}
+            <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div
+                  key={`skel-${idx}`}
+                  className="bg-white rounded-2xl overflow-hidden border border-surface-variant shadow-xs flex flex-col justify-between animate-pulse"
                 >
-                  {/* Media Area / Póster del Evento */}
-                  <div className="aspect-16/10 relative overflow-hidden bg-slate-900">
-                    <Link href={ctaHref} className="block w-full h-full">
+                  <div className="aspect-16/10 bg-surface-variant/50 relative" />
+                  <div className="p-4 flex-1 flex flex-col justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="h-3.5 bg-surface-variant/40 rounded w-1/3" />
+                      <div className="h-5 bg-surface-variant/60 rounded w-4/5" />
+                      <div className="h-3 bg-surface-variant/30 rounded w-full" />
+                    </div>
+                    <div className="pt-3 border-t border-surface-variant flex justify-between items-center">
+                      <div className="h-4 bg-surface-variant/50 rounded w-1/4" />
+                      <div className="h-8 bg-surface-variant/60 rounded-xl w-1/3" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : filteredAndSortedEvents.length > 0 ? (
+          <>
+            {/* VISTA MÓVIL: FILAS COMPACTAS AGRUPADAS (ALTA DENSIDAD - IGUAL AL HOME) */}
+            <div className="block sm:hidden flex flex-col divide-y divide-surface-variant bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant overflow-hidden mb-8">
+              {filteredAndSortedEvents.map((ev) => {
+                const isFav = !!favorites[ev.id];
+                const secureId = ev.publicUuid || ev.slug || ev.id;
+                const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
+                const ctaText = ev.hasLandingPage && ev.slug ? "Ver" : "Comprar";
+                const fallbackImage =
+                  "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80";
+
+                return (
+                  <article
+                    key={`mob-${ev.id}`}
+                    className="p-3 flex items-center gap-3.5 hover:bg-surface-gray/50 transition-colors active:scale-[0.99]"
+                  >
+                    {/* Miniatura cuadrada con badge de categoría */}
+                    <Link
+                      href={ctaHref}
+                      className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-900 group cursor-pointer"
+                    >
                       <img
                         src={ev.bannerUrl || fallbackImage}
                         alt={ev.title}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-108 duration-500 cursor-pointer"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = fallbackImage;
                         }}
                       />
-                    </Link>
-
-                    {/* Badge de Categoría y Destacado */}
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none">
-                      <span className="px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
+                      <span className="absolute top-1.5 left-1.5 bg-deep-slate/85 backdrop-blur-sm text-white text-[9px] font-label-bold uppercase px-1.5 py-0.5 rounded shadow-xs">
                         {ev.category}
                       </span>
-                      {ev.isFeatured && (
-                        <span className="px-2 py-0.5 bg-vip-gold text-white rounded-full text-[10px] font-label-bold uppercase shadow-xs">
-                          Destacado
-                        </span>
-                      )}
-                    </div>
+                    </Link>
 
-                    {/* Botón Favorito Flotante */}
-                    <button
-                      type="button"
-                      onClick={(e) => toggleFavorite(ev.id, e)}
-                      aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                      className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
-                    >
-                      <span
-                        className="material-symbols-outlined text-[18px]"
-                        style={{
-                          fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
-                          color: isFav ? "#e11d48" : "inherit",
-                        }}
-                      >
-                        favorite
-                      </span>
-                    </button>
-                  </div>
+                    {/* Contenido derecho de la fila */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div className="flex items-start justify-between gap-1">
+                        <Link href={ctaHref} className="block group flex-1 min-w-0 cursor-pointer">
+                          {ev.date && (
+                            <span className="text-[11px] font-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
+                              {formatEventDate(ev.date)}
+                            </span>
+                          )}
+                          <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
+                            {ev.title}
+                          </h4>
+                          <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
+                            <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
+                            <span className="truncate">{ev.venue || "Recinto Oficial"}</span>
+                          </p>
+                        </Link>
 
-                  {/* Cuerpo de la Tarjeta */}
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      {/* Fecha y Lugar */}
-                      <p className="font-label-bold text-[11px] text-electric-indigo mb-1 uppercase tracking-wide flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[13px]">calendar_today</span>
-                        <span>{formatEventDate(ev.date)}</span>
-                        <span>•</span>
-                        <span className="truncate">{ev.venue || "Recinto Oficial"}</span>
-                      </p>
-
-                      <Link href={ctaHref} className="block">
-                        <h3 className="font-headline-md text-base sm:text-lg font-bold text-deep-slate group-hover:text-electric-indigo transition-colors leading-tight mb-2 line-clamp-1 cursor-pointer">
-                          {ev.title}
-                        </h3>
-                      </Link>
-
-                      <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3 leading-relaxed">
-                        {ev.description || "Acceso digital garantizado con control de seguridad oficial."}
-                      </p>
-                    </div>
-
-                    {/* Footer de Tarjeta con Precio y CTA */}
-                    <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-on-surface-variant uppercase font-label-bold">
-                          Precio
-                        </span>
-                        <span className="font-headline-md font-black text-sm sm:text-base text-deep-slate">
-                          {ev.minPrice > 0 ? `Desde S/. ${ev.minPrice.toFixed(2)}` : "Entrada Libre"}
-                        </span>
+                        {/* Botón Favorito Compacto */}
+                        <button
+                          type="button"
+                          onClick={(e) => toggleFavorite(ev.id, e)}
+                          aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                          className="p-1 text-on-surface-variant hover:text-rose-600 transition-colors cursor-pointer"
+                        >
+                          <span
+                            className="material-symbols-outlined text-[18px]"
+                            style={{
+                              fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
+                              color: isFav ? "#e11d48" : "inherit",
+                            }}
+                          >
+                            favorite
+                          </span>
+                        </button>
                       </div>
 
-                      <Link
-                        href={ctaHref}
-                        className="px-3.5 py-2 bg-electric-indigo hover:bg-primary text-white rounded-xl font-label-bold text-xs shadow-xs hover:shadow-md hover:shadow-electric-indigo/20 active:scale-95 transition-all"
-                      >
-                        {ctaText}
-                      </Link>
+                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
+                        <span className="text-xs font-bold text-on-surface">
+                          Desde <span className="text-electric-indigo font-bold text-sm">S/ {ev.minPrice > 0 ? ev.minPrice.toFixed(2) : "0.00"}</span>
+                        </span>
+                        <Link
+                          href={ctaHref}
+                          className="px-3.5 py-1.5 bg-electric-indigo hover:bg-primary text-white font-label-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer font-bold"
+                        >
+                          {ctaText}
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {/* VISTA ESCRITORIO Y TABLET: GRID MULTI-COLUMNAS (sm:grid) */}
+            <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredAndSortedEvents.map((ev) => {
+                const isFav = !!favorites[ev.id];
+                const secureId = ev.publicUuid || ev.slug || ev.id;
+                const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
+                const ctaText = ev.hasLandingPage && ev.slug ? "Ver Experiencia" : "Comprar";
+                const fallbackImage =
+                  "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80";
+
+                return (
+                  <article
+                    key={ev.id}
+                    className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between border border-surface-variant"
+                  >
+                    {/* Media Area / Póster del Evento */}
+                    <div className="aspect-16/10 relative overflow-hidden bg-slate-900">
+                      <Link href={ctaHref} className="block w-full h-full">
+                        <img
+                          src={ev.bannerUrl || fallbackImage}
+                          alt={ev.title}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-108 duration-500 cursor-pointer"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = fallbackImage;
+                          }}
+                        />
+                      </Link>
+
+                      {/* Badge de Categoría y Destacado */}
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none">
+                        <span className="px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
+                          {ev.category}
+                        </span>
+                        {ev.isFeatured && (
+                          <span className="px-2 py-0.5 bg-vip-gold text-white rounded-full text-[10px] font-label-bold uppercase shadow-xs">
+                            Destacado
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Botón Favorito Flotante */}
+                      <button
+                        type="button"
+                        onClick={(e) => toggleFavorite(ev.id, e)}
+                        aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
+                      >
+                        <span
+                          className="material-symbols-outlined text-[18px]"
+                          style={{
+                            fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
+                            color: isFav ? "#e11d48" : "inherit",
+                          }}
+                        >
+                          favorite
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Cuerpo de la Tarjeta */}
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        {/* Fecha y Lugar */}
+                        <p className="font-label-bold text-[11px] text-electric-indigo mb-1 uppercase tracking-wide flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[13px]">calendar_today</span>
+                          <span>{formatEventDate(ev.date)}</span>
+                          <span>•</span>
+                          <span className="truncate">{ev.venue || "Recinto Oficial"}</span>
+                        </p>
+
+                        <Link href={ctaHref} className="block">
+                          <h3 className="font-headline-md text-base sm:text-lg font-bold text-deep-slate group-hover:text-electric-indigo transition-colors leading-tight mb-2 line-clamp-1 cursor-pointer">
+                            {ev.title}
+                          </h3>
+                        </Link>
+
+                        <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3 leading-relaxed">
+                          {ev.description || "Acceso digital garantizado con control de seguridad oficial."}
+                        </p>
+                      </div>
+
+                      {/* Footer de Tarjeta con Precio y CTA */}
+                      <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-on-surface-variant uppercase font-label-bold">
+                            Precio
+                          </span>
+                          <span className="font-headline-md font-black text-sm sm:text-base text-deep-slate">
+                            {ev.minPrice > 0 ? `Desde S/. ${ev.minPrice.toFixed(2)}` : "Entrada Libre"}
+                          </span>
+                        </div>
+
+                        <Link
+                          href={ctaHref}
+                          className="px-3.5 py-2 bg-electric-indigo hover:bg-primary text-white rounded-xl font-label-bold text-xs shadow-xs hover:shadow-md hover:shadow-electric-indigo/20 active:scale-95 transition-all"
+                        >
+                          {ctaText}
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </>
         ) : (
           /* ESTADO VACÍO (EMPTY STATE) */
           <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-surface-variant p-8 shadow-xs max-w-xl mx-auto">

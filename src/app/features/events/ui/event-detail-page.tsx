@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { getEventDetailUseCase } from "../index";
 import { EventDetailModel, EventZoneModel } from "../models/event-detail.model";
+import { formatAgeRestriction } from "../utils/age-restriction";
 
 // Carga dinámica del mapa OpenStreetMap / Leaflet (desactivando SSR)
 const EventLocationMap = dynamic(
@@ -542,7 +543,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                     </h4>
                     <p className="qph-body-md text-xs text-on-surface-variant mt-1 leading-relaxed">
                       {event.entryRequirements ||
-                        `Restricción: ${event.ageRestriction || "Toda edad"}. DNI o documento oficial requerido para validación de entrada digital.`}
+                        `Restricción: ${formatAgeRestriction(event.ageRestriction).label}. DNI o documento oficial requerido para validación de entrada digital.`}
                     </p>
                   </div>
                 </div>

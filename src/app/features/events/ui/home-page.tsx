@@ -136,6 +136,23 @@ function EventCardSkeleton() {
   );
 }
 
+function MobileRowSkeleton() {
+  return (
+    <div className="p-3 flex items-center gap-3.5 animate-pulse">
+      <div className="w-24 h-24 flex-shrink-0 rounded-xl bg-slate-200" />
+      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+        <div className="h-3 w-28 bg-slate-200 rounded mb-2" />
+        <div className="h-4 w-3/4 bg-slate-200 rounded mb-2" />
+        <div className="h-3 w-1/2 bg-slate-100 rounded mb-3" />
+        <div className="flex justify-between items-center pt-1 border-t border-slate-100">
+          <div className="h-3 w-16 bg-slate-200 rounded" />
+          <div className="h-6 w-16 bg-slate-200 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EmptySectionMessage({ message }: { message: string }) {
   return (
     <div className="col-span-full py-12 px-6 rounded-2xl bg-surface-container-lowest border border-dashed border-surface-variant text-center flex flex-col items-center justify-center">
@@ -254,120 +271,184 @@ export default function HomePage() {
       ? weeklyFeaturedEvents
       : upcomingEvents.slice(0, 5);
 
+  const mobileHeroRef = useRef<HTMLDivElement>(null);
+  const [currentMobileSlide, setCurrentMobileSlide] = useState(0);
+
+  const scrollToMobileSlide = (index: number) => {
+    setCurrentMobileSlide(index);
+    if (mobileHeroRef.current) {
+      const width = mobileHeroRef.current.offsetWidth;
+      mobileHeroRef.current.scrollTo({
+        left: index * width,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (mobileFeaturedList.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentMobileSlide((prev) => {
+        const next = (prev + 1) % mobileFeaturedList.length;
+        if (mobileHeroRef.current) {
+          const width = mobileHeroRef.current.offsetWidth;
+          mobileHeroRef.current.scrollTo({
+            left: next * width,
+            behavior: "smooth",
+          });
+        }
+        return next;
+      });
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [mobileFeaturedList.length]);
+
   return (
     <>
       {/* =========================================================================
-          VISTA MÓVIL (STITCH STYLE)
+          VISTA MÓVIL (STITCH STYLE - OPTIMIZADA)
          ========================================================================= */}
-      <div className="block md:hidden bg-background min-h-screen pb-24 text-on-background">
+      <div className="block md:hidden bg-background min-h-screen pb-32 text-on-background">
         
-        {/* Barra de Búsqueda Móvil */}
-        <section className="px-4 py-4">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <span className="material-symbols-outlined text-platinum-silver">search</span>
+        {/* 1. Hero Banner Cinematográfico Móvil (Full-Width 380px Stitch Style) */}
+        {isLoadingWeekly && isLoadingUpcoming ? (
+          <section className="relative w-full h-[380px] bg-slate-900 animate-pulse mb-6">
+            <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/60 to-transparent" />
+            <div className="absolute bottom-5 inset-x-0 p-5 z-20 flex flex-col justify-end">
+              <div className="h-5 w-44 bg-white/20 rounded-full mb-3" />
+              <div className="h-8 w-3/4 bg-white/20 rounded-lg mb-2" />
+              <div className="h-4 w-1/2 bg-white/10 rounded mb-4" />
+              <div className="h-11 w-full bg-electric-indigo/40 rounded-xl" />
             </div>
-            <input
-              className="w-full h-14 pl-12 pr-4 bg-surface-container-lowest rounded-xl border-none shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.05)] focus:ring-2 focus:ring-electric-indigo font-body-md transition-all text-on-surface outline-none"
-              placeholder="¿Qué planes hoy?"
-              type="text"
-            />
-            <Link
-              href="/events"
-              className="absolute inset-y-2 right-2 px-4 bg-electric-indigo text-white rounded-lg qph-label-bold hover:bg-primary transition-colors cursor-pointer flex items-center"
+          </section>
+        ) : mobileFeaturedList.length > 0 ? (
+          <section className="relative w-full h-[380px] overflow-hidden mb-6 group">
+            {/* Contenedor de slides de ancho completo */}
+            <div
+              ref={mobileHeroRef}
+              onScroll={(e) => {
+                const target = e.currentTarget;
+                const index = Math.round(target.scrollLeft / target.offsetWidth);
+                if (index !== currentMobileSlide && index >= 0 && index < mobileFeaturedList.length) {
+                  setCurrentMobileSlide(index);
+                }
+              }}
+              className="flex w-full h-full overflow-x-auto snap-x snap-mandatory qph-hide-scrollbar"
             >
-              Explorar
-            </Link>
-          </div>
-        </section>
-
-        {/* Carrusel de Destacados Móvil */}
-        <section className="mb-6">
-          <div className="flex items-center justify-between px-4 mb-3">
-            <h2 className="qph-headline-lg text-[20px] font-bold text-deep-slate">Destacados</h2>
-            <Link className="text-electric-indigo qph-label-bold text-xs" href="/events">
-              Ver todos
-            </Link>
-          </div>
-
-          {isLoadingWeekly && isLoadingUpcoming ? (
-            <div className="flex overflow-x-auto qph-hide-scrollbar px-4 gap-4 pb-4">
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="min-w-[85%] rounded-2xl aspect-[3/4] bg-surface-gray animate-pulse border border-surface-variant flex-none"
-                />
-              ))}
-            </div>
-          ) : mobileFeaturedList.length > 0 ? (
-            <div className="flex overflow-x-auto snap-x snap-mandatory qph-hide-scrollbar px-4 gap-4 pb-4">
-              {mobileFeaturedList.slice(0, 5).map((event) => {
+              {mobileFeaturedList.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
                 const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
                 return (
-                  <div
-                    key={event.id}
-                    className="min-w-[85%] snap-center rounded-2xl overflow-hidden relative aspect-[3/4] shadow-md border border-surface-variant group flex-none"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/20 to-transparent z-10" />
+                  <div key={event.id} className="relative w-full h-full flex-none snap-center">
+                    {/* Imagen de fondo de ancho completo */}
                     <img
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       src={event.imageUrl}
                       alt={event.altText || event.title}
+                      className="absolute inset-0 w-full h-full object-cover object-center"
                     />
-                    <div className="absolute bottom-0 left-0 p-6 z-20 w-full">
-                      <span className="inline-block px-3 py-1 bg-vip-gold text-white text-[10px] qph-label-bold rounded-full uppercase mb-2">
-                        {event.category || "Destacado"}
+                    {/* Gradiente cinematográfico oscuro */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/60 to-transparent" />
+
+                    {/* Badge superior izquierdo */}
+                    <div className="absolute top-4 left-4 z-10">
+                      <span className="px-2.5 py-1 bg-electric-indigo/90 backdrop-blur-md text-white text-[11px] qph-label-bold rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        EN VIVO ESTE FIN DE SEMANA
                       </span>
-                      <h3 className="text-white qph-headline-md text-[20px] mb-1 font-semibold line-clamp-2">
+                    </div>
+
+                    {/* Contenido inferior integrado */}
+                    <div className="absolute bottom-0 inset-x-0 p-5 z-20 flex flex-col justify-end">
+                      {event.date && (
+                        <div className="flex items-center gap-2 mb-1.5 text-platinum-silver text-xs qph-label-bold uppercase tracking-wider">
+                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">calendar_today</span>
+                          <span>{event.date}</span>
+                        </div>
+                      )}
+                      <h2 className="text-white qph-headline-lg-mobile text-[22px] leading-tight font-bold tracking-tight mb-1.5 line-clamp-2">
                         {event.title}
-                      </h3>
-                      <p className="text-platinum-silver qph-body-md text-sm mb-4">
-                        {event.location} {event.date ? `• ${event.date}` : ""}
+                      </h2>
+                      <p className="text-platinum-silver text-xs flex items-center gap-1 mb-4">
+                        <span className="material-symbols-outlined text-[15px] text-platinum-silver">location_on</span>
+                        <span>{event.location}</span>
                       </p>
-                      <Link
-                        href={ctaHref}
-                        className="w-full py-3 bg-electric-indigo text-white rounded-lg qph-label-bold hover:bg-primary transition-colors cursor-pointer block text-center shadow-md shadow-electric-indigo/30"
-                      >
-                        {event.hasLandingPage ? "Ver Experiencia" : "Comprar Entradas"}
-                      </Link>
+                      <div className="flex items-center gap-2.5">
+                        <Link
+                          href={ctaHref}
+                          className="flex-1 h-11 bg-electric-indigo hover:bg-primary text-white text-sm qph-label-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/30 active:scale-[0.98] transition-all cursor-pointer"
+                        >
+                          <span>{event.hasLandingPage ? "Ver Experiencia" : `Comprar Entradas • Desde S/ ${event.price}`}</span>
+                        </Link>
+                        <button
+                          type="button"
+                          aria-label="Guardar en favoritos"
+                          className="h-11 w-11 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-xl flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">favorite_border</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <div className="px-4 py-8 text-center text-on-surface-variant text-sm bg-surface-container-lowest mx-4 rounded-2xl border border-dashed border-surface-variant">
-              Próximamente más eventos destacados.
-            </div>
-          )}
-        </section>
 
-        {/* Chips de Categorías Móvil */}
-        <section className="mb-6 overflow-hidden">
-          <div className="flex items-center justify-between px-4 mb-3">
-            <h2 className="qph-headline-lg text-[20px] font-bold text-deep-slate">Explora por Categoría</h2>
+            {/* Puntos de navegación horizontales (Dots de Stitch) */}
+            {mobileFeaturedList.length > 1 && (
+              <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-1.5 z-30 pointer-events-none">
+                {mobileFeaturedList.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    type="button"
+                    onClick={() => scrollToMobileSlide(dotIdx)}
+                    aria-label={`Ir al slide ${dotIdx + 1}`}
+                    className={`transition-all duration-300 pointer-events-auto rounded-full ${
+                      currentMobileSlide === dotIdx
+                        ? "w-5 h-1.5 bg-electric-indigo shadow-xs"
+                        : "w-1.5 h-1.5 bg-white/40 hover:bg-white/80"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {/* 2. Chips de Categorías Móvil (Horizontal Chips) */}
+        <section className="mb-6 px-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">Explora por Categoría</h3>
             <Link
               href="/events"
-              className="text-electric-indigo text-xs font-semibold hover:underline flex items-center gap-0.5"
+              className="text-xs text-electric-indigo qph-label-bold hover:underline flex items-center gap-0.5"
             >
               Ver todas <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
           </div>
-          <div className="flex overflow-x-auto qph-hide-scrollbar px-4 gap-2.5 pb-2 scroll-smooth">
+          <div className="flex overflow-x-auto qph-hide-scrollbar gap-2 pb-1 -mx-4 px-4 scroll-smooth">
+            <button
+              onClick={() => setActiveMobileFilter("Todo")}
+              className={`whitespace-nowrap px-4 py-2 rounded-full qph-label-bold text-xs shadow-xs transition-colors flex-none cursor-pointer ${
+                activeMobileFilter === "Todo"
+                  ? "bg-deep-slate text-white"
+                  : "bg-surface-container-lowest text-on-surface-variant border border-surface-variant hover:bg-surface-gray"
+              }`}
+            >
+              Todos
+            </button>
             {CATEGORY_CHIPS.map((cat) => {
               const isSelected = activeMobileFilter === cat.id;
               return (
                 <button
                   key={cat.id}
                   onClick={() => setActiveMobileFilter(isSelected ? "Todo" : cat.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap qph-label-bold text-xs shadow-xs transition-all flex-none cursor-pointer ${
+                  className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full qph-label-bold text-xs shadow-xs transition-colors flex-none cursor-pointer ${
                     isSelected
                       ? "bg-electric-indigo text-white border border-electric-indigo"
-                      : "bg-white text-on-surface border border-surface-variant hover:bg-surface-gray"
+                      : "bg-surface-container-lowest text-on-surface-variant border border-surface-variant hover:bg-surface-gray"
                   }`}
                 >
-                  <span className={`material-symbols-outlined text-[16px] ${isSelected ? "text-white" : cat.textClass}`}>
+                  <span className={`material-symbols-outlined text-[15px] ${isSelected ? "text-white" : cat.textClass}`}>
                     {cat.icon}
                   </span>
                   <span>{cat.name}</span>
@@ -377,101 +458,255 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Eventos Próximos Móvil */}
-        <section className="px-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="qph-headline-lg text-[20px] font-bold text-deep-slate">Eventos Próximos</h2>
-            <Link href="/events" className="text-electric-indigo text-xs font-semibold hover:underline">
-              Ver todos
-            </Link>
-          </div>
-          <div className="flex flex-col gap-6">
-            {isLoadingUpcoming ? (
-              [1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-2xl overflow-hidden border border-surface-variant p-4 animate-pulse flex flex-col gap-3"
-                >
-                  <div className="aspect-[16/9] w-full bg-surface-gray rounded-xl" />
-                  <div className="h-5 w-3/4 bg-slate-200 rounded" />
-                  <div className="h-4 w-1/2 bg-slate-100 rounded" />
-                </div>
-              ))
-            ) : filteredMobileEvents.length > 0 ? (
-              filteredMobileEvents.map((event) => {
+        {/* 3. SECCIÓN: DESTACADOS DE LA SEMANA */}
+        {weeklyFeaturedEvents.length > 0 && (
+          <section className="px-4 mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-vip-gold text-[20px]">star</span>
+                  Destacados de la Semana
+                </h3>
+                <p className="text-xs text-on-surface-variant">Los eventos más solicitados por el público</p>
+              </div>
+              <Link href="/events?sort=date_asc" className="text-xs text-electric-indigo qph-label-bold hover:underline">
+                Ver todos
+              </Link>
+            </div>
+
+            <div className="flex flex-col divide-y divide-surface-variant bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant overflow-hidden">
+              {weeklyFeaturedEvents.slice(0, 4).map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
                 const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
                 return (
-                  <Link
-                    key={event.id}
-                    href={ctaHref}
-                    className="bg-white rounded-2xl overflow-hidden shadow-xs border border-surface-variant flex flex-col group active:scale-[0.98] transition-transform cursor-pointer"
+                  <article
+                    key={`weekly-${event.id}`}
+                    className="p-3 flex items-center gap-3.5 hover:bg-surface-gray/50 transition-colors active:scale-[0.99]"
                   >
-                    <div className="aspect-[16/9] w-full relative">
-                      <img className="w-full h-full object-cover" src={event.imageUrl} alt={event.altText} />
-                      {event.date && (
-                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-3 py-1 rounded-xl text-center shadow-xs border border-surface-variant/50">
-                          <span className="block text-electric-indigo qph-label-bold text-[16px] font-bold">
-                            {event.date.split(" ")[0]}
+                    <Link
+                      href={ctaHref}
+                      className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-surface-gray group cursor-pointer"
+                    >
+                      <img
+                        src={event.imageUrl}
+                        alt={event.altText || event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <span className="absolute top-1.5 left-1.5 bg-vip-gold text-white text-[9px] qph-label-bold uppercase px-1.5 py-0.5 rounded shadow-xs">
+                        DESTACADO
+                      </span>
+                    </Link>
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <Link href={ctaHref} className="block group cursor-pointer">
+                        {event.date && (
+                          <span className="text-[11px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
+                            {event.date}
                           </span>
-                          <span className="block text-on-surface-variant text-[10px] uppercase qph-label-bold">
-                            {event.date.split(" ")[1]}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-5 flex flex-col gap-2">
-                      <div className="flex justify-between items-start">
-                        <h4 className="qph-headline-md text-[20px] text-on-surface leading-tight font-semibold group-hover:text-electric-indigo transition-colors line-clamp-2">
+                        )}
+                        <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
                           {event.title}
                         </h4>
-                        <span className="text-electric-indigo qph-price-tag text-[20px] font-bold whitespace-nowrap ml-2">
-                          Desde S/. {event.price}
+                        <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
+                          <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
+                          <span className="truncate">{event.location}</span>
+                        </p>
+                      </Link>
+
+                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
+                        <span className="text-xs font-bold text-on-surface">
+                          Desde <span className="text-electric-indigo qph-price-tag text-sm">S/ {event.price}</span>
                         </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[18px]">location_on</span>
-                        <span className="qph-body-md text-sm">{event.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="px-2 py-0.5 bg-surface-gray border border-surface-variant/40 text-on-secondary-fixed-variant text-[10px] qph-label-bold rounded uppercase">
-                          {event.category}
-                        </span>
-                        <span className="px-2 py-0.5 bg-surface-gray border border-surface-variant/40 text-on-secondary-fixed-variant text-[10px] qph-label-bold rounded uppercase">
-                          {event.ticketType}
-                        </span>
+                        <Link
+                          href={ctaHref}
+                          className="px-3.5 py-1.5 bg-electric-indigo hover:bg-primary text-white qph-label-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer font-bold"
+                        >
+                          {event.hasLandingPage ? "Ver" : "Comprar"}
+                        </Link>
                       </div>
                     </div>
-                  </Link>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* 4. SECCIÓN: EVENTOS PRÓXIMOS (Con filtrado reactivo de categorías) */}
+        <section className="px-4 mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">
+                Eventos Próximos
+              </h3>
+              <p className="text-xs text-on-surface-variant">Cartelera ordenada por fecha de presentación</p>
+            </div>
+            <Link href="/events" className="text-xs text-electric-indigo qph-label-bold hover:underline">
+              Ver todos ({filteredMobileEvents.length})
+            </Link>
+          </div>
+
+          <div className="flex flex-col divide-y divide-surface-variant bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant overflow-hidden">
+            {isLoadingUpcoming ? (
+              [1, 2, 3, 4].map((i) => <MobileRowSkeleton key={i} />)
+            ) : filteredMobileEvents.length > 0 ? (
+              filteredMobileEvents.slice(0, 6).map((event) => {
+                const secureId = event.publicUuid || event.slug || event.id;
+                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
+                return (
+                  <article
+                    key={`upcoming-${event.id}`}
+                    className="p-3 flex items-center gap-3.5 hover:bg-surface-gray/50 transition-colors active:scale-[0.99]"
+                  >
+                    <Link
+                      href={ctaHref}
+                      className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-surface-gray group cursor-pointer"
+                    >
+                      <img
+                        src={event.imageUrl}
+                        alt={event.altText || event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <span className="absolute top-1.5 left-1.5 bg-deep-slate/85 backdrop-blur-sm text-white text-[9px] qph-label-bold uppercase px-1.5 py-0.5 rounded shadow-xs">
+                        {event.category || "EVENTO"}
+                      </span>
+                    </Link>
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <Link href={ctaHref} className="block group cursor-pointer">
+                        {event.date && (
+                          <span className="text-[11px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
+                            {event.date}
+                          </span>
+                        )}
+                        <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
+                          {event.title}
+                        </h4>
+                        <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
+                          <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
+                          <span className="truncate">{event.location}</span>
+                        </p>
+                      </Link>
+
+                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
+                        <span className="text-xs font-bold text-on-surface">
+                          Desde <span className="text-electric-indigo qph-price-tag text-sm">S/ {event.price}</span>
+                        </span>
+                        <Link
+                          href={ctaHref}
+                          className="px-3.5 py-1.5 bg-electric-indigo hover:bg-primary text-white qph-label-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer font-bold"
+                        >
+                          {event.hasLandingPage ? "Ver" : "Comprar"}
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
                 );
               })
             ) : (
-              <div className="py-8 text-center text-on-surface-variant text-sm bg-surface-container-lowest rounded-2xl border border-dashed border-surface-variant">
-                No se encontraron eventos disponibles en esta selección.
+              <div className="py-8 text-center text-on-surface-variant text-sm p-4">
+                No se encontraron eventos próximos en esta categoría.
               </div>
             )}
           </div>
         </section>
 
-        {/* Newsletter Móvil */}
-        <section className="px-4 py-8 bg-deep-slate rounded-3xl mx-4 mb-10 text-center text-white overflow-hidden relative">
+        {/* 5. SECCIÓN: PLANES PARA EL FIN DE SEMANA */}
+        {weekendPlans.length > 0 && (
+          <section className="px-4 mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-emerald-500 text-[20px]">weekend</span>
+                  Planes de Fin de Semana
+                </h3>
+                <p className="text-xs text-on-surface-variant">Disfruta este sábado y domingo sin complicaciones</p>
+              </div>
+              <Link href="/events?date=weekend" className="text-xs text-electric-indigo qph-label-bold hover:underline">
+                Ver todos
+              </Link>
+            </div>
+
+            <div className="flex flex-col divide-y divide-surface-variant bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant overflow-hidden">
+              {weekendPlans.slice(0, 4).map((event) => {
+                const secureId = event.publicUuid || event.slug || event.id;
+                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
+                return (
+                  <article
+                    key={`weekend-${event.id}`}
+                    className="p-3 flex items-center gap-3.5 hover:bg-surface-gray/50 transition-colors active:scale-[0.99]"
+                  >
+                    <Link
+                      href={ctaHref}
+                      className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-surface-gray group cursor-pointer"
+                    >
+                      <img
+                        src={event.imageUrl}
+                        alt={event.altText || event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[9px] qph-label-bold uppercase px-1.5 py-0.5 rounded shadow-xs">
+                        FIN DE SEMANA
+                      </span>
+                    </Link>
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <Link href={ctaHref} className="block group cursor-pointer">
+                        {event.date && (
+                          <span className="text-[11px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
+                            {event.date}
+                          </span>
+                        )}
+                        <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
+                          {event.title}
+                        </h4>
+                        <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
+                          <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
+                          <span className="truncate">{event.location}</span>
+                        </p>
+                      </Link>
+
+                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
+                        <span className="text-xs font-bold text-on-surface">
+                          Desde <span className="text-electric-indigo qph-price-tag text-sm">S/ {event.price}</span>
+                        </span>
+                        <Link
+                          href={ctaHref}
+                          className="px-3.5 py-1.5 bg-electric-indigo hover:bg-primary text-white qph-label-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer font-bold"
+                        >
+                          {event.hasLandingPage ? "Ver" : "Comprar"}
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* 6. Newsletter Móvil (Stitch Style) */}
+        <section className="px-5 py-8 bg-deep-slate rounded-2xl mx-4 mb-8 text-center text-white overflow-hidden relative">
           <div className="relative z-10">
-            <h3 className="qph-headline-lg text-[20px] font-bold mb-2">No te pierdas de nada</h3>
-            <p className="text-platinum-silver qph-body-md text-sm mb-6">
-              Recibe alertas personalizadas para tus eventos favoritos directamente en tu móvil.
+            <span className="inline-block px-2.5 py-0.5 bg-electric-indigo/30 text-electric-indigo text-[10px] qph-label-bold rounded-full uppercase tracking-wider mb-2">
+              Newsletter QPH
+            </span>
+            <h3 className="qph-headline-md text-[20px] font-bold mb-1.5">No te pierdas de nada</h3>
+            <p className="text-platinum-silver font-body-md text-xs mb-5 max-w-xs mx-auto">
+              Alertas de preventa y descuentos exclusivos directamente a tu correo.
             </p>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               <input
-                className="w-full h-12 bg-white/10 rounded-xl px-4 border-none text-white placeholder-platinum-silver focus:ring-1 focus:ring-electric-indigo outline-none"
+                className="w-full h-11 bg-white/10 rounded-xl px-4 border-none text-white text-sm placeholder-platinum-silver focus:ring-1 focus:ring-electric-indigo outline-none"
                 placeholder="Tu correo electrónico"
                 type="email"
               />
-              <button className="w-full h-12 bg-electric-indigo text-white font-label-bold rounded-xl shadow-lg shadow-electric-indigo/20 active:scale-95 transition-transform cursor-pointer">
-                Suscribirme
+              <button className="w-full h-11 bg-electric-indigo hover:bg-primary text-white qph-label-bold text-sm rounded-xl shadow-lg shadow-electric-indigo/20 active:scale-[0.98] transition-all cursor-pointer">
+                Suscribirme gratis
               </button>
             </div>
           </div>
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-electric-indigo/20 rounded-full blur-3xl" />
+          <div className="absolute -top-10 -right-10 w-28 h-28 bg-electric-indigo/20 rounded-full blur-3xl pointer-events-none" />
         </section>
       </div>
 

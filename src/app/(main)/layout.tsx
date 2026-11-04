@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { DesktopHeader } from "../common/components/desktop-header";
+import { MobileBottomNav } from "../common/components/mobile-bottom-nav";
 
 export default function MainLayout({
   children,
@@ -151,28 +152,8 @@ export default function MainLayout({
 
       </footer>
 
-      {/* Bottom Navigation Bar - Mobile (Stitch Style) */}
-      <nav className="qph-mobile-nav fixed bottom-0 left-0 right-0 md:hidden bg-white h-20 flex items-center justify-around px-2 z-50 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-outline-variant/10">
-        <a href="/" className="flex flex-col items-center gap-1 text-primary group cursor-pointer">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
-          <span className="font-bold text-[10px] uppercase">Inicio</span>
-        </a>
-        <Link href="/events" className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
-          <span className="material-symbols-outlined">explore</span>
-          <span className="font-semibold text-[10px] uppercase">Explorar</span>
-        </Link>
-        <Link href="/organizer/events/new" aria-label="Crear evento" className="flex flex-col items-center justify-center -mt-10 w-14 h-14 bg-electric-indigo text-white rounded-full shadow-lg shadow-electric-indigo/30 active:scale-95 transition-transform cursor-pointer">
-          <span className="material-symbols-outlined text-[32px]">add</span>
-        </Link>
-        <a href="/profile/tickets" className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
-          <span className="material-symbols-outlined">confirmation_number</span>
-          <span className="font-semibold text-[10px] uppercase">Tickets</span>
-        </a>
-        <a href="/profile" className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
-          <span className="material-symbols-outlined">person</span>
-          <span className="font-semibold text-[10px] uppercase">Perfil</span>
-        </a>
-      </nav>
+      {/* Bottom Navigation Bar - Mobile con Buscador a Pantalla Completa en Botón Central */}
+      <MobileBottomNav />
     </>
   );
 }

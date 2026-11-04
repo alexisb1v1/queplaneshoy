@@ -54,35 +54,24 @@ export function LandingHeader({
       </Link>
 
       {/* Lado Derecho: Navegación Estilo Teleticket (INICIO, ENTRADAS, LEGALES) */}
-      <nav className="flex items-center gap-4 md:gap-7">
-        <div className="hidden sm:flex items-center gap-5 text-xs font-bold uppercase tracking-wider text-white/80">
-          <button
-            onClick={() => scrollToSection("landing-inicio")}
-            className="hover:text-white transition-colors cursor-pointer py-1"
-          >
-            Inicio
-          </button>
-          <button
-            onClick={() => scrollToSection("zonas-entradas")}
-            className="hover:text-white transition-colors cursor-pointer py-1"
-          >
-            Entradas
-          </button>
-          <button
-            onClick={() => scrollToSection("landing-legales")}
-            className="hover:text-white transition-colors cursor-pointer py-1"
-          >
-            Legales
-          </button>
-        </div>
-
-        {/* Botón CTA Destacado */}
+      <nav className="flex items-center gap-3 sm:gap-6 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white/80">
+        <button
+          onClick={() => scrollToSection("landing-inicio")}
+          className="hover:text-white transition-colors cursor-pointer py-1"
+        >
+          Inicio
+        </button>
         <button
           onClick={() => scrollToSection("zonas-entradas")}
-          style={{ backgroundColor: primaryColor }}
-          className="px-4 py-2 rounded-xl text-white font-bold text-xs uppercase tracking-wide hover:opacity-90 active:scale-95 transition-all shadow-md cursor-pointer"
+          className="hover:text-white transition-colors cursor-pointer py-1"
         >
-          {ctaText}
+          Entradas
+        </button>
+        <button
+          onClick={() => scrollToSection("landing-legales")}
+          className="hover:text-white transition-colors cursor-pointer py-1"
+        >
+          Legales
         </button>
       </nav>
     </header>
