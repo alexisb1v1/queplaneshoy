@@ -172,5 +172,40 @@ Para garantizar la integridad y titularidad de las compras:
    - Extrae y valida criptográficamente el JWT mediante `TokenService` resolviendo el `id` interno del usuario en sesión.
    - Asocia directamente la orden en la tabla `orders` y los tickets emitidos en `tickets` al `userId` del comprador autenticado existente en PostgreSQL, sin crear cuentas duplicadas.
 
+---
+
+## 8. Sistema de Cupones de Descuento en Checkout (Stitch Design & Doble Check Atómico)
+
+Integra la experiencia visual interactiva de Stitch con validación robusta de 6 casos de negocio y candado pesimista:
+
+1. **Matriz de Casos de Negocio:**
+   - **3 Ciclos de Vida / Vigencia:**
+     - `single_use`: De un solo uso; al pagarse se quema e invalida (`is_active = false`, `used_count = 1`).
+     - `reusable`: Reutilizable N veces; incrementa `used_count` hasta alcanzar `max_uses`, momento en el que se auto-invalida.
+     - Vigencia por fecha y hora: Válido únicamente en el rango `starts_at <= NOW() <= expires_at`.
+   - **2 Tipos de Beneficio Financiero:**
+     - `percentage`: Porcentaje de descuento sobre el subtotal (`subtotal * (discountValue / 100)`).
+     - `fixed`: Monto fijo directo en soles (`min(subtotal, discountValue)` con piso cero).
+   - **Restricción de Monto Mínimo:** `min_order_amount <= subtotal`.
+
+2. **Doble Validación (Paso 1/2 y Checkout Atómico):**
+   - **Paso 1 y 2 (UI Reactiva):** El usuario ingresa el cupón en el resumen lateral; el frontend llama a `validateCouponUseCase.execute({ eventId, code, subtotal })`. Si es exitoso, la interfaz dibuja la pastilla verde con badge de descuento, recalcula dinámicamente el total ante cualquier cambio de entradas y ofrece botón de remoción.
+   - **Paso 2 Final (Doble Check Atómico en Transacción):** Al pulsar "Confirmar y Pagar", se envía `couponCode` en el payload de `simulateCheckoutUseCase`. El backend ejecuta un bloqueo pesimista `SELECT ... FOR UPDATE` sobre la fila del cupón en PostgreSQL. Si otra compra concurrente consumió el último canje al mismo instante o el cupón expiró, la transacción hace rollback de inmediato con error `COUPON_INVALID_OR_EXPIRED`, evitando cualquier cobro indebido y alertando al usuario en pantalla para que continúe sin el cupón.
+
+---
+
+## 9. Pasarela Oficial Izipay en Modo Pop-in y Webhook IPN
+
+1. **Selector de Medios de Pago Contextual:**
+   - Si el comprador elige **Tarjeta de Débito/Crédito** (`card`) o **Yape/Plin** (`yape`), el botón "Confirmar y Pagar" solicita el `formToken` oficial a `POST /api/orders/izipay/create-payment`.
+   - Abre de forma superpuesta el componente modal [`IzipayPopinModal`](file:///d:/Personal/queplaneshoy/src/app/features/orders/ui/components/izipay-popin-modal.tsx) (Krypton SmartForm Pop-in).
+2. **Ciclo de Cobro y Cierre:**
+   - El cliente introduce su tarjeta o confirma Yape directamente en los campos seguros de Izipay.
+   - Al completarse el pago, `KR.onSubmit` captura la aprobación y transiciona al Paso 3 posicionando la vista arriba (`top: 0`).
+   - Si el usuario cancela o cierra el modal, el checkout permanece en el Paso 2 con sus entradas y resumen intactos.
+3. **Webhook IPN (Server to Server):**
+   - En backend (`POST /api/orders/izipay/ipn`), Izipay notifica la transacción autenticada mediante firma criptográfica **HMAC-SHA256**.
+   - Garantiza idempotencia: valida si la orden ya fue procesada y emite los tickets con firma Ed25519 en PostgreSQL.
+
 
 

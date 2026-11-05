@@ -21,6 +21,7 @@ export interface SimulateCheckoutParams {
   showId: string;
   items: SimulateCheckoutItem[];
   paymentMethod: 'card' | 'yape' | 'transfer' | 'apple_pay' | 'google_pay';
+  couponCode?: string;
   customerEmail?: string;
   customerName?: string;
   customerDocument?: string;
@@ -44,11 +45,28 @@ export interface SimulateCheckoutResponseModel {
   orderPublicUuid: string;
   status: string;
   subtotal: number;
+  discountAmount?: number;
+  couponCode?: string | null;
   totalAmount: number;
   paymentMethod: string;
   txCode: string;
   message: string;
   tickets: IssuedTicketModel[];
+}
+
+export interface ValidateCouponParams {
+  eventId: string;
+  code: string;
+  subtotal: number;
+}
+
+export interface ValidateCouponResponseModel {
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  discountAmount: number;
+  newTotal: number;
+  message: string;
 }
 
 export interface UserOrderTicketModel {
@@ -87,4 +105,25 @@ export interface UserOrderModel {
   isPast: boolean;
   zoneName: string;
   tickets: UserOrderTicketModel[];
+}
+
+export interface CreateIzipayPaymentParams {
+  eventId: string;
+  showId: string;
+  items: Array<{ zoneId: string; quantity: number }>;
+  paymentMethod?: string;
+  couponCode?: string;
+}
+
+export interface CreateIzipayPaymentResponse {
+  success: boolean;
+  formToken: string;
+  publicKey: string;
+  orderId: string;
+  orderCode: string;
+  orderPublicUuid: string;
+  totalAmount: number;
+  discountAmount: number;
+  couponCode: string | null;
+  clientEndpoint: string;
 }

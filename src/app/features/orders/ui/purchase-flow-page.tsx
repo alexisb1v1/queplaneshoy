@@ -6,12 +6,22 @@ import Link from "next/link";
 import PaymentSuccessScreen from "./payment-success-screen";
 import CheckoutStepper from "./components/checkout-stepper";
 import VenueZonesMap from "./components/venue-zones-map";
+import IzipayPopinModal from "./components/izipay-popin-modal";
+import IzipayEmbeddedForm from "./components/izipay-embedded-form";
 import { getEventDetailUseCase } from "../../events";
 import { EventDetailModel } from "../../events/models/event-detail.model";
 import { getCurrentUserUseCase } from "../../auth";
 import { UserModel } from "../../auth/models/user.model";
 import { apiClient } from "@/app/common/services/api-client";
-import { simulateCheckoutUseCase, getMyOrdersUseCase, SimulateCheckoutResponseModel } from "../index";
+import {
+  simulateCheckoutUseCase,
+  createIzipayPaymentUseCase,
+  getMyOrdersUseCase,
+  validateCouponUseCase,
+  SimulateCheckoutResponseModel,
+  ValidateCouponResponseModel,
+  CreateIzipayPaymentResponse,
+} from "../index";
 
 interface TicketTier {
   id: string;
@@ -108,6 +118,18 @@ export default function PurchaseFlowPageComponent() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [forceFailureTest, setForceFailureTest] = useState<boolean>(false);
   const [checkoutResult, setCheckoutResult] = useState<SimulateCheckoutResponseModel | null>(null);
+
+  // Cupón de descuento (6 casos de uso + doble check atómico)
+  const [couponCodeInput, setCouponCodeInput] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResponseModel | null>(null);
+  const [isCouponLoading, setIsCouponLoading] = useState<boolean>(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccessMessage, setCouponSuccessMessage] = useState<string | null>(null);
+
+  // Izipay SmartForm (Embedded Form & Pop-in)
+  const [izipayModalData, setIzipayModalData] = useState<CreateIzipayPaymentResponse | null>(null);
+  const [isLoadingIzipayToken, setIsLoadingIzipayToken] = useState<boolean>(false);
+  const [showIzipayPopin, setShowIzipayPopin] = useState<boolean>(false);
 
   // Usuario autenticado en sesión y entradas ya compradas para este evento
   const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
@@ -254,6 +276,17 @@ export default function PurchaseFlowPageComponent() {
     return () => clearInterval(interval);
   }, [currentStep]);
 
+  // Posicionar la vista en la parte superior al llegar al Paso 3 (Pantalla de Confirmación)
+  useEffect(() => {
+    if (currentStep === 3 && typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      const rafId = requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+  }, [currentStep]);
+
   const formatTimer = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -285,8 +318,63 @@ export default function PurchaseFlowPageComponent() {
   // Cálculos de Totales en Soles (PEN)
   const totalTickets = ticketTiers.reduce((acc, t) => acc + t.quantity, 0);
   const subtotal = ticketTiers.reduce((acc, t) => acc + t.price * t.quantity, 0);
+
+  // Recálculo dinámico de descuento si cambia el subtotal
+  const effectiveDiscountAmount = appliedCoupon
+    ? appliedCoupon.discountType === "percentage"
+      ? Math.round(subtotal * (appliedCoupon.discountValue / 100) * 100) / 100
+      : Math.min(subtotal, appliedCoupon.discountValue)
+    : 0;
+
   // El precio de la entrada ya incluye el servicio definido al crear el evento (sin cobro duplicado)
-  const grandTotal = subtotal;
+  const grandTotal = Math.max(0, Math.round((subtotal - effectiveDiscountAmount) * 100) / 100);
+
+  const handleApplyCoupon = () => {
+    const trimmedCode = couponCodeInput.trim().toUpperCase();
+    if (!trimmedCode) {
+      setCouponError("Por favor ingresa un código de cupón.");
+      return;
+    }
+    if (subtotal <= 0) {
+      setCouponError("Selecciona al menos una entrada antes de aplicar un cupón.");
+      return;
+    }
+
+    setIsCouponLoading(true);
+    setCouponError(null);
+    setCouponSuccessMessage(null);
+
+    const targetEventId = event ? (event.publicUuid || event.id) : eventId || "1";
+
+    validateCouponUseCase
+      .execute({
+        eventId: targetEventId,
+        code: trimmedCode,
+        subtotal: subtotal,
+      })
+      .match(
+        (res) => {
+          setIsCouponLoading(false);
+          setAppliedCoupon(res);
+          setCouponSuccessMessage(res.message || "¡Cupón aplicado exitosamente!");
+          setCouponCodeInput("");
+        },
+        (err) => {
+          setIsCouponLoading(false);
+          setCouponError(
+            err.message ||
+            "El cupón ingresado no es válido, ha expirado o no cumple con las condiciones."
+          );
+        }
+      );
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError(null);
+    setCouponSuccessMessage(null);
+    setCouponCodeInput("");
+  };
 
   const selectedFunction =
     showFunctions.find((f) => f.id === selectedFunctionId) || showFunctions[0];
@@ -303,27 +391,44 @@ export default function PurchaseFlowPageComponent() {
       return;
     }
 
-    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
-      return;
+    const checkVisibility = () => {
+      const el = summaryCtaContainerRef.current;
+      if (!el) {
+        setIsSummaryCtaVisible(false);
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const inView = rect.top < window.innerHeight && rect.bottom > 0;
+      setIsSummaryCtaVisible(inView);
+    };
+
+    // Comprobación inicial inmediata y garantizada tras render de imágenes
+    checkVisibility();
+    const rafId = requestAnimationFrame(checkVisibility);
+
+    let observer: IntersectionObserver | null = null;
+    const target = summaryCtaContainerRef.current;
+    if (typeof window !== "undefined" && "IntersectionObserver" in window && target) {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          setIsSummaryCtaVisible(entry.isIntersecting);
+        },
+        {
+          threshold: 0.1,
+          rootMargin: "0px",
+        }
+      );
+      observer.observe(target);
     }
 
-    const target = summaryCtaContainerRef.current;
-    if (!target) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsSummaryCtaVisible(entry.isIntersecting);
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px",
-      }
-    );
-
-    observer.observe(target);
+    window.addEventListener("scroll", checkVisibility, { passive: true });
+    window.addEventListener("resize", checkVisibility, { passive: true });
 
     return () => {
-      observer.disconnect();
+      cancelAnimationFrame(rafId);
+      if (observer) observer.disconnect();
+      window.removeEventListener("scroll", checkVisibility);
+      window.removeEventListener("resize", checkVisibility);
     };
   }, [currentStep, ticketTiers, loadingEvent]);
 
@@ -345,6 +450,58 @@ export default function PurchaseFlowPageComponent() {
       return () => clearTimeout(timer);
     }
   }, [currentStep]);
+
+  // Precarga automática del formToken de Izipay para el formulario incrustado en Paso 2
+  useEffect(() => {
+    if (currentStep !== 2 || paymentMethod !== "card") return;
+    if (totalTickets <= 0) return;
+
+    const activeToken = apiClient.getToken();
+    if (!activeToken) return;
+
+    let isMounted = true;
+    setIsLoadingIzipayToken(true);
+
+    const selectedItems = ticketTiers
+      .filter((t) => t.quantity > 0)
+      .map((t) => ({ zoneId: t.id, quantity: t.quantity }));
+
+    createIzipayPaymentUseCase
+      .execute({
+        eventId: event ? (event.publicUuid || event.id) : eventId || "1",
+        showId: selectedFunctionId,
+        items: selectedItems,
+        paymentMethod: "card",
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+      })
+      .match(
+        (response) => {
+          if (!isMounted) return;
+          setIsLoadingIzipayToken(false);
+          setIzipayModalData(response);
+        },
+        (error) => {
+          if (!isMounted) return;
+          setIsLoadingIzipayToken(false);
+          if (error.code === 'UNAUTHORIZED' || error.message?.toLowerCase().includes('sesión')) {
+            setShowAuthModal(true);
+            return;
+          }
+          if (error.code === 'COUPON_INVALID_OR_EXPIRED') {
+            setAppliedCoupon(null);
+            setCouponError("El cupón de descuento ya no se encuentra disponible o ha expirado.");
+            return;
+          }
+          setPaymentError(
+            error.message || "No se pudo inicializar la pasarela de Izipay. Intenta nuevamente."
+          );
+        }
+      );
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentStep, paymentMethod, appliedCoupon, totalTickets, selectedFunctionId]);
 
   // Lógica para avanzar al Paso 2 desde el botón nativo o desde el footer flotante móvil
   const handleProceedToStep2 = () => {
@@ -397,12 +554,66 @@ export default function PurchaseFlowPageComponent() {
     const resolvedCustomerEmail = currentUser.email;
     const resolvedCustomerName = `${currentUser.firstName} ${currentUser.lastName}`.trim() || currentUser.email;
 
+    // A. Pago mediante Izipay en Modo Incrustado (Para Tarjeta)
+    if (paymentMethod === "card") {
+      if (typeof window !== "undefined" && (window as any).KR) {
+        setIsProcessing(true);
+        setPaymentError(null);
+        (window as any).KR.submit();
+        return;
+      }
+      alert(
+        "La pasarela segura de Izipay se está terminando de inicializar. Por favor espera un momento e intenta nuevamente."
+      );
+      setIsProcessing(false);
+      return;
+    }
+
+    // B. Pago mediante Izipay en Modo Pop-in (Para Yape)
+    if (paymentMethod === "yape") {
+      createIzipayPaymentUseCase
+        .execute({
+          eventId: event ? (event.publicUuid || event.id) : eventId || "1",
+          showId: selectedFunctionId,
+          items: selectedItems,
+          paymentMethod,
+          couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+        })
+        .match(
+          (response) => {
+            setIsProcessing(false);
+            setIzipayModalData(response);
+            setShowIzipayPopin(true); // Despliega el Pop-in para Yape
+          },
+          (error) => {
+            setIsProcessing(false);
+            if (error.code === 'UNAUTHORIZED' || error.message?.toLowerCase().includes('sesión')) {
+              setShowAuthModal(true);
+              return;
+            }
+            if (error.code === 'COUPON_INVALID_OR_EXPIRED' || error.message?.toLowerCase().includes('cupón')) {
+              setAppliedCoupon(null);
+              setCouponError("El cupón de descuento ya no se encuentra disponible o ha expirado. Por favor retíralo o prueba con otro cupón.");
+              setPaymentError("El cupón de descuento ha dejado de ser válido o alcanzó su límite en este instante.");
+              return;
+            }
+            setPaymentError(
+              error.message ||
+              "No se pudo inicializar la pasarela de pagos de Izipay. Por favor intenta de nuevo."
+            );
+          }
+        );
+      return;
+    }
+
+    // C. Otros Medios de Pago / Simulación
     simulateCheckoutUseCase
       .execute({
         eventId: event ? (event.publicUuid || event.id) : eventId || "1",
         showId: selectedFunctionId,
         items: selectedItems,
         paymentMethod,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         customerEmail: resolvedCustomerEmail,
         customerName: resolvedCustomerName,
         forceFailure: forceFailureTest,
@@ -412,11 +623,20 @@ export default function PurchaseFlowPageComponent() {
           setIsProcessing(false);
           setCheckoutResult(response);
           setCurrentStep(3);
+          if (typeof window !== "undefined") {
+            window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+          }
         },
         (error) => {
           setIsProcessing(false);
           if (error.code === 'UNAUTHORIZED' || error.message?.toLowerCase().includes('sesión')) {
             setShowAuthModal(true);
+            return;
+          }
+          if (error.code === 'COUPON_INVALID_OR_EXPIRED' || error.message?.toLowerCase().includes('cupón')) {
+            setAppliedCoupon(null);
+            setCouponError("El cupón de descuento ya no se encuentra disponible o ha expirado. Por favor retíralo o prueba con otro cupón.");
+            setPaymentError("El cupón de descuento ha dejado de ser válido o alcanzó su límite de canjes en este instante. Se ha desvinculado de la orden para que puedas reintentar tu pago.");
             return;
           }
           setPaymentError(
@@ -425,6 +645,49 @@ export default function PurchaseFlowPageComponent() {
           );
         }
       );
+  };
+
+  const handleIzipayPaymentSuccess = (krAnswer?: any) => {
+    setShowIzipayPopin(false);
+
+    const resolvedOrderCode = izipayModalData ? izipayModalData.orderCode : `#QPH-${Math.floor(100000 + Math.random() * 900000)}`;
+    const resolvedUuid = izipayModalData ? izipayModalData.orderPublicUuid : `ord-${Date.now()}`;
+    const resolvedTotal = izipayModalData ? izipayModalData.totalAmount : grandTotal;
+
+    const ticketsGenerated = ticketTiers
+      .filter((t) => t.quantity > 0)
+      .flatMap((t, idx) =>
+        Array.from({ length: t.quantity }).map((_, i) => ({
+          ticketId: `${idx + 1}${i + 1}`,
+          ticketUuid: `tkt-${Date.now()}-${idx}-${i}`,
+          ticketNumber: i + 1,
+          zoneName: t.name,
+          tierName: t.name,
+          unitPrice: t.price,
+          qrPayload: `QPH|ORD:${resolvedOrderCode}|ZONE:${t.name}|TKT:${i + 1}|TS:${Date.now()}`,
+        }))
+      );
+
+    setCheckoutResult({
+      success: true,
+      orderId: izipayModalData?.orderId || "1",
+      orderCode: resolvedOrderCode,
+      orderPublicUuid: resolvedUuid,
+      status: "paid",
+      subtotal: subtotal,
+      discountAmount: izipayModalData?.discountAmount || (appliedCoupon ? appliedCoupon.discountAmount : 0),
+      couponCode: izipayModalData?.couponCode || (appliedCoupon ? appliedCoupon.code : null),
+      totalAmount: resolvedTotal,
+      paymentMethod: paymentMethod,
+      txCode: krAnswer?.transactions?.[0]?.uuid || `IZI-${Math.floor(100000 + Math.random() * 900000)}`,
+      message: "¡Pago completado con éxito a través de Izipay!",
+      tickets: ticketsGenerated,
+    });
+
+    setCurrentStep(3);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
   };
 
   const paymentMethodLabel = {
@@ -482,6 +745,8 @@ export default function PurchaseFlowPageComponent() {
         unitPrice={primarySelectedTier ? primarySelectedTier.price : 65}
         distributionFee={0}
         vatAmount={0}
+        discountAmount={checkoutResult?.discountAmount ?? effectiveDiscountAmount}
+        couponCode={checkoutResult?.couponCode ?? (appliedCoupon ? appliedCoupon.code : null)}
         totalAmount={checkoutResult ? checkoutResult.totalAmount : (grandTotal > 0 ? grandTotal : (primarySelectedTier ? primarySelectedTier.price : 65))}
         paymentMethodText={paymentMethodLabel}
         txCode={checkoutResult ? checkoutResult.txCode : `TX-${Math.floor(100000 + Math.random() * 900000)}`}
@@ -996,6 +1261,29 @@ export default function PurchaseFlowPageComponent() {
                     </button>
                   </div>
 
+                  {/* Formulario Incrustado Oficial de Izipay (Solo para método Tarjeta) */}
+                  {paymentMethod === "card" && (
+                    <IzipayEmbeddedForm
+                      formToken={izipayModalData?.formToken || null}
+                      publicKey={
+                        izipayModalData?.publicKey ||
+                        process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY ||
+                        "94556890:testpublickey_VZqyzt8aze4EY4vTeAQBCfNeK1k4qlF2Mv1upObB5fm2V"
+                      }
+                      clientEndpoint={
+                        izipayModalData?.clientEndpoint ||
+                        process.env.NEXT_PUBLIC_IZIPAY_CLIENT_ENDPOINT ||
+                        "https://api.micuentaweb.pe"
+                      }
+                      isLoadingToken={isLoadingIzipayToken}
+                      onPaymentSuccess={handleIzipayPaymentSuccess}
+                      onPaymentError={(errorMessage) => {
+                        setIsProcessing(false);
+                        setPaymentError(errorMessage);
+                      }}
+                    />
+                  )}
+
                   {/* Datos del Titular de la Orden (Usuario en Sesión) */}
                   <div className="p-4 bg-surface-container-lowest rounded-xl border border-surface-variant flex items-center justify-between gap-3 shadow-xs">
                     <div className="flex items-center gap-3">
@@ -1138,6 +1426,117 @@ export default function PurchaseFlowPageComponent() {
                     )}
                   </div>
 
+                  {/* Desglose de Descuento por Cupón (Si aplica) */}
+                  {appliedCoupon && effectiveDiscountAmount > 0 && (
+                    <div className="my-3 py-2.5 px-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center justify-between text-xs font-semibold text-emerald-800">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="material-symbols-outlined text-emerald-600 text-[18px]">
+                          local_offer
+                        </span>
+                        <span className="truncate">
+                          Cupón {appliedCoupon.code} ({appliedCoupon.discountType === 'percentage' ? `-${appliedCoupon.discountValue}%` : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`})
+                        </span>
+                      </div>
+                      <span className="text-emerald-700 font-bold shrink-0">
+                        -S/. {effectiveDiscountAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Bloque Interactivo de Cupón de Descuento (Stitch Design) */}
+                  <div className="py-4 border-b border-surface-variant space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="coupon-input" className="text-xs font-bold text-deep-slate flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">confirmation_number</span>
+                        <span>¿Tienes un cupón de descuento?</span>
+                      </label>
+                      {appliedCoupon && (
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-full">
+                          Activo
+                        </span>
+                      )}
+                    </div>
+
+                    {appliedCoupon ? (
+                      <div className="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 shadow-xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-[20px]">verified</span>
+                          </div>
+                          <div className="truncate">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-black text-emerald-950 tracking-wider font-mono uppercase">
+                                {appliedCoupon.code}
+                              </span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                {appliedCoupon.discountType === 'percentage'
+                                  ? `-${appliedCoupon.discountValue}%`
+                                  : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-emerald-700 truncate">
+                              {appliedCoupon.message || "Descuento aplicado en el total"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          title="Remover cupón"
+                          className="w-7 h-7 rounded-lg hover:bg-emerald-200/50 text-emerald-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-base">close</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            id="coupon-input"
+                            type="text"
+                            value={couponCodeInput}
+                            onChange={(e) => {
+                              setCouponCodeInput(e.target.value.toUpperCase());
+                              if (couponError) setCouponError(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleApplyCoupon();
+                              }
+                            }}
+                            placeholder="EJ: PROMO2026"
+                            className="w-full px-3 py-2 text-xs uppercase font-mono tracking-wider bg-surface-container-low border border-surface-variant rounded-xl focus:outline-none focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo transition-all placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-platinum-silver text-deep-slate"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleApplyCoupon}
+                            disabled={isCouponLoading || !couponCodeInput.trim() || subtotal <= 0}
+                            className="px-4 py-2 bg-electric-indigo/10 hover:bg-electric-indigo/20 text-electric-indigo disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-bold text-xs transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+                          >
+                            {isCouponLoading ? (
+                              <div className="w-3.5 h-3.5 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <span>Aplicar</span>
+                            )}
+                          </button>
+                        </div>
+                        {couponError && (
+                          <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 animate-in fade-in duration-150">
+                            <span className="material-symbols-outlined text-[13px]">error</span>
+                            <span>{couponError}</span>
+                          </p>
+                        )}
+                        {couponSuccessMessage && (
+                          <p className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 animate-in fade-in duration-150">
+                            <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                            <span>{couponSuccessMessage}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Total Final */}
                   <div className="py-5 flex justify-between items-center">
                     <div className="flex flex-col">
@@ -1147,6 +1546,11 @@ export default function PurchaseFlowPageComponent() {
                       </span>
                     </div>
                     <div className="text-right">
+                      {appliedCoupon && effectiveDiscountAmount > 0 && (
+                        <span className="block text-xs text-platinum-silver line-through font-semibold">
+                          S/. {subtotal.toFixed(2)}
+                        </span>
+                      )}
                       <span className="text-3xl font-black text-electric-indigo">
                         S/. {grandTotal.toFixed(2)}
                       </span>
@@ -1349,11 +1753,11 @@ export default function PurchaseFlowPageComponent() {
       {/* =========================================================================
           FOOTER FLOTANTE MÓVIL: TOTAL DE COMPRA SEGÚN SELECCIÓN (SOLO MÓVIL)
           Muestra el total en tiempo real y desaparece automáticamente cuando el
-          botón "Continuar al Paso de Pago" entra en pantalla (IntersectionObserver).
+          botón oficial del resumen entra en pantalla (IntersectionObserver / scroll).
          ========================================================================= */}
       <aside
         aria-label="Total de la compra en versión móvil"
-        className={`fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-md border-t border-surface-variant shadow-[0_-4px_25px_rgba(0,0,0,0.12)] px-4 py-3 transition-all duration-300 ease-in-out ${
+        className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-md border-t border-surface-variant shadow-[0_-4px_25px_rgba(0,0,0,0.15)] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-all duration-300 ease-in-out ${
           showMobileOrderFooter
             ? "translate-y-0 opacity-100 pointer-events-auto"
             : "translate-y-full opacity-0 pointer-events-none"
@@ -1361,13 +1765,23 @@ export default function PurchaseFlowPageComponent() {
       >
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-              Total de la orden
+            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1">
+              <span>Total de la orden</span>
+              {appliedCoupon && (
+                <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                  -{appliedCoupon.code}
+                </span>
+              )}
             </span>
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-black text-electric-indigo tracking-tight">
                 S/. {grandTotal.toFixed(2)}
               </span>
+              {appliedCoupon && effectiveDiscountAmount > 0 && (
+                <span className="text-[11px] text-platinum-silver line-through font-semibold">
+                  S/. {subtotal.toFixed(2)}
+                </span>
+              )}
               <span className="text-[11px] text-platinum-silver font-medium">
                 ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
               </span>
@@ -1386,10 +1800,7 @@ export default function PurchaseFlowPageComponent() {
                   }
                   return;
                 }
-                summaryCtaContainerRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                });
+                handleProceedToStep2();
               }}
               className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer"
             >
@@ -1411,13 +1822,30 @@ export default function PurchaseFlowPageComponent() {
               ) : (
                 <>
                   <span className="material-symbols-outlined text-base">lock</span>
-                  <span>Confirmar y Pagar</span>
+                  <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
                 </>
               )}
             </button>
           )}
         </div>
       </aside>
+
+      {/* =========================================================================
+          MODAL POP-IN OFICIAL DE IZIPAY (SMARTFORM POPIN)
+         ========================================================================= */}
+      {showIzipayPopin && izipayModalData && (
+        <IzipayPopinModal
+          isOpen={showIzipayPopin}
+          onClose={() => setShowIzipayPopin(false)}
+          formToken={izipayModalData.formToken}
+          publicKey={izipayModalData.publicKey}
+          clientEndpoint={izipayModalData.clientEndpoint}
+          orderCode={izipayModalData.orderCode}
+          totalAmount={izipayModalData.totalAmount}
+          paymentMethodText={paymentMethodLabel}
+          onPaymentSuccess={handleIzipayPaymentSuccess}
+        />
+      )}
     </div>
   );
 }

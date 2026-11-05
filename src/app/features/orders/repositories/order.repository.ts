@@ -4,6 +4,10 @@ import {
   SimulateCheckoutParams,
   SimulateCheckoutResponseModel,
   UserOrderModel,
+  ValidateCouponParams,
+  ValidateCouponResponseModel,
+  CreateIzipayPaymentParams,
+  CreateIzipayPaymentResponse,
 } from '../models/order.model';
 import { DomainError } from '../../../common/errors/domain-error';
 
@@ -12,4 +16,6 @@ export abstract class OrderRepository {
   abstract getOrder(orderToken: string): ResultAsync<OrderModel, DomainError>;
   abstract simulateCheckout(params: SimulateCheckoutParams): ResultAsync<SimulateCheckoutResponseModel, DomainError>;
   abstract getMyOrders(): ResultAsync<UserOrderModel[], DomainError>;
+  abstract validateCoupon(params: ValidateCouponParams): ResultAsync<ValidateCouponResponseModel, DomainError>;
+  abstract createIzipayPayment(params: CreateIzipayPaymentParams): ResultAsync<CreateIzipayPaymentResponse, DomainError>;
 }

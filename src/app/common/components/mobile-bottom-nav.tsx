@@ -62,6 +62,13 @@ export function MobileBottomNav() {
     };
   }, [isSearchOpen]);
 
+  // Escuchar evento global para abrir búsqueda móvil desde cualquier botón o barra del Home
+  useEffect(() => {
+    const handleOpenSearch = () => setIsSearchOpen(true);
+    window.addEventListener("open-mobile-search", handleOpenSearch);
+    return () => window.removeEventListener("open-mobile-search", handleOpenSearch);
+  }, []);
+
   // Cerrar búsqueda con tecla Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { QRCodeSVG } from "qrcode.react";
@@ -47,6 +47,8 @@ export interface PaymentSuccessProps {
   unitPrice?: number;
   distributionFee?: number;
   vatAmount?: number;
+  discountAmount?: number;
+  couponCode?: string | null;
   totalAmount?: number;
   paymentMethodText?: string;
   txCode?: string;
@@ -85,6 +87,8 @@ export default function PaymentSuccessScreen({
   unitPrice = 50,
   distributionFee = 0,
   vatAmount = 0,
+  discountAmount = 0,
+  couponCode = null,
   totalAmount = 50,
   paymentMethodText = "Tarjeta de crédito",
   txCode = "TX-910403",
@@ -94,6 +98,17 @@ export default function PaymentSuccessScreen({
   const [showPrintView, setShowPrintView] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Asegurar que la pantalla de confirmación inicie siempre en la parte superior (scroll top 0)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      const rafId = requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+  }, []);
 
   const handleDownloadPdf = () => {
     setShowPrintView(true);
@@ -440,6 +455,16 @@ export default function PaymentSuccessScreen({
                     <div className="flex justify-between items-center text-on-surface-variant">
                       <span>IGV aplicado</span>
                       <span>S/. {vatAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between items-center text-emerald-600 font-semibold bg-emerald-50/60 p-2 rounded-lg border border-emerald-200/50">
+                      <span className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px]">local_offer</span>
+                        <span>Cupón descuento {couponCode ? `(${couponCode})` : ''}</span>
+                      </span>
+                      <span>-S/. {discountAmount.toFixed(2)}</span>
                     </div>
                   )}
                 </div>
