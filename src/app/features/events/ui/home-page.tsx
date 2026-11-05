@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { HeroCarousel } from "./components/hero-carousel";
 import { SearchBar } from "./components/search-bar";
 import { EventCard, EventCardProps } from "./components/event-card";
@@ -136,19 +137,31 @@ function EventCardSkeleton() {
   );
 }
 
-function MobileRowSkeleton() {
+function MobileCarouselSkeleton() {
   return (
-    <div className="p-3 flex items-center gap-3.5 animate-pulse">
-      <div className="w-24 h-24 flex-shrink-0 rounded-xl bg-slate-200" />
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
-        <div className="h-3 w-28 bg-slate-200 rounded mb-2" />
-        <div className="h-4 w-3/4 bg-slate-200 rounded mb-2" />
-        <div className="h-3 w-1/2 bg-slate-100 rounded mb-3" />
-        <div className="flex justify-between items-center pt-1 border-t border-slate-100">
-          <div className="h-3 w-16 bg-slate-200 rounded" />
-          <div className="h-6 w-16 bg-slate-200 rounded-lg" />
+    <div className="flex gap-3.5 overflow-hidden animate-pulse">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="w-[75vw] max-w-[280px] flex-shrink-0">
+          <div className="aspect-[4/5] rounded-2xl bg-slate-200 mb-2.5" />
+          <div className="h-4 w-3/4 bg-slate-200 rounded mb-1.5" />
+          <div className="h-3 w-1/2 bg-slate-100 rounded" />
         </div>
-      </div>
+      ))}
+    </div>
+  );
+}
+
+function MobileGridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3.5 animate-pulse">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i}>
+          <div className="aspect-[4/5] rounded-2xl bg-slate-200 mb-2" />
+          <div className="h-3 w-16 bg-slate-200 rounded mb-1" />
+          <div className="h-4 w-full bg-slate-200 rounded mb-1" />
+          <div className="h-3 w-2/3 bg-slate-100 rounded" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -172,6 +185,8 @@ function EmptySectionMessage({ message }: { message: string }) {
 // PÁGINA PRINCIPAL (HOME PAGE)
 // =========================================================================
 export default function HomePage() {
+  const router = useRouter();
+  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
   const [activeMobileFilter, setActiveMobileFilter] = useState("Todo");
   const [upcomingEvents, setUpcomingEvents] = useState<EventCardProps[]>([]);
   const [weeklyFeaturedEvents, setWeeklyFeaturedEvents] = useState<EventCardProps[]>([]);
@@ -414,16 +429,57 @@ export default function HomePage() {
           </section>
         ) : null}
 
-        {/* 2. Chips de Categorías Móvil (Horizontal Chips) */}
+        {/* 2. SPEC 1: ELEVAR EL BUSCADOR FLOTANTE (Directamente debajo del Hero & antes de Categorías) */}
+        <section className="px-4 py-4 -mt-3 relative z-30">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (mobileSearchQuery.trim()) {
+                router.push(`/events?q=${encodeURIComponent(mobileSearchQuery.trim())}`);
+              } else {
+                window.dispatchEvent(new Event("open-mobile-search"));
+              }
+            }}
+            className="relative flex items-center bg-surface-container-lowest rounded-2xl shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.05)] border border-surface-variant p-1.5 transition-all focus-within:ring-2 focus-within:ring-electric-indigo"
+          >
+            <button
+              type="submit"
+              aria-label="Buscar planes"
+              className="pl-3 pr-2 flex items-center text-platinum-silver hover:text-electric-indigo transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[22px]">search</span>
+            </button>
+            <input
+              type="text"
+              value={mobileSearchQuery}
+              onChange={(e) => setMobileSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent border-none text-on-surface text-sm font-body-md placeholder-platinum-silver focus:ring-0 p-2 min-w-0 outline-none"
+              placeholder="¿Qué planes buscas hoy? Artistas, lugares..."
+            />
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new Event("open-mobile-search"));
+              }}
+              aria-label="Filtrar eventos"
+              className="w-10 h-10 flex-shrink-0 bg-surface-gray hover:bg-electric-indigo hover:text-white text-on-surface rounded-xl flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[20px]">tune</span>
+            </button>
+          </form>
+        </section>
+
+        {/* 3. Chips de Categorías Móvil (Horizontal Chips) */}
         <section className="mb-6 px-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">Explora por Categoría</h3>
-            <Link
-              href="/events"
-              className="text-xs text-electric-indigo qph-label-bold hover:underline flex items-center gap-0.5"
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("open-mobile-search"))}
+              className="text-xs text-electric-indigo qph-label-bold hover:underline flex items-center gap-0.5 cursor-pointer"
             >
-              Ver todas <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </Link>
+              Ver filtros
+            </button>
           </div>
           <div className="flex overflow-x-auto qph-hide-scrollbar gap-2 pb-1 -mx-4 px-4 scroll-smooth">
             <button
@@ -458,226 +514,204 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 3. SECCIÓN: DESTACADOS DE LA SEMANA */}
-        {weeklyFeaturedEvents.length > 0 && (
-          <section className="px-4 mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-vip-gold text-[20px]">star</span>
-                  Destacados de la Semana
-                </h3>
-                <p className="text-xs text-on-surface-variant">Los eventos más solicitados por el público</p>
-              </div>
-              <Link href="/events?sort=date_asc" className="text-xs text-electric-indigo qph-label-bold hover:underline">
-                Ver todos
-              </Link>
+        {/* 4. SPEC 2 & 4: CARRUSEL HORIZONTAL (SWIPE) PARA DESTACADOS (Netflix/Spotify style cards) */}
+        <section className="mb-8 px-4">
+          <div className="flex items-center justify-between mb-3.5">
+            <div>
+              <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-vip-gold text-[20px]">star</span>
+                Destacados de la Semana
+              </h3>
+              <p className="text-xs text-on-surface-variant">Seleccionados especialmente para ti</p>
             </div>
+            <span className="text-xs text-electric-indigo qph-label-bold flex items-center gap-0.5">
+              Deslizar <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </span>
+          </div>
 
-            <div className="flex flex-col divide-y divide-surface-variant bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant overflow-hidden">
-              {weeklyFeaturedEvents.slice(0, 4).map((event) => {
+          {isLoadingWeekly ? (
+            <MobileCarouselSkeleton />
+          ) : weeklyFeaturedEvents.length > 0 ? (
+            <div className="flex overflow-x-auto qph-hide-scrollbar gap-3.5 pb-2 -mx-4 px-4 snap-x snap-mandatory">
+              {weeklyFeaturedEvents.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
                 const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
                 return (
                   <article
-                    key={`weekly-${event.id}`}
-                    className="p-3 flex items-center gap-3.5 hover:bg-surface-gray/50 transition-colors active:scale-[0.99]"
+                    key={`carousel-${event.id}`}
+                    className="w-[75vw] max-w-[280px] flex-shrink-0 group cursor-pointer active:scale-[0.98] transition-transform snap-start"
                   >
-                    <Link
-                      href={ctaHref}
-                      className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-surface-gray group cursor-pointer"
-                    >
-                      <img
-                        src={event.imageUrl}
-                        alt={event.altText || event.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <span className="absolute top-1.5 left-1.5 bg-vip-gold text-white text-[9px] qph-label-bold uppercase px-1.5 py-0.5 rounded shadow-xs">
-                        DESTACADO
-                      </span>
-                    </Link>
-
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                      <Link href={ctaHref} className="block group cursor-pointer">
-                        {event.date && (
-                          <span className="text-[11px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
-                            {event.date}
-                          </span>
-                        )}
-                        <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
-                          {event.title}
-                        </h4>
-                        <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                          <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
-                          <span className="truncate">{event.location}</span>
-                        </p>
-                      </Link>
-
-                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
-                        <span className="text-xs font-bold text-on-surface">
-                          Desde <span className="text-electric-indigo qph-price-tag text-sm">S/ {event.price}</span>
+                    <Link href={ctaHref} className="block">
+                      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-surface-gray shadow-sm mb-2.5">
+                        <img
+                          src={event.imageUrl}
+                          alt={event.altText || event.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-deep-slate/90 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                        <span className="absolute top-2.5 left-2.5 bg-vip-gold/90 backdrop-blur-sm text-white text-[10px] qph-label-bold uppercase px-2 py-0.5 rounded-full shadow-xs">
+                          DESTACADO
                         </span>
-                        <Link
-                          href={ctaHref}
-                          className="px-3.5 py-1.5 bg-electric-indigo hover:bg-primary text-white qph-label-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer font-bold"
-                        >
-                          {event.hasLandingPage ? "Ver" : "Comprar"}
-                        </Link>
+                        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white text-xs">
+                          <span className="qph-label-bold bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md">
+                            Desde S/ {event.price}
+                          </span>
+                          {event.date && (
+                            <span className="text-[11px] text-platinum-silver qph-label-bold">
+                              {event.date}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                      <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
+                        {event.title}
+                      </h4>
+                      <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
+                        <span className="material-symbols-outlined text-[14px] text-platinum-silver">location_on</span>
+                        <span className="truncate">{event.location}</span>
+                      </p>
+                    </Link>
                   </article>
                 );
               })}
             </div>
-          </section>
-        )}
+          ) : (
+            <EmptySectionMessage message="No hay eventos destacados en este momento." />
+          )}
+        </section>
 
-        {/* 4. SECCIÓN: EVENTOS PRÓXIMOS (Con filtrado reactivo de categorías) */}
-        <section className="px-4 mb-8">
-          <div className="flex items-center justify-between mb-3">
+        {/* 5. SPEC 3 & 4: GRID DE 2 COLUMNAS PARA \"EVENTOS PRÓXIMOS\" (Netflix/Spotify Clean Cards) */}
+        <section className="px-4 mb-10">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">
                 Eventos Próximos
               </h3>
-              <p className="text-xs text-on-surface-variant">Cartelera ordenada por fecha de presentación</p>
+              <p className="text-xs text-on-surface-variant">Los mejores planes cerca de ti</p>
             </div>
-            <Link href="/events" className="text-xs text-electric-indigo qph-label-bold hover:underline">
-              Ver todos ({filteredMobileEvents.length})
-            </Link>
+            <span className="text-xs text-platinum-silver qph-label-bold">Lima &amp; Más</span>
           </div>
 
-          <div className="flex flex-col divide-y divide-surface-variant bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant overflow-hidden">
-            {isLoadingUpcoming ? (
-              [1, 2, 3, 4].map((i) => <MobileRowSkeleton key={i} />)
-            ) : filteredMobileEvents.length > 0 ? (
-              filteredMobileEvents.slice(0, 6).map((event) => {
-                const secureId = event.publicUuid || event.slug || event.id;
-                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
-                return (
-                  <article
-                    key={`upcoming-${event.id}`}
-                    className="p-3 flex items-center gap-3.5 hover:bg-surface-gray/50 transition-colors active:scale-[0.99]"
-                  >
-                    <Link
-                      href={ctaHref}
-                      className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-surface-gray group cursor-pointer"
+          {isLoadingUpcoming ? (
+            <MobileGridSkeleton />
+          ) : filteredMobileEvents.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 gap-3.5">
+                {filteredMobileEvents.slice(0, 6).map((event) => {
+                  const secureId = event.publicUuid || event.slug || event.id;
+                  const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
+                  return (
+                    <article
+                      key={`grid-${event.id}`}
+                      className="group cursor-pointer active:scale-[0.98] transition-transform"
                     >
-                      <img
-                        src={event.imageUrl}
-                        alt={event.altText || event.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <span className="absolute top-1.5 left-1.5 bg-deep-slate/85 backdrop-blur-sm text-white text-[9px] qph-label-bold uppercase px-1.5 py-0.5 rounded shadow-xs">
-                        {event.category || "EVENTO"}
-                      </span>
-                    </Link>
-
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                      <Link href={ctaHref} className="block group cursor-pointer">
+                      <Link href={ctaHref} className="block">
+                        <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-surface-gray shadow-sm mb-2">
+                          <img
+                            src={event.imageUrl}
+                            alt={event.altText || event.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <span className="absolute top-2 left-2 bg-deep-slate/85 backdrop-blur-sm text-white text-[9px] qph-label-bold uppercase px-2 py-0.5 rounded-full">
+                            {event.category || "EVENTO"}
+                          </span>
+                          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-[11px]">
+                            <span className="bg-deep-slate/80 backdrop-blur-sm px-1.5 py-0.5 rounded qph-label-bold text-electric-indigo">
+                              Desde S/ {event.price}
+                            </span>
+                          </div>
+                        </div>
                         {event.date && (
-                          <span className="text-[11px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
+                          <span className="text-[10px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
                             {event.date}
                           </span>
                         )}
-                        <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
+                        <h4 className="text-xs font-bold text-on-surface leading-tight line-clamp-2 group-hover:text-electric-indigo transition-colors">
                           {event.title}
                         </h4>
-                        <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
+                        <p className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
                           <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
                           <span className="truncate">{event.location}</span>
                         </p>
                       </Link>
-
-                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
-                        <span className="text-xs font-bold text-on-surface">
-                          Desde <span className="text-electric-indigo qph-price-tag text-sm">S/ {event.price}</span>
-                        </span>
-                        <Link
-                          href={ctaHref}
-                          className="px-3.5 py-1.5 bg-electric-indigo hover:bg-primary text-white qph-label-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer font-bold"
-                        >
-                          {event.hasLandingPage ? "Ver" : "Comprar"}
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })
-            ) : (
-              <div className="py-8 text-center text-on-surface-variant text-sm p-4">
-                No se encontraron eventos próximos en esta categoría.
+                    </article>
+                  );
+                })}
               </div>
-            )}
-          </div>
+
+              {/* Botón CTA Ancho Completo como en Stitch SPEC 3 */}
+              <div className="mt-5">
+                <Link
+                  href="/events"
+                  className="w-full h-12 bg-surface-container-lowest hover:bg-surface-gray border border-surface-variant text-on-surface qph-label-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99] cursor-pointer"
+                >
+                  <span>Ver toda la cartelera</span>
+                  <span className="material-symbols-outlined text-[18px] text-electric-indigo">arrow_forward</span>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="py-8 text-center text-on-surface-variant text-sm p-4 bg-surface-container-lowest rounded-2xl border border-surface-variant">
+              No se encontraron eventos próximos en esta categoría.
+            </div>
+          )}
         </section>
 
-        {/* 5. SECCIÓN: PLANES PARA EL FIN DE SEMANA */}
+        {/* 6. Planes para el Fin de Semana (Carrusel Horizontal Swipeable) */}
         {weekendPlans.length > 0 && (
-          <section className="px-4 mb-8">
-            <div className="flex items-center justify-between mb-3">
+          <section className="mb-8 px-4">
+            <div className="flex items-center justify-between mb-3.5">
               <div>
                 <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-emerald-500 text-[20px]">weekend</span>
                   Planes de Fin de Semana
                 </h3>
-                <p className="text-xs text-on-surface-variant">Disfruta este sábado y domingo sin complicaciones</p>
+                <p className="text-xs text-on-surface-variant">Disfruta este sábado y domingo</p>
               </div>
               <Link href="/events?date=weekend" className="text-xs text-electric-indigo qph-label-bold hover:underline">
                 Ver todos
               </Link>
             </div>
 
-            <div className="flex flex-col divide-y divide-surface-variant bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant overflow-hidden">
-              {weekendPlans.slice(0, 4).map((event) => {
+            <div className="flex overflow-x-auto qph-hide-scrollbar gap-3.5 pb-2 -mx-4 px-4 snap-x snap-mandatory">
+              {weekendPlans.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
                 const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
                 return (
                   <article
                     key={`weekend-${event.id}`}
-                    className="p-3 flex items-center gap-3.5 hover:bg-surface-gray/50 transition-colors active:scale-[0.99]"
+                    className="w-[65vw] max-w-[240px] flex-shrink-0 group cursor-pointer active:scale-[0.98] transition-transform snap-start"
                   >
-                    <Link
-                      href={ctaHref}
-                      className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-surface-gray group cursor-pointer"
-                    >
-                      <img
-                        src={event.imageUrl}
-                        alt={event.altText || event.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[9px] qph-label-bold uppercase px-1.5 py-0.5 rounded shadow-xs">
-                        FIN DE SEMANA
-                      </span>
-                    </Link>
-
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                      <Link href={ctaHref} className="block group cursor-pointer">
-                        {event.date && (
-                          <span className="text-[11px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
-                            {event.date}
-                          </span>
-                        )}
-                        <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
-                          {event.title}
-                        </h4>
-                        <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                          <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
-                          <span className="truncate">{event.location}</span>
-                        </p>
-                      </Link>
-
-                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
-                        <span className="text-xs font-bold text-on-surface">
-                          Desde <span className="text-electric-indigo qph-price-tag text-sm">S/ {event.price}</span>
+                    <Link href={ctaHref} className="block">
+                      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-surface-gray shadow-sm mb-2.5">
+                        <img
+                          src={event.imageUrl}
+                          alt={event.altText || event.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-deep-slate/90 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                        <span className="absolute top-2.5 left-2.5 bg-emerald-600 backdrop-blur-sm text-white text-[10px] qph-label-bold uppercase px-2 py-0.5 rounded-full shadow-xs">
+                          FIN DE SEMANA
                         </span>
-                        <Link
-                          href={ctaHref}
-                          className="px-3.5 py-1.5 bg-electric-indigo hover:bg-primary text-white qph-label-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer font-bold"
-                        >
-                          {event.hasLandingPage ? "Ver" : "Comprar"}
-                        </Link>
+                        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white text-xs">
+                          <span className="qph-label-bold bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md">
+                            Desde S/ {event.price}
+                          </span>
+                          {event.date && (
+                            <span className="text-[11px] text-platinum-silver qph-label-bold">
+                              {event.date}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                      <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
+                        {event.title}
+                      </h4>
+                      <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
+                        <span className="material-symbols-outlined text-[14px] text-platinum-silver">location_on</span>
+                        <span className="truncate">{event.location}</span>
+                      </p>
+                    </Link>
                   </article>
                 );
               })}
@@ -685,8 +719,8 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* 6. Newsletter Móvil (Stitch Style) */}
-        <section className="px-5 py-8 bg-deep-slate rounded-2xl mx-4 mb-8 text-center text-white overflow-hidden relative">
+        {/* 7. Newsletter Móvil (Stitch Style) */}
+        <section className="px-5 py-8 bg-deep-slate rounded-2xl mx-4 mb-16 text-center text-white overflow-hidden relative">
           <div className="relative z-10">
             <span className="inline-block px-2.5 py-0.5 bg-electric-indigo/30 text-electric-indigo text-[10px] qph-label-bold rounded-full uppercase tracking-wider mb-2">
               Newsletter QPH

@@ -917,20 +917,14 @@ export default function ExploreEventsPageComponent() {
         {/* ESTADO: CARGANDO (SKELETONS RESPONSIVOS) */}
         {isLoading ? (
           <>
-            {/* Skeletons en Filas para Móvil */}
-            <div className="block sm:hidden flex flex-col divide-y divide-surface-variant bg-white rounded-2xl border border-surface-variant overflow-hidden mb-8">
+            {/* Skeletons en Grid de 2 Columnas para Móvil */}
+            <div className="grid grid-cols-2 gap-3.5 sm:hidden mb-8 animate-pulse">
               {Array.from({ length: 6 }).map((_, idx) => (
-                <div key={`mob-skel-${idx}`} className="p-3 flex items-center gap-3.5 animate-pulse">
-                  <div className="w-24 h-24 flex-shrink-0 rounded-xl bg-slate-200" />
-                  <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
-                    <div className="h-3 w-28 bg-slate-200 rounded mb-2" />
-                    <div className="h-4 w-3/4 bg-slate-200 rounded mb-2" />
-                    <div className="h-3 w-1/2 bg-slate-100 rounded mb-3" />
-                    <div className="flex justify-between items-center pt-1 border-t border-slate-100">
-                      <div className="h-3 w-16 bg-slate-200 rounded" />
-                      <div className="h-6 w-16 bg-slate-200 rounded-lg" />
-                    </div>
-                  </div>
+                <div key={`mob-skel-${idx}`}>
+                  <div className="aspect-[4/5] rounded-2xl bg-slate-200 mb-2" />
+                  <div className="h-3 w-16 bg-slate-200 rounded mb-1" />
+                  <div className="h-4 w-full bg-slate-200 rounded mb-1" />
+                  <div className="h-3 w-2/3 bg-slate-100 rounded" />
                 </div>
               ))}
             </div>
@@ -960,88 +954,79 @@ export default function ExploreEventsPageComponent() {
           </>
         ) : filteredAndSortedEvents.length > 0 ? (
           <>
-            {/* VISTA MÓVIL: FILAS COMPACTAS AGRUPADAS (ALTA DENSIDAD - IGUAL AL HOME) */}
-            <div className="block sm:hidden flex flex-col divide-y divide-surface-variant bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant overflow-hidden mb-8">
+            {/* VISTA MÓVIL: GRID DE 2 COLUMNAS (ESTILO EVENTOS PRÓXIMOS DE STITCH) */}
+            <div className="grid grid-cols-2 gap-3.5 sm:hidden mb-8">
               {filteredAndSortedEvents.map((ev) => {
                 const isFav = !!favorites[ev.id];
                 const secureId = ev.publicUuid || ev.slug || ev.id;
                 const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
-                const ctaText = ev.hasLandingPage && ev.slug ? "Ver" : "Comprar";
                 const fallbackImage =
                   "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80";
 
                 return (
                   <article
-                    key={`mob-${ev.id}`}
-                    className="p-3 flex items-center gap-3.5 hover:bg-surface-gray/50 transition-colors active:scale-[0.99]"
+                    key={`mob-grid-${ev.id}`}
+                    className="group cursor-pointer active:scale-[0.98] transition-transform"
                   >
-                    {/* Miniatura cuadrada con badge de categoría */}
-                    <Link
-                      href={ctaHref}
-                      className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-900 group cursor-pointer"
-                    >
-                      <img
-                        src={ev.bannerUrl || fallbackImage}
-                        alt={ev.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = fallbackImage;
-                        }}
-                      />
-                      <span className="absolute top-1.5 left-1.5 bg-deep-slate/85 backdrop-blur-sm text-white text-[9px] font-label-bold uppercase px-1.5 py-0.5 rounded shadow-xs">
-                        {ev.category}
-                      </span>
-                    </Link>
+                    <Link href={ctaHref} className="block">
+                      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-surface-gray shadow-sm mb-2">
+                        <img
+                          src={ev.bannerUrl || fallbackImage}
+                          alt={ev.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = fallbackImage;
+                          }}
+                        />
+                        {/* Badge de Categoría */}
+                        <span className="absolute top-2 left-2 bg-deep-slate/85 backdrop-blur-sm text-white text-[9px] qph-label-bold uppercase px-2 py-0.5 rounded-full shadow-xs">
+                          {ev.category || "EVENTO"}
+                        </span>
 
-                    {/* Contenido derecho de la fila */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                      <div className="flex items-start justify-between gap-1">
-                        <Link href={ctaHref} className="block group flex-1 min-w-0 cursor-pointer">
-                          {ev.date && (
-                            <span className="text-[11px] font-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
-                              {formatEventDate(ev.date)}
-                            </span>
-                          )}
-                          <h4 className="text-sm font-bold text-on-surface leading-snug line-clamp-1 group-hover:text-electric-indigo transition-colors">
-                            {ev.title}
-                          </h4>
-                          <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                            <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
-                            <span className="truncate">{ev.venue || "Recinto Oficial"}</span>
-                          </p>
-                        </Link>
-
-                        {/* Botón Favorito Compacto */}
+                        {/* Botón Favorito Flotante */}
                         <button
                           type="button"
                           onClick={(e) => toggleFavorite(ev.id, e)}
                           aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                          className="p-1 text-on-surface-variant hover:text-rose-600 transition-colors cursor-pointer"
+                          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-deep-slate/60 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
                         >
                           <span
-                            className="material-symbols-outlined text-[18px]"
+                            className="material-symbols-outlined text-[15px]"
                             style={{
                               fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
-                              color: isFav ? "#e11d48" : "inherit",
+                              color: isFav ? "#e11d48" : "white",
                             }}
                           >
                             favorite
                           </span>
                         </button>
+
+                        {/* Chip de Precio inferior */}
+                        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-[11px]">
+                          <span className="bg-deep-slate/80 backdrop-blur-sm px-1.5 py-0.5 rounded qph-label-bold text-electric-indigo">
+                            {ev.minPrice > 0 ? `Desde S/ ${ev.minPrice.toFixed(2)}` : "Entrada Libre"}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
-                        <span className="text-xs font-bold text-on-surface">
-                          Desde <span className="text-electric-indigo font-bold text-sm">S/ {ev.minPrice > 0 ? ev.minPrice.toFixed(2) : "0.00"}</span>
+                      {/* Fecha del Evento */}
+                      {ev.date && (
+                        <span className="text-[10px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
+                          {formatEventDate(ev.date)}
                         </span>
-                        <Link
-                          href={ctaHref}
-                          className="px-3.5 py-1.5 bg-electric-indigo hover:bg-primary text-white font-label-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer font-bold"
-                        >
-                          {ctaText}
-                        </Link>
-                      </div>
-                    </div>
+                      )}
+
+                      {/* Título en hasta 2 líneas */}
+                      <h4 className="text-xs font-bold text-on-surface leading-tight line-clamp-2 group-hover:text-electric-indigo transition-colors">
+                        {ev.title}
+                      </h4>
+
+                      {/* Ubicación con pin */}
+                      <p className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
+                        <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
+                        <span className="truncate">{ev.venue || "Recinto Oficial"}</span>
+                      </p>
+                    </Link>
                   </article>
                 );
               })}
