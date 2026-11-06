@@ -20,6 +20,7 @@
   --color-surface-container-lowest: #ffffff;
   --color-on-surface: #191c1e;
   --color-on-surface-variant: #464554;
+  --color-surface-variant: #cbd5e1;
   --color-outline: #767586;
   --color-outline-variant: #c7c4d7;
   
@@ -30,7 +31,7 @@
   --spacing-stack-sm: 8px;
   --spacing-gutter: 24px;
   --spacing-stack-md: 16px;
-  --spacing-container-max: 1280px;
+  --spacing-container-max: 1440px;
 
   /* 📐 Radios de borde */
   --radius-DEFAULT: 0.25rem;

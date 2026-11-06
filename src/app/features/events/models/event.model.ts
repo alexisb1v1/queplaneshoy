@@ -1,11 +1,30 @@
 export interface EventModel {
   id: string;
+  publicUuid?: string;
+  slug?: string;
   title: string;
   description?: string;
+  category?: string;
   date: Date;
   location: string;
+  venue?: string;
+  address?: string;
+  addressReference?: string;
+  ubigeoCode?: string;
+  coordinates?: string;
+  googleMapsUrl?: string;
+  ageRestriction?: string;
+  userTicketLimit?: number;
+  entryRequirements?: string;
+  openingHoursComment?: string;
+  termsAndConditionsUrl?: string;
+  faqs?: Array<{ question: string; answer: string }>;
+  hasLandingPage?: boolean;
+  landingConfig?: Record<string, any>;
+  bannerUrl?: string;
   price: number;
   capacity: number;
+  status: 'draft' | 'published' | 'cancelled' | string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
