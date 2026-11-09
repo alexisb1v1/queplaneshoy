@@ -23,15 +23,21 @@ export default function MainLayout({
             queplanes<span className="text-electric-indigo">hoy</span>
           </span>
         </Link>
-        <div className="flex items-center gap-4">
-          <button className="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-high/50 rounded-lg transition-all">favorite</button>
-          <a href="/profile" className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/30 cursor-pointer">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/profile/favorites"
+            aria-label="Mis Favoritos"
+            className="flex items-center justify-center w-9 h-9 text-on-surface-variant hover:text-rose-600 hover:bg-surface-container-high/50 rounded-full transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[22px]">favorite</span>
+          </Link>
+          <Link href="/profile" className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/30 cursor-pointer block">
             <img
               alt="Avatar de usuario"
               className="w-full h-full object-cover"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnqXVnsmBrHy9Kd7cWWb0PaButWFj7ieVvda4KQ6Gzku7NMPcNGxi_Cq2UC1DSwk2r8_qL2ZzWM5Lq_9BFFEpeMNF11zZiUQtr4JjMsCuraW_kcZXdxL4ftivhWz3SLrtagNNngRrHMt2Gwg553z8hX80YVC9_BRRQrviCyXSypPSe4atADFZpigLRh7RNFotpC4cdb05tB9_JhjTFs4nsISy6vQFzA78k7jIKy4CTPzUqYunCJ3yBvoR8hOOwXModWn6WconFu2O9"
             />
-          </a>
+          </Link>
         </div>
       </header>
 

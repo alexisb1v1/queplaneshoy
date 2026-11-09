@@ -227,6 +227,50 @@ export class AuthRepositoryImpl implements AuthRepository {
   }
 
   /**
+   * Solicita el enlace de recuperación de contraseña
+   */
+  requestPasswordReset(email: string): ResultAsync<{ message: string }, DomainError> {
+    return apiClient
+      .requestResult<{ message: string }>(
+        apiClient.post('/auth/forgot-password', {
+          email: email.trim().toLowerCase(),
+        })
+      )
+      .map((res) => ({
+        message:
+          res.message ||
+          'Si el correo electrónico está registrado, recibirás un enlace para restablecer tu contraseña.',
+      }));
+  }
+
+  /**
+   * Verifica si un token efímero de recuperación sigue vigente
+   */
+  verifyResetToken(token: string): ResultAsync<{ valid: boolean; maskedEmail?: string }, DomainError> {
+    return apiClient.requestResult<{ valid: boolean; maskedEmail?: string }>(
+      apiClient.get(`/auth/verify-reset-token?token=${encodeURIComponent(token.trim())}`)
+    );
+  }
+
+  /**
+   * Restablece la contraseña definitiva con el token efímero
+   */
+  resetPassword(token: string, newPassword: string): ResultAsync<{ message: string }, DomainError> {
+    return apiClient
+      .requestResult<{ message: string }>(
+        apiClient.post('/auth/reset-password', {
+          token: token.trim(),
+          newPassword,
+        })
+      )
+      .map((res) => ({
+        message:
+          res.message ||
+          'Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión con tus nuevas credenciales.',
+      }));
+  }
+
+  /**
    * Activa el perfil de organizador para el usuario autenticado
    */
   becomeOrganizer(params: BecomeOrganizerParams): ResultAsync<{ token: string; user: UserModel }, DomainError> {

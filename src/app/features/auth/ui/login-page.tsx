@@ -196,16 +196,12 @@ export default function LoginPageComponent() {
                 <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="password">
                   Contraseña
                 </label>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert('La recuperación de contraseña se enviará a tu correo registrado.');
-                  }}
+                <Link
+                  href="/forgot-password"
                   className="text-xs font-semibold text-electric-indigo hover:underline cursor-pointer"
                 >
                   ¿Olvidaste tu contraseña?
-                </a>
+                </Link>
               </div>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-platinum-silver transition-colors group-focus-within:text-electric-indigo">

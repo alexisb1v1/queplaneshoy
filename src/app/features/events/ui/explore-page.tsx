@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useFavorites } from "../../../common/hooks/use-favorites";
 import {
   searchEventsUseCase,
   getPublishedCitiesUseCase,
@@ -74,43 +75,22 @@ export default function ExploreEventsPageComponent() {
     "date" | "category" | "city" | "price" | null
   >(null);
   const filterBarRef = useRef<HTMLDivElement>(null);
+  const mobileSheetRef = useRef<HTMLDivElement>(null);
 
   // Estados de Datos
+  const router = useRouter();
+  const { isFavorite: checkFavorite, toggle: toggleFavApi } = useFavorites();
   const [events, setEvents] = useState<SearchEventItem[]>([]);
   const [publishedCities, setPublishedCities] = useState<PublishedCity[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
-  // 1. Cargar favoritos persistidos en localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("qph_favorites");
-      if (stored) {
-        const ids: string[] = JSON.parse(stored);
-        const favMap: Record<string, boolean> = {};
-        ids.forEach((id) => {
-          favMap[id] = true;
-        });
-        setFavorites(favMap);
-      }
-    } catch {
-      // Fallback silencioso
-    }
-  }, []);
-
-  const toggleFavorite = (eventId: string, e: React.MouseEvent) => {
+  const toggleFavorite = async (eventId: string, e: React.MouseEvent, publicUuid?: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setFavorites((prev) => {
-      const next = { ...prev, [eventId]: !prev[eventId] };
-      try {
-        const activeIds = Object.keys(next).filter((k) => next[k]);
-        localStorage.setItem("qph_favorites", JSON.stringify(activeIds));
-      } catch {
-        // Fallback silencioso
-      }
-      return next;
-    });
+    const res = await toggleFavApi(eventId, publicUuid);
+    if (res.requiresAuth && typeof window !== "undefined") {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+    }
   };
 
   // 2. Cargar ciudades con eventos publicados
@@ -142,7 +122,12 @@ export default function ExploreEventsPageComponent() {
   // 4. Cerrar dropdowns al hacer clic fuera o presionar Escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (filterBarRef.current && !filterBarRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        filterBarRef.current &&
+        !filterBarRef.current.contains(target) &&
+        (!mobileSheetRef.current || !mobileSheetRef.current.contains(target))
+      ) {
         setActiveDropdown(null);
       }
     };
@@ -163,6 +148,24 @@ export default function ExploreEventsPageComponent() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  // Bloquear scroll de fondo en móvil mientras el Bottom Sheet de filtros esté abierto
+  useEffect(() => {
+    if (activeDropdown) {
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        document.body.style.overflow = "hidden";
+      }
+    } else {
+      if (typeof document !== "undefined") {
+        document.body.style.overflow = "";
+      }
+    }
+    return () => {
+      if (typeof document !== "undefined") {
+        document.body.style.overflow = "";
+      }
+    };
+  }, [activeDropdown]);
 
   // 5. Sincronizar parámetros en URL (sin recargar la página)
   const syncUrlParams = useCallback(
@@ -485,6 +488,218 @@ export default function ExploreEventsPageComponent() {
     }
   };
 
+  // Renderizadores de contenido de filtros (compartidos entre Desktop Popover y Mobile Bottom Sheet)
+  const renderDateFilterContent = () => (
+    <>
+      <div className="space-y-1">
+        {[
+          { id: "all", label: "Cualquier fecha", icon: "all_inclusive" },
+          { id: "today", label: "Hoy", icon: "today" },
+          { id: "weekend", label: "Este fin de semana", icon: "weekend" },
+          { id: "this_week", label: "Esta semana", icon: "date_range" },
+          { id: "this_month", label: "Este mes", icon: "calendar_month" },
+          { id: "custom", label: "Rango personalizado", icon: "edit_calendar" },
+        ].map((d) => (
+          <button
+            key={d.id}
+            type="button"
+            onClick={() => {
+              setDateFilter(d.id as DateFilterType);
+              if (d.id !== "custom") setActiveDropdown(null);
+            }}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-xs font-semibold transition-colors cursor-pointer ${
+              dateFilter === d.id
+                ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+                : "hover:bg-surface-gray text-deep-slate active:bg-surface-gray"
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-[18px]">
+                {d.icon}
+              </span>
+              <span>{d.label}</span>
+            </div>
+            {dateFilter === d.id && (
+              <span className="material-symbols-outlined text-[18px] text-electric-indigo">
+                check
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Rango Personalizado */}
+      {dateFilter === "custom" && (
+        <div className="mt-3 pt-3 border-t border-surface-variant/60 space-y-3">
+          <div>
+            <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">
+              Desde:
+            </label>
+            <input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              className="w-full bg-surface-gray border border-surface-variant rounded-xl p-2 text-xs text-deep-slate outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">
+              Hasta:
+            </label>
+            <input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              className="w-full bg-surface-gray border border-surface-variant rounded-xl p-2 text-xs text-deep-slate outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveDropdown(null)}
+            className="w-full py-2 bg-electric-indigo text-white text-xs font-bold rounded-xl shadow-xs hover:bg-primary transition-colors cursor-pointer active:scale-95"
+          >
+            Aplicar fechas
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  const renderCategoryFilterContent = () => (
+    <div className="space-y-1">
+      {CATEGORY_OPTIONS.map((cat) => (
+        <button
+          key={cat.id}
+          type="button"
+          onClick={() => {
+            setSelectedCategory(cat.id);
+            setActiveDropdown(null);
+          }}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-xs font-semibold transition-colors cursor-pointer ${
+            selectedCategory === cat.id
+              ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+              : "hover:bg-surface-gray text-deep-slate active:bg-surface-gray"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-[18px]">
+              {cat.icon}
+            </span>
+            <span>{cat.name}</span>
+          </div>
+          {selectedCategory === cat.id && (
+            <span className="material-symbols-outlined text-[18px] text-electric-indigo">
+              check
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderCityFilterContent = () => (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={() => {
+          setSelectedCity("Todas");
+          setActiveDropdown(null);
+        }}
+        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-xs font-semibold transition-colors cursor-pointer ${
+          selectedCity === "Todas" || selectedCity === "Todos"
+            ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+            : "hover:bg-surface-gray text-deep-slate active:bg-surface-gray"
+        }`}
+      >
+        <span>Todas las ciudades (Perú)</span>
+        {(selectedCity === "Todas" || selectedCity === "Todos") && (
+          <span className="material-symbols-outlined text-[18px] text-electric-indigo">
+            check
+          </span>
+        )}
+      </button>
+
+      {publishedCities.map((city) => (
+        <button
+          key={city.id}
+          type="button"
+          onClick={() => {
+            setSelectedCity(city.name);
+            setActiveDropdown(null);
+          }}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-xs font-semibold transition-colors cursor-pointer ${
+            selectedCity === city.name
+              ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+              : "hover:bg-surface-gray text-deep-slate active:bg-surface-gray"
+          }`}
+        >
+          <span>{city.name}</span>
+          <span className="text-[11px] font-normal text-on-surface-variant bg-surface-gray px-2 py-0.5 rounded-md">
+            {city.eventCount}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderPriceFilterContent = () => (
+    <div>
+      <div className="space-y-1 mb-4">
+        {[
+          { id: "all", label: "Cualquier precio" },
+          { id: "under_50", label: "Menos de S/. 50 (Económicas)" },
+          { id: "50_to_150", label: "S/. 50 a S/. 150 (Intermedias)" },
+          { id: "over_150", label: "Más de S/. 150 (VIP / Especiales)" },
+        ].map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => handleSelectPricePreset(p.id as PriceRangeType)}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-xs font-semibold transition-colors cursor-pointer ${
+              pricePreset === p.id
+                ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+                : "hover:bg-surface-gray text-deep-slate active:bg-surface-gray"
+            }`}
+          >
+            <span>{p.label}</span>
+            {pricePreset === p.id && (
+              <span className="material-symbols-outlined text-[18px] text-electric-indigo">
+                check
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Slider de ajuste fino */}
+      <div className="pt-3 border-t border-surface-variant/60">
+        <div className="flex justify-between text-xs font-bold text-on-surface-variant mb-2">
+          <span>Límite máximo:</span>
+          <span className="text-electric-indigo font-black">
+            {maxPrice >= 500 ? "Sin límite" : `Hasta S/. ${maxPrice}`}
+          </span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="500"
+          step="10"
+          value={maxPrice}
+          onChange={(e) => {
+            setMaxPrice(Number(e.target.value));
+            setPricePreset("custom");
+          }}
+          className="w-full h-2 bg-surface-gray rounded-lg appearance-none cursor-pointer accent-electric-indigo"
+        />
+        <div className="flex justify-between text-[10px] text-platinum-silver mt-1">
+          <span>S/. 0</span>
+          <span>S/. 250</span>
+          <span>S/. 500+</span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="w-full bg-[#f8fafc] min-h-screen text-on-background font-body-md">
       
@@ -523,10 +738,10 @@ export default function ExploreEventsPageComponent() {
         ref={filterBarRef}
         className="sticky top-16 md:top-20 z-40 bg-white/95 backdrop-blur-md border-b border-surface-variant/80 py-2.5 sm:py-3 shadow-xs"
       >
-        <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 overflow-x-auto sm:overflow-visible qph-hide-scrollbar">
+        <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 overflow-x-auto md:overflow-visible qph-hide-scrollbar">
           
           {/* Grupo de Filtros Desplegables (Pills en 1 fila horizontal deslizable en móvil) */}
-          <div className="flex items-center gap-2 flex-nowrap sm:flex-wrap flex-shrink-0">
+          <div className="flex items-center gap-2 flex-nowrap md:flex-wrap flex-shrink-0">
             
             {/* PILL 1: CUÁNDO (FECHAS) */}
             <div className="relative flex-shrink-0">
@@ -550,84 +765,13 @@ export default function ExploreEventsPageComponent() {
                 </span>
               </button>
 
-              {/* Popover Desplegable de Fechas */}
+              {/* Popover Desplegable de Fechas (Solo Desktop) */}
               {activeDropdown === "date" && (
-                <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-surface-variant p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="hidden md:block absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-surface-variant p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-2 pb-2 mb-1 border-b border-surface-variant/60">
                     Selecciona una fecha
                   </span>
-                  
-                  <div className="space-y-1">
-                    {[
-                      { id: "all", label: "Cualquier fecha", icon: "all_inclusive" },
-                      { id: "today", label: "Hoy", icon: "today" },
-                      { id: "weekend", label: "Este fin de semana", icon: "weekend" },
-                      { id: "this_week", label: "Esta semana", icon: "date_range" },
-                      { id: "this_month", label: "Este mes", icon: "calendar_month" },
-                      { id: "custom", label: "Rango personalizado", icon: "edit_calendar" },
-                    ].map((d) => (
-                      <button
-                        key={d.id}
-                        type="button"
-                        onClick={() => {
-                          setDateFilter(d.id as DateFilterType);
-                          if (d.id !== "custom") setActiveDropdown(null);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                          dateFilter === d.id
-                            ? "bg-electric-indigo/10 text-electric-indigo font-bold"
-                            : "hover:bg-surface-gray text-deep-slate"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[16px]">
-                            {d.icon}
-                          </span>
-                          <span>{d.label}</span>
-                        </div>
-                        {dateFilter === d.id && (
-                          <span className="material-symbols-outlined text-[16px] text-electric-indigo">
-                            check
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Rango Personalizado */}
-                  {dateFilter === "custom" && (
-                    <div className="mt-2 pt-2 border-t border-surface-variant/60 space-y-2">
-                      <div>
-                        <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">
-                          Desde:
-                        </label>
-                        <input
-                          type="date"
-                          value={customStartDate}
-                          onChange={(e) => setCustomStartDate(e.target.value)}
-                          className="w-full bg-surface-gray border border-surface-variant rounded-lg p-1.5 text-xs text-deep-slate outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-on-surface-variant uppercase mb-1">
-                          Hasta:
-                        </label>
-                        <input
-                          type="date"
-                          value={customEndDate}
-                          onChange={(e) => setCustomEndDate(e.target.value)}
-                          className="w-full bg-surface-gray border border-surface-variant rounded-lg p-1.5 text-xs text-deep-slate outline-none"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveDropdown(null)}
-                        className="w-full py-1.5 bg-electric-indigo text-white text-xs font-bold rounded-lg shadow-xs hover:bg-primary transition-colors cursor-pointer"
-                      >
-                        Aplicar fechas
-                      </button>
-                    </div>
-                  )}
+                  {renderDateFilterContent()}
                 </div>
               )}
             </div>
@@ -654,39 +798,13 @@ export default function ExploreEventsPageComponent() {
                 </span>
               </button>
 
-              {/* Popover Desplegable de Categorías */}
+              {/* Popover Desplegable de Categorías (Solo Desktop) */}
               {activeDropdown === "category" && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-2 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-80 overflow-y-auto">
+                <div className="hidden md:block absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-2 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-80 overflow-y-auto">
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-3 py-1.5 mb-1 border-b border-surface-variant/60">
                     Filtrar por categoría
                   </span>
-                  {CATEGORY_OPTIONS.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategory(cat.id);
-                        setActiveDropdown(null);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                        selectedCategory === cat.id
-                          ? "bg-electric-indigo/10 text-electric-indigo font-bold"
-                          : "hover:bg-surface-gray text-deep-slate"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="material-symbols-outlined text-[18px]">
-                          {cat.icon}
-                        </span>
-                        <span>{cat.name}</span>
-                      </div>
-                      {selectedCategory === cat.id && (
-                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">
-                          check
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                  {renderCategoryFilterContent()}
                 </div>
               )}
             </div>
@@ -717,53 +835,13 @@ export default function ExploreEventsPageComponent() {
                 </span>
               </button>
 
-              {/* Popover Desplegable de Ciudades */}
+              {/* Popover Desplegable de Ciudades (Solo Desktop) */}
               {activeDropdown === "city" && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="hidden md:block absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-2 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-80 overflow-y-auto">
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-3 py-1.5 mb-1 border-b border-surface-variant/60">
                     Ciudades con cartelera
                   </span>
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCity("Todas");
-                      setActiveDropdown(null);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                      selectedCity === "Todas" || selectedCity === "Todos"
-                        ? "bg-electric-indigo/10 text-electric-indigo font-bold"
-                        : "hover:bg-surface-gray text-deep-slate"
-                    }`}
-                  >
-                    <span>Todas las ciudades (Perú)</span>
-                    {(selectedCity === "Todas" || selectedCity === "Todos") && (
-                      <span className="material-symbols-outlined text-[16px] text-electric-indigo">
-                        check
-                      </span>
-                    )}
-                  </button>
-
-                  {publishedCities.map((city) => (
-                    <button
-                      key={city.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCity(city.name);
-                        setActiveDropdown(null);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                        selectedCity === city.name
-                          ? "bg-electric-indigo/10 text-electric-indigo font-bold"
-                          : "hover:bg-surface-gray text-deep-slate"
-                      }`}
-                    >
-                      <span>{city.name}</span>
-                      <span className="text-[11px] font-normal text-on-surface-variant bg-surface-gray px-1.5 py-0.5 rounded">
-                        {city.eventCount}
-                      </span>
-                    </button>
-                  ))}
+                  {renderCityFilterContent()}
                 </div>
               )}
             </div>
@@ -790,61 +868,13 @@ export default function ExploreEventsPageComponent() {
                 </span>
               </button>
 
-              {/* Popover Desplegable de Precios */}
+              {/* Popover Desplegable de Precios (Solo Desktop) */}
               {activeDropdown === "price" && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="hidden md:block absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-surface-variant p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-1 pb-2 mb-2 border-b border-surface-variant/60">
                     Rango de entradas
                   </span>
-
-                  <div className="space-y-1 mb-3">
-                    {[
-                      { id: "all", label: "Cualquier precio" },
-                      { id: "under_50", label: "Menos de S/. 50 (Económicas)" },
-                      { id: "50_to_150", label: "S/. 50 a S/. 150 (Intermedias)" },
-                      { id: "over_150", label: "Más de S/. 150 (VIP / Especiales)" },
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => handleSelectPricePreset(p.id as PriceRangeType)}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                          pricePreset === p.id
-                            ? "bg-electric-indigo/10 text-electric-indigo font-bold"
-                            : "hover:bg-surface-gray text-deep-slate"
-                        }`}
-                      >
-                        <span>{p.label}</span>
-                        {pricePreset === p.id && (
-                          <span className="material-symbols-outlined text-[16px] text-electric-indigo">
-                            check
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Slider de ajuste fino */}
-                  <div className="pt-2 border-t border-surface-variant/60">
-                    <div className="flex justify-between text-[11px] font-bold text-on-surface-variant mb-1">
-                      <span>Límite máximo:</span>
-                      <span className="text-electric-indigo">
-                        {maxPrice >= 500 ? "Sin límite" : `Hasta S/. ${maxPrice}`}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="500"
-                      step="10"
-                      value={maxPrice}
-                      onChange={(e) => {
-                        setMaxPrice(Number(e.target.value));
-                        setPricePreset("custom");
-                      }}
-                      className="w-full h-1.5 bg-surface-gray rounded-lg appearance-none cursor-pointer accent-electric-indigo"
-                    />
-                  </div>
+                  {renderPriceFilterContent()}
                 </div>
               )}
             </div>
@@ -865,7 +895,7 @@ export default function ExploreEventsPageComponent() {
 
           {/* Lado Derecho: Ordenamiento */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-[11px] font-label-bold text-on-surface-variant uppercase hidden sm:inline">
+            <span className="text-[11px] font-label-bold text-on-surface-variant uppercase hidden md:inline">
               Ordenar por:
             </span>
             <div className="relative flex-shrink-0">
@@ -887,6 +917,82 @@ export default function ExploreEventsPageComponent() {
 
         </div>
       </div>
+
+      {/* =========================================================================
+          DRAWER / BOTTOM SHEET PARA FILTROS EN MÓVIL (100% RESPONSIVE - SIN RECORTES DE OVERFLOW)
+         ========================================================================= */}
+      {activeDropdown && (
+        <div
+          ref={mobileSheetRef}
+          className="md:hidden fixed inset-0 z-[70] flex flex-col justify-end"
+        >
+          {/* Backdrop oscuro translúcido */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setActiveDropdown(null)}
+          />
+
+          {/* Panel Deslizable Bottom Sheet */}
+          <div className="relative z-[71] bg-white rounded-t-3xl max-h-[82vh] overflow-y-auto p-5 shadow-2xl animate-in slide-in-from-bottom duration-200 border-t border-surface-variant">
+            {/* Tirador superior */}
+            <div className="w-12 h-1.5 bg-surface-variant rounded-full mx-auto mb-3" />
+
+            {/* Cabecera del Drawer */}
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-surface-variant/60">
+              <h3 className="font-bold text-base text-deep-slate flex items-center gap-2">
+                {activeDropdown === "date" && (
+                  <>
+                    <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+                      calendar_month
+                    </span>
+                    <span>Filtrar por fecha</span>
+                  </>
+                )}
+                {activeDropdown === "category" && (
+                  <>
+                    <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+                      theater_comedy
+                    </span>
+                    <span>Filtrar por categoría</span>
+                  </>
+                )}
+                {activeDropdown === "city" && (
+                  <>
+                    <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+                      location_on
+                    </span>
+                    <span>Ciudades con cartelera</span>
+                  </>
+                )}
+                {activeDropdown === "price" && (
+                  <>
+                    <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+                      payments
+                    </span>
+                    <span>Rango de entradas</span>
+                  </>
+                )}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setActiveDropdown(null)}
+                aria-label="Cerrar filtro"
+                className="w-8 h-8 rounded-full bg-surface-gray text-on-surface-variant flex items-center justify-center hover:bg-slate-200 active:scale-95 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {/* Contenido dinámico del filtro */}
+            <div className="pb-4">
+              {activeDropdown === "date" && renderDateFilterContent()}
+              {activeDropdown === "category" && renderCategoryFilterContent()}
+              {activeDropdown === "city" && renderCityFilterContent()}
+              {activeDropdown === "price" && renderPriceFilterContent()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           3. CATÁLOGO A PANTALLA COMPLETA (FULL-WIDTH GRID - 3 A 4 COLUMNAS)
@@ -957,7 +1063,7 @@ export default function ExploreEventsPageComponent() {
             {/* VISTA MÓVIL: GRID DE 2 COLUMNAS (ESTILO EVENTOS PRÓXIMOS DE STITCH) */}
             <div className="grid grid-cols-2 gap-3.5 sm:hidden mb-8">
               {filteredAndSortedEvents.map((ev) => {
-                const isFav = !!favorites[ev.id];
+                const isFav = checkFavorite(ev.id) || (ev.publicUuid ? checkFavorite(ev.publicUuid) : false);
                 const secureId = ev.publicUuid || ev.slug || ev.id;
                 const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
                 const fallbackImage =
@@ -986,7 +1092,7 @@ export default function ExploreEventsPageComponent() {
                         {/* Botón Favorito Flotante */}
                         <button
                           type="button"
-                          onClick={(e) => toggleFavorite(ev.id, e)}
+                          onClick={(e) => toggleFavorite(ev.id, e, ev.publicUuid)}
                           aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
                           className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-deep-slate/60 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
                         >
@@ -1035,7 +1141,7 @@ export default function ExploreEventsPageComponent() {
             {/* VISTA ESCRITORIO Y TABLET: GRID MULTI-COLUMNAS (sm:grid) */}
             <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredAndSortedEvents.map((ev) => {
-                const isFav = !!favorites[ev.id];
+                const isFav = checkFavorite(ev.id) || (ev.publicUuid ? checkFavorite(ev.publicUuid) : false);
                 const secureId = ev.publicUuid || ev.slug || ev.id;
                 const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
                 const ctaText = ev.hasLandingPage && ev.slug ? "Ver Experiencia" : "Comprar";
@@ -1075,7 +1181,7 @@ export default function ExploreEventsPageComponent() {
                       {/* Botón Favorito Flotante */}
                       <button
                         type="button"
-                        onClick={(e) => toggleFavorite(ev.id, e)}
+                        onClick={(e) => toggleFavorite(ev.id, e, ev.publicUuid)}
                         aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
                         className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
                       >

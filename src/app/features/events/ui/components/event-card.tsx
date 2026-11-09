@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useFavorites } from "../../../../common/hooks/use-favorites";
 
 export interface EventCardProps {
   id: string | number;
@@ -42,41 +44,16 @@ export function EventCard({
   urgencyIcon = "bolt",
   urgencyType = "info",
 }: EventCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const router = useRouter();
+  const { isFavorite: checkFavorite, toggle } = useFavorites();
+  const isFavorite = checkFavorite(String(id)) || (publicUuid ? checkFavorite(publicUuid) : false);
 
-  // Sincronizar estado inicial desde localStorage (persistencia del lado del cliente)
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("qph_favorites");
-      if (stored) {
-        const ids: string[] = JSON.parse(stored);
-        if (ids.includes(String(id))) {
-          setIsFavorite(true);
-        }
-      }
-    } catch {
-      // Ignorar errores de lectura en entornos restringidos
-    }
-  }, [id]);
-
-  const toggleFavorite = (e: React.MouseEvent) => {
+  const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const nextState = !isFavorite;
-    setIsFavorite(nextState);
-
-    try {
-      const stored = localStorage.getItem("qph_favorites");
-      let ids: string[] = stored ? JSON.parse(stored) : [];
-      const eventIdStr = String(id);
-      if (nextState) {
-        if (!ids.includes(eventIdStr)) ids.push(eventIdStr);
-      } else {
-        ids = ids.filter((item) => item !== eventIdStr);
-      }
-      localStorage.setItem("qph_favorites", JSON.stringify(ids));
-    } catch {
-      // Ignorar errores de escritura en localStorage
+    const res = await toggle(String(id), publicUuid);
+    if (res.requiresAuth && typeof window !== "undefined") {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
     }
   };
 
