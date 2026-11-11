@@ -69,7 +69,7 @@ export default function ProfileLayout({
     'https://lh3.googleusercontent.com/aida-public/AB6AXuD0WX7wdAbDny3NqD0b2ZPWtXnPzWCKC6yV8xZuW3kp4ubObYTPkigGWMYVnDEKgXoGmcZsSr_Lk2io_rmui84FLSFtatmRg5xpaHjyWjOXqnuuDHbt7pwlj119-eo50UMR7FyWBataGridEHgcqrhJtjw4H5NajgVfWS_7Y7clWQZqGdr2b0zDUW01MY-122_qcWml18oAzXHBm4ULRShkh9CSGyiZhff8VIWuNbVaZW_EoH5Y_93_DqG0X1r6Y9AnhgD15hG9wAxs';
 
   return (
-    <div className="bg-surface min-h-screen py-6 md:py-10">
+    <div className="bg-surface min-h-screen pt-5 pb-28 md:py-10">
       <div className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8">
         
         {/* Barra de pestañas móvil cuando se está en /profile/tickets, /profile/favorites, etc. */}

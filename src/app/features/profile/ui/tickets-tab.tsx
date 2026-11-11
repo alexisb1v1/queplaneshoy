@@ -142,22 +142,27 @@ export default function TicketsTab() {
           CONTENIDO: ESTADO DE CARGA, AUTENTICACIÓN O LISTADO
          ========================================================================= */}
       {isLoading ? (
-        /* Skeletons */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        /* Skeletons Compactos */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {Array.from({ length: 2 }).map((_, idx) => (
             <div
               key={`skel-${idx}`}
-              className="bg-white rounded-2xl border border-surface-variant p-5 shadow-xs animate-pulse flex flex-col gap-4"
+              className="bg-white rounded-2xl border border-surface-variant p-4 shadow-xs animate-pulse flex flex-col gap-3"
             >
-              <div className="h-44 bg-surface-variant/40 rounded-xl" />
-              <div className="space-y-2">
-                <div className="h-4 bg-surface-variant/50 rounded w-1/3" />
-                <div className="h-6 bg-surface-variant/70 rounded w-3/4" />
-                <div className="h-3.5 bg-surface-variant/30 rounded w-1/2" />
+              <div className="flex gap-3.5 items-start">
+                <div className="w-20 h-24 sm:w-24 sm:h-24 bg-surface-variant/40 rounded-xl shrink-0" />
+                <div className="flex-1 space-y-2 pt-1">
+                  <div className="h-3.5 bg-surface-variant/50 rounded w-1/3" />
+                  <div className="h-5 bg-surface-variant/70 rounded w-3/4" />
+                  <div className="h-3 bg-surface-variant/30 rounded w-2/3" />
+                </div>
               </div>
-              <div className="pt-3 border-t border-surface-variant flex justify-between">
-                <div className="h-8 bg-surface-variant/40 rounded w-1/4" />
-                <div className="h-9 bg-surface-variant/60 rounded-xl w-1/3" />
+              <div className="pt-3 border-t border-dashed border-surface-variant flex justify-between items-center">
+                <div className="h-6 bg-surface-variant/40 rounded w-1/4" />
+                <div className="flex gap-2">
+                  <div className="h-8 bg-surface-variant/40 rounded-xl w-20" />
+                  <div className="h-8 bg-surface-variant/60 rounded-xl w-28" />
+                </div>
               </div>
             </div>
           ))}
@@ -210,9 +215,9 @@ export default function TicketsTab() {
         </div>
       ) : (
         /* =====================================================================
-            GRID DE COMPRAS CON ACCESO A DESCARGA E IMPRESIÓN
+            GRID COMPACTO DE COMPRAS CON ACCESO VISIBLE A QR Y PDF
            ===================================================================== */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {displayedOrders.map((order) => {
             const fallbackImage =
               "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80";
@@ -220,117 +225,105 @@ export default function TicketsTab() {
             return (
               <article
                 key={order.orderId}
-                className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md border border-surface-variant flex flex-col justify-between group transition-all duration-200"
+                className="bg-white rounded-2xl p-4 shadow-xs hover:shadow-md border border-surface-variant flex flex-col justify-between gap-3 group transition-all duration-200"
               >
-                {/* Banner del Evento */}
-                <div className="h-44 w-full overflow-hidden relative bg-slate-900">
-                  <img
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    src={order.bannerImageUrl || fallbackImage}
-                    alt={order.eventTitle}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = fallbackImage;
-                    }}
-                  />
-
-                  {/* Badges superiores sobre el banner */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/95 backdrop-blur-md text-deep-slate border border-surface-variant/40 shadow-xs">
-                      {order.category}
-                    </span>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white shadow-xs ${
-                        order.isPast ? "bg-slate-600" : "bg-electric-indigo"
-                      }`}
-                    >
-                      {order.isPast ? "Evento Finalizado" : "Pase Válido"}
-                    </span>
+                {/* Fila Superior Compacta: Miniatura + Info del Evento */}
+                <div className="flex items-start gap-3.5">
+                  <div className="w-20 h-24 sm:w-24 sm:h-24 rounded-xl overflow-hidden relative bg-slate-900 shrink-0 border border-surface-variant/50">
+                    <img
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      src={order.bannerImageUrl || fallbackImage}
+                      alt={order.eventTitle}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = fallbackImage;
+                      }}
+                    />
                   </div>
 
-                  <div className="absolute top-3 right-3">
-                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-deep-slate/85 backdrop-blur-md text-white border border-white/20 shadow-xs">
-                      {order.ticketCount} {order.ticketCount === 1 ? "Entrada" : "Entradas"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Contenido / Datos de la Compra */}
-                <div className="p-5 flex-1 flex flex-col justify-between gap-4">
-                  <div>
-                    <div className="flex items-center justify-between text-[11px] font-mono text-on-surface-variant mb-1">
-                      <span className="font-bold text-deep-slate">{order.orderCode}</span>
-                      <span>Ref: {order.txCode}</span>
+                  <div className="flex-1 min-w-0">
+                    {/* Badges compactos de estado y cantidad */}
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white ${
+                          order.isPast ? "bg-slate-600" : "bg-electric-indigo"
+                        }`}
+                      >
+                        {order.isPast ? "Finalizado" : "Pase Válido"}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-surface-gray text-deep-slate border border-surface-variant">
+                        {order.ticketCount} {order.ticketCount === 1 ? "entrada" : "entradas"}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                        • {order.category}
+                      </span>
                     </div>
 
-                    <h2 className="font-headline-md text-lg sm:text-xl font-bold text-deep-slate leading-tight group-hover:text-electric-indigo transition-colors mb-2.5">
+                    <h2 className="font-headline-md text-base font-bold text-deep-slate leading-snug group-hover:text-electric-indigo transition-colors line-clamp-2 mb-1.5">
                       {order.eventTitle}
                     </h2>
 
-                    <div className="space-y-1.5 text-xs text-on-surface-variant font-medium">
-                      <div className="flex items-center gap-2 text-deep-slate font-semibold">
-                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                    <div className="space-y-1 text-xs text-on-surface-variant font-medium">
+                      <div className="flex items-center gap-1.5 text-deep-slate font-semibold">
+                        <span className="material-symbols-outlined text-[15px] text-electric-indigo shrink-0">
                           calendar_today
                         </span>
-                        <span>{order.eventDateFormatted} • {order.eventTimeFormatted}</span>
+                        <span className="truncate">
+                          {order.eventDateFormatted} • {order.eventTimeFormatted}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[15px] text-electric-indigo shrink-0">
                           location_on
                         </span>
                         <span className="truncate">
                           {order.venueName}, {order.city}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <span className="material-symbols-outlined text-[15px] text-electric-indigo shrink-0">
                           confirmation_number
                         </span>
-                        <span>
+                        <span className="truncate">
                           Zona: <strong className="text-deep-slate font-bold">{order.zoneName}</strong>
                         </span>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Footer de Tarjeta: Monto Total y Botones de Descarga */}
-                  <div className="pt-4 border-t border-surface-variant flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-on-surface-variant uppercase font-bold">
-                        Total Pagado
-                      </span>
-                      <span className="font-headline-md text-base sm:text-lg font-black text-deep-slate">
-                        S/. {order.totalAmount.toFixed(2)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* Botón QR Digital Rápido */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedOrderForQR(order);
-                          setActiveTicketIndex(0);
-                        }}
-                        className="p-2.5 rounded-xl border border-surface-variant text-deep-slate hover:bg-surface-gray transition-colors cursor-pointer"
-                        title="Ver código QR digital"
-                      >
-                        <span className="material-symbols-outlined text-[18px] text-electric-indigo">
-                          qr_code_2
-                        </span>
-                      </button>
-
-                      {/* Botón Principal: Ver Entradas / Descargar PDF */}
-                      <button
-                        type="button"
-                        onClick={() => setPrintOrder(order)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-electric-indigo hover:bg-primary text-white rounded-xl text-xs font-bold shadow-md shadow-electric-indigo/20 active:scale-95 transition-all cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">download</span>
-                        <span>Descargar PDF</span>
-                      </button>
-                    </div>
+                {/* Pie Compacto: Código/Total y Botones Visibles Ver QR + Descargar PDF */}
+                <div className="pt-3 border-t border-dashed border-surface-variant flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-mono font-semibold text-on-surface-variant">
+                      {order.orderCode}
+                    </span>
+                    <span className="font-headline-md text-sm sm:text-base font-black text-deep-slate tabular-nums">
+                      S/. {order.totalAmount.toFixed(2)}
+                    </span>
                   </div>
 
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOrderForQR(order);
+                        setActiveTicketIndex(0);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-electric-indigo/30 bg-electric-indigo/5 hover:bg-electric-indigo/10 text-electric-indigo text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
+                      <span>Ver QR</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPrintOrder(order)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-electric-indigo hover:bg-primary text-white rounded-xl text-xs font-bold shadow-sm shadow-electric-indigo/20 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                      <span>Descargar PDF</span>
+                    </button>
+                  </div>
                 </div>
               </article>
             );
@@ -342,7 +335,7 @@ export default function TicketsTab() {
           MODAL: VISUALIZADOR RÁPIDO DE PASE DIGITAL QR MÓVIL
          ========================================================================= */}
       {selectedOrderForQR && (
-        <div className="fixed inset-0 bg-deep-slate/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-deep-slate/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-surface-variant animate-in fade-in zoom-in-95 duration-150">
             
             {/* Header del Modal */}

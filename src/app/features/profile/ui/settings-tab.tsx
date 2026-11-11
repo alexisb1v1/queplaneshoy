@@ -11,16 +11,6 @@ interface SettingsTabProps {
   onUserUpdate: (updatedUser: UserModel) => void;
 }
 
-interface ActiveSession {
-  id: string;
-  device: string;
-  os: string;
-  browser: string;
-  location: string;
-  isCurrent: boolean;
-  lastActive: string;
-}
-
 export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
   const router = useRouter();
 
@@ -45,30 +35,6 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
   const [isChangingPass, setIsChangingPass] = useState(false);
   const [passError, setPassError] = useState<string | null>(null);
   const [passSuccess, setPassSuccess] = useState(false);
-
-  // Estados de sesiones activas
-  const [showSessionsModal, setShowSessionsModal] = useState(false);
-  const [sessions, setSessions] = useState<ActiveSession[]>([
-    {
-      id: 'session-1',
-      device: 'MacBook Pro 16"',
-      os: 'macOS Sonoma',
-      browser: 'Chrome 124',
-      location: 'Madrid, España',
-      isCurrent: true,
-      lastActive: 'Activo ahora',
-    },
-    {
-      id: 'session-2',
-      device: 'iPhone 15 Pro',
-      os: 'iOS 17.4',
-      browser: 'Safari Mobile',
-      location: 'Madrid, España',
-      isCurrent: false,
-      lastActive: 'Hace 2 horas',
-    },
-  ]);
-  const [closedOtherSessions, setClosedOtherSessions] = useState(false);
 
   // Estados de preferencias de comunicación
   const [artistNews, setArtistNews] = useState(true);
@@ -132,6 +98,11 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
       return;
     }
 
+    if (newPassword === oldPassword) {
+      setPassError('La nueva contraseña debe ser diferente a la contraseña actual');
+      return;
+    }
+
     setIsChangingPass(true);
 
     changePasswordUseCase.execute(oldPassword, newPassword).match(
@@ -151,14 +122,6 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
         setPassError(error.message || 'Error al cambiar la contraseña.');
       }
     );
-  };
-
-  const handleCloseOtherSessions = () => {
-    setSessions((prev) => prev.filter((s) => s.isCurrent));
-    setClosedOtherSessions(true);
-    setTimeout(() => {
-      setClosedOtherSessions(false);
-    }, 3000);
   };
 
   const handleLogout = () => {
@@ -186,13 +149,23 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
 
       {/* Mobile Welcome & Shortcuts Section (Visible sólo en Mobile) */}
       <div className="lg:hidden space-y-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-deep-slate tracking-tight">
-            Hola, {firstName || user.firstName}
-          </h1>
-          <p className="text-sm text-on-surface-variant mt-1">
-            Gestiona tus eventos y ajustes de cuenta.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold text-deep-slate tracking-tight">
+              Hola, {firstName || user.firstName}
+            </h1>
+            <p className="text-sm text-on-surface-variant mt-1">
+              Gestiona tus eventos y ajustes de cuenta.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-error/25 bg-error/5 text-error font-bold text-xs hover:bg-error/10 active:scale-95 transition-all cursor-pointer shrink-0"
+          >
+            <span className="material-symbols-outlined text-[16px]">logout</span>
+            <span>Salir</span>
+          </button>
         </div>
 
         {/* Shortcut Cards Mobile */}
@@ -209,7 +182,7 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
               </div>
               <div className="text-left">
                 <span className="block font-bold text-base text-deep-slate leading-tight">Mis entradas</span>
-                <span className="text-xs text-on-surface-variant">3 eventos próximos</span>
+                <span className="text-xs text-on-surface-variant">Códigos QR y descarga PDF</span>
               </div>
             </div>
             <span className="material-symbols-outlined text-platinum-silver group-hover:text-electric-indigo transition-colors text-[20px]">
@@ -229,7 +202,7 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
               </div>
               <div className="text-left">
                 <span className="block font-bold text-base text-deep-slate leading-tight">Mis favoritos</span>
-                <span className="text-xs text-on-surface-variant">12 planes guardados</span>
+                <span className="text-xs text-on-surface-variant">Eventos y planes guardados</span>
               </div>
             </div>
             <span className="material-symbols-outlined text-platinum-silver group-hover:text-electric-indigo transition-colors text-[20px]">
@@ -561,35 +534,17 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
               </div>
               <div>
                 <h3 className="font-bold text-base text-deep-slate">Contraseña</h3>
-                <p className="text-xs text-on-surface-variant mt-0.5">Actualizada hace 3 meses</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowPasswordModal(true)}
-              className="bg-electric-indigo text-white font-bold text-sm px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-electric-indigo/20 active:scale-95 transition-all w-full md:w-auto text-center"
-            >
-              Cambiar contraseña
-            </button>
-          </div>
-
-          {/* Card Sesiones Activas */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-xl bg-surface-gray/60 border border-surface-variant/70">
-            <div className="flex items-center gap-4">
-              <div className="bg-white w-12 h-12 rounded-full shadow-xs flex items-center justify-center text-on-surface-variant flex-shrink-0 border border-surface-variant/40">
-                <span className="material-symbols-outlined text-[24px]">devices</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-base text-deep-slate">Sesiones activas</h3>
                 <p className="text-xs text-on-surface-variant mt-0.5">
-                  {sessions.length} dispositivo{sessions.length !== 1 ? 's' : ''} conectado{sessions.length !== 1 ? 's' : ''} actualmente
+                  Actualiza tu contraseña periódicamente para mantener segura tu cuenta
                 </p>
               </div>
             </div>
             <button
-              onClick={() => setShowSessionsModal(true)}
-              className="text-electric-indigo font-bold text-sm px-6 py-3 rounded-xl border border-electric-indigo hover:bg-electric-indigo/5 transition-all w-full md:w-auto text-center"
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              className="bg-electric-indigo text-white font-bold text-sm px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-electric-indigo/20 active:scale-95 transition-all w-full md:w-auto text-center cursor-pointer"
             >
-              Ver sesiones
+              Cambiar contraseña
             </button>
           </div>
         </div>
@@ -638,7 +593,7 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
 
           <label className="flex items-center justify-between cursor-pointer group py-1">
             <span className="text-sm font-medium text-deep-slate group-hover:text-electric-indigo transition-colors select-none pr-4">
-              Resumen semanal de eventos en Madrid
+              Resumen semanal de eventos recomendados
             </span>
             <input
               type="checkbox"
@@ -701,8 +656,9 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
 
         {/* Botón Logout Mobile */}
         <button
+          type="button"
           onClick={handleLogout}
-          className="w-full py-3.5 rounded-2xl border-2 border-error/20 text-error font-bold text-sm hover:bg-error/5 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-2xl border-2 border-error/25 bg-white text-error font-bold text-sm hover:bg-error/5 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <span className="material-symbols-outlined text-[20px]">logout</span>
           <span>Cerrar sesión</span>
@@ -801,87 +757,6 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
                 )}
               </button>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: Sesiones Activas */}
-      {showSessionsModal && (
-        <div className="fixed inset-0 bg-deep-slate/50 backdrop-blur-sm z-[99] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 border border-surface-variant animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6 border-b border-surface-variant/40 pb-4">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-electric-indigo text-[24px]">devices</span>
-                <h3 className="text-lg font-bold text-deep-slate">Sesiones activas</h3>
-              </div>
-              <button
-                onClick={() => setShowSessionsModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-gray text-on-surface-variant hover:text-deep-slate transition-colors"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-
-            {closedOtherSessions && (
-              <div className="mb-4 p-3 bg-green-50 text-green-800 text-xs rounded-xl border border-green-200 flex items-center gap-2 font-semibold">
-                <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                <span>Se han cerrado todas las demás sesiones activas.</span>
-              </div>
-            )}
-
-            <div className="space-y-3 mb-6">
-              {sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${
-                    session.isCurrent
-                      ? 'bg-electric-indigo/5 border-electric-indigo/30'
-                      : 'bg-surface-gray/50 border-surface-variant/70'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-on-surface-variant text-[28px]">
-                      {session.device.includes('iPhone') ? 'smartphone' : 'laptop_mac'}
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-deep-slate">{session.device}</span>
-                        {session.isCurrent && (
-                          <span className="bg-green-100 text-green-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                            Esta sesión
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-on-surface-variant mt-0.5">
-                        {session.browser} · {session.location}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] font-semibold text-on-surface-variant">
-                    {session.lastActive}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2 border-t border-surface-variant/40">
-              {sessions.length > 1 && (
-                <button
-                  type="button"
-                  onClick={handleCloseOtherSessions}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-error/30 text-error font-bold text-xs hover:bg-error/5 transition-all text-center"
-                >
-                  Cerrar otras sesiones
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowSessionsModal(false)}
-                className="w-full sm:w-auto bg-deep-slate text-white px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-deep-slate/90 transition-all text-center"
-              >
-                Entendido
-              </button>
-            </div>
           </div>
         </div>
       )}
