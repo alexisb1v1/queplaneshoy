@@ -6,22 +6,27 @@ import Link from "next/link";
 import PaymentSuccessScreen from "./payment-success-screen";
 import CheckoutStepper from "./components/checkout-stepper";
 import VenueZonesMap from "./components/venue-zones-map";
-import IzipayPopinModal from "./components/izipay-popin-modal";
-import IzipayEmbeddedForm from "./components/izipay-embedded-form";
 import { getEventDetailUseCase } from "../../events";
 import { EventDetailModel } from "../../events/models/event-detail.model";
 import { getCurrentUserUseCase } from "../../auth";
 import { UserModel } from "../../auth/models/user.model";
 import { apiClient } from "@/app/common/services/api-client";
 import {
-  simulateCheckoutUseCase,
-  createIzipayPaymentUseCase,
+  prepareCulqiCheckoutUseCase,
+  confirmCulqiChargeUseCase,
+  getCulqiOrderStatusUseCase,
+  cancelPendingCulqiOrderUseCase,
   getMyOrdersUseCase,
   validateCouponUseCase,
   SimulateCheckoutResponseModel,
   ValidateCouponResponseModel,
-  CreateIzipayPaymentResponse,
 } from "../index";
+import {
+  authenticateWithCulqi3DS,
+  generateCulqiDeviceFingerprint,
+  openCulqiCheckoutModal,
+  resolveCulqiClientConfig,
+} from "../services/culqi-checkout-script.service";
 
 interface TicketTier {
   id: string;
@@ -34,7 +39,6 @@ interface TicketTier {
   quantity: number;
   colorHex: string;
   maxTicketsPerOrder?: number;
-  maxTicketsPerUser?: number;
   remainingTickets?: number;
 }
 
@@ -90,6 +94,23 @@ const DEFAULT_TICKET_TIERS: TicketTier[] = [
   },
 ];
 
+// Duración estándar de reserva temporal en pasarela (14:59 min) y clave en sessionStorage
+const CHECKOUT_RESERVATION_DURATION_SECONDS = 899;
+const CHECKOUT_TIMER_STORAGE_PREFIX = "qph_checkout_expires_at:";
+
+function getCheckoutTimerKey(eventId: string | null): string {
+  return `${CHECKOUT_TIMER_STORAGE_PREFIX}${eventId || "default"}`;
+}
+
+function removePersistedCheckoutTimer(timerKey: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(timerKey);
+  } catch {
+    // Ignorar restricciones de almacenamiento del navegador
+  }
+}
+
 export default function PurchaseFlowPageComponent() {
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
@@ -103,21 +124,34 @@ export default function PurchaseFlowPageComponent() {
   const [event, setEvent] = useState<EventDetailModel | null>(null);
   const [loadingEvent, setLoadingEvent] = useState<boolean>(Boolean(eventId));
 
-  // Temporizador de Reserva regresivo (14:59 min)
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(899);
+  // Temporizador de Reserva regresivo persistente ante recargas (14:59 min)
+  const checkoutTimerKey = getCheckoutTimerKey(eventId);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(CHECKOUT_RESERVATION_DURATION_SECONDS);
+  const [isTimerSynced, setIsTimerSynced] = useState<boolean>(false);
+  const expiresAtRef = useRef<number | null>(null);
 
   // Lista de Funciones y Zonas Dinámicas
   const [showFunctions, setShowFunctions] = useState<ShowFunction[]>(DEFAULT_SHOW_FUNCTIONS);
   const [ticketTiers, setTicketTiers] = useState<TicketTier[]>(DEFAULT_TICKET_TIERS);
 
-  // Método de pago en Paso 2
+  // Método de pago en Paso 2 (Estándar Multipago Perú / Culqi)
   const [paymentMethod, setPaymentMethod] = useState<
-    "card" | "yape" | "transfer" | "apple_pay" | "google_pay"
+    "yape" | "card" | "transfer" | "cuotealo"
   >("yape");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isGatewayModalOpen, setIsGatewayModalOpen] = useState(false);
+  const [processingLabel, setProcessingLabel] = useState<string>("Conectando con Culqi...");
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [forceFailureTest, setForceFailureTest] = useState<boolean>(false);
   const [checkoutResult, setCheckoutResult] = useState<SimulateCheckoutResponseModel | null>(null);
+  const [pendingAsyncOrder, setPendingAsyncOrder] = useState<{
+    orderPublicUuid: string;
+    orderCode: string;
+    culqiOrderId: string;
+    paymentCode?: string | null;
+    method: "yape" | "card" | "transfer" | "cuotealo";
+  } | null>(null);
+  const [isCheckingAsyncStatus, setIsCheckingAsyncStatus] = useState<boolean>(false);
+  const [isMobileSummaryExpanded, setIsMobileSummaryExpanded] = useState(false);
 
   // Cupón de descuento (6 casos de uso + doble check atómico)
   const [couponCodeInput, setCouponCodeInput] = useState<string>("");
@@ -125,11 +159,6 @@ export default function PurchaseFlowPageComponent() {
   const [isCouponLoading, setIsCouponLoading] = useState<boolean>(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponSuccessMessage, setCouponSuccessMessage] = useState<string | null>(null);
-
-  // Izipay SmartForm (Embedded Form & Pop-in)
-  const [izipayModalData, setIzipayModalData] = useState<CreateIzipayPaymentResponse | null>(null);
-  const [isLoadingIzipayToken, setIsLoadingIzipayToken] = useState<boolean>(false);
-  const [showIzipayPopin, setShowIzipayPopin] = useState<boolean>(false);
 
   // Usuario autenticado en sesión y entradas ya compradas para este evento
   const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
@@ -161,8 +190,8 @@ export default function PurchaseFlowPageComponent() {
           let count = 0;
           (orders || []).forEach((o) => {
             const matchesEvent =
-              (event && o.eventTitle && o.eventTitle.trim().toLowerCase() === event.name.trim().toLowerCase()) ||
-              (eventId && String(o.orderId).includes(eventId));
+              (event && o.eventId && String(o.eventId) === String(event.id)) ||
+              (event && o.eventTitle && o.eventTitle.trim().toLowerCase() === event.name.trim().toLowerCase());
             if (matchesEvent) {
               count += o.ticketCount || o.tickets?.length || 0;
             }
@@ -232,8 +261,7 @@ export default function PurchaseFlowPageComponent() {
               available: !zone.isSoldOut,
               quantity: isTarget && !zone.isSoldOut ? 1 : 0,
               colorHex: zone.color || "#4F46E5",
-              maxTicketsPerOrder: zone.maxTicketsPerOrder || 6,
-              maxTicketsPerUser: zone.maxTicketsPerUser || 10,
+              maxTicketsPerOrder: zone.maxTicketsPerOrder || 4,
               remainingTickets: zone.remainingTickets,
             };
           });
@@ -263,18 +291,92 @@ export default function PurchaseFlowPageComponent() {
     };
   }, [eventId, zoneId]);
 
-  // Límites oficiales de entradas por persona
-  const eventUserTicketLimit = event?.userTicketLimit ?? 4;
+  // Límites oficiales de entradas por persona (Regla 1: Por Evento)
+  const eventUserTicketLimit = event?.userTicketLimit ?? 6;
   const remainingUserQuotaForEvent = Math.max(0, eventUserTicketLimit - alreadyPurchasedTicketsCount);
 
-  // Cuenta regresiva del temporizador
+  // Estado derivado cuando vence la ventana de reserva (solo tras sincronizar con sessionStorage)
+  const isReservationExpired = isTimerSynced && currentStep !== 3 && secondsRemaining <= 0;
+
+  // Hidratación inicial del temporizador desde sessionStorage para mantener el tiempo al refrescar
   useEffect(() => {
-    if (currentStep === 3) return;
-    const interval = setInterval(() => {
-      setSecondsRemaining((prev) => (prev <= 1 ? 0 : prev - 1));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [currentStep]);
+    if (typeof window === "undefined") return;
+
+    if (currentStep === 3) {
+      expiresAtRef.current = null;
+      removePersistedCheckoutTimer(checkoutTimerKey);
+      setIsTimerSynced(true);
+      return;
+    }
+
+    let resolvedExpiresAt = Date.now() + CHECKOUT_RESERVATION_DURATION_SECONDS * 1000;
+    try {
+      const storedValue = sessionStorage.getItem(checkoutTimerKey);
+      const parsedExpiresAt = storedValue ? Number(storedValue) : NaN;
+      if (Number.isFinite(parsedExpiresAt) && parsedExpiresAt > 0) {
+        resolvedExpiresAt = parsedExpiresAt;
+      } else {
+        sessionStorage.setItem(checkoutTimerKey, String(resolvedExpiresAt));
+      }
+    } catch {
+      // Respaldo en memoria si sessionStorage está restringido
+    }
+
+    expiresAtRef.current = resolvedExpiresAt;
+    const syncedRemaining = Math.max(0, Math.ceil((resolvedExpiresAt - Date.now()) / 1000));
+    setSecondsRemaining(syncedRemaining);
+    setIsTimerSynced(true);
+  }, [checkoutTimerKey, currentStep]);
+
+  // Cuenta regresiva basada en reloj real + resincronización al volver a enfocar la pestaña
+  useEffect(() => {
+    if (!isTimerSynced || currentStep === 3 || isReservationExpired) return;
+
+    const syncRemainingTime = () => {
+      if (!expiresAtRef.current) return;
+      const nextRemaining = Math.max(0, Math.ceil((expiresAtRef.current - Date.now()) / 1000));
+      setSecondsRemaining(nextRemaining);
+    };
+
+    syncRemainingTime();
+    const interval = setInterval(syncRemainingTime, 1000);
+    window.addEventListener("focus", syncRemainingTime);
+    document.addEventListener("visibilitychange", syncRemainingTime);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", syncRemainingTime);
+      document.removeEventListener("visibilitychange", syncRemainingTime);
+    };
+  }, [isTimerSynced, currentStep, isReservationExpired]);
+
+  // Cierra modales secundarios y bloquea scroll cuando el tiempo de reserva expira
+  useEffect(() => {
+    if (!isReservationExpired || typeof document === "undefined") return;
+    setShowAuthModal(false);
+    setIsMobileSummaryExpanded(false);
+    setIsGatewayModalOpen(false);
+    setIsProcessing(false);
+    setPendingAsyncOrder(null);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isReservationExpired]);
+
+  // Bloquea interacción secundaria y scroll del fondo mientras se procesa el pago
+  useEffect(() => {
+    if (!isProcessing || typeof document === "undefined") return;
+    setShowAuthModal(false);
+    setIsMobileSummaryExpanded(false);
+    if (isGatewayModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isProcessing, isGatewayModalOpen]);
 
   // Posicionar la vista en la parte superior al llegar al Paso 3 (Pantalla de Confirmación)
   useEffect(() => {
@@ -288,6 +390,7 @@ export default function PurchaseFlowPageComponent() {
   }, [currentStep]);
 
   const formatTimer = (secs: number) => {
+    if (!isTimerSynced) return "--:-- min";
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")} min`;
@@ -295,6 +398,7 @@ export default function PurchaseFlowPageComponent() {
 
   // Manejo de cantidades (+ / -) con validación estricta de límites por compra y por evento
   const handleQuantityChange = (tierId: string, delta: number) => {
+    if (isReservationExpired) return;
     setTicketTiers((prev) => {
       const target = prev.find((t) => t.id === tierId);
       if (!target || !target.available) return prev;
@@ -303,7 +407,7 @@ export default function PurchaseFlowPageComponent() {
         .filter((t) => t.id !== tierId)
         .reduce((sum, t) => sum + t.quantity, 0);
 
-      const zoneMaxPerOrder = target.maxTicketsPerOrder ?? 6;
+      const zoneMaxPerOrder = target.maxTicketsPerOrder ?? 4;
       const effectiveMaxForThisTier = Math.min(
         zoneMaxPerOrder,
         target.remainingTickets ?? 999,
@@ -435,8 +539,15 @@ export default function PurchaseFlowPageComponent() {
   // Mostrar el footer flotante en móvil en pasos 1 y 2 mientras no sea visible el botón oficial del resumen
   const showMobileOrderFooter = (currentStep === 1 || currentStep === 2) && !isSummaryCtaVisible;
 
+  useEffect(() => {
+    if (!showMobileOrderFooter) {
+      setIsMobileSummaryExpanded(false);
+    }
+  }, [showMobileOrderFooter]);
+
   // Auto-scroll hacia la sección de método de pago al ingresar al Paso 2
   useEffect(() => {
+    setIsMobileSummaryExpanded(false);
     if (currentStep === 2) {
       const timer = setTimeout(() => {
         const paymentSection = document.getElementById("payment-methods-section");
@@ -451,60 +562,9 @@ export default function PurchaseFlowPageComponent() {
     }
   }, [currentStep]);
 
-  // Precarga automática del formToken de Izipay para el formulario incrustado en Paso 2
-  useEffect(() => {
-    if (currentStep !== 2 || paymentMethod !== "card") return;
-    if (totalTickets <= 0) return;
-
-    const activeToken = apiClient.getToken();
-    if (!activeToken) return;
-
-    let isMounted = true;
-    setIsLoadingIzipayToken(true);
-
-    const selectedItems = ticketTiers
-      .filter((t) => t.quantity > 0)
-      .map((t) => ({ zoneId: t.id, quantity: t.quantity }));
-
-    createIzipayPaymentUseCase
-      .execute({
-        eventId: event ? (event.publicUuid || event.id) : eventId || "1",
-        showId: selectedFunctionId,
-        items: selectedItems,
-        paymentMethod: "card",
-        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
-      })
-      .match(
-        (response) => {
-          if (!isMounted) return;
-          setIsLoadingIzipayToken(false);
-          setIzipayModalData(response);
-        },
-        (error) => {
-          if (!isMounted) return;
-          setIsLoadingIzipayToken(false);
-          if (error.code === 'UNAUTHORIZED' || error.message?.toLowerCase().includes('sesión')) {
-            setShowAuthModal(true);
-            return;
-          }
-          if (error.code === 'COUPON_INVALID_OR_EXPIRED') {
-            setAppliedCoupon(null);
-            setCouponError("El cupón de descuento ya no se encuentra disponible o ha expirado.");
-            return;
-          }
-          setPaymentError(
-            error.message || "No se pudo inicializar la pasarela de Izipay. Intenta nuevamente."
-          );
-        }
-      );
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentStep, paymentMethod, appliedCoupon, totalTickets, selectedFunctionId]);
-
   // Lógica para avanzar al Paso 2 desde el botón nativo o desde el footer flotante móvil
   const handleProceedToStep2 = () => {
+    if (isReservationExpired) return;
     if (totalTickets === 0) {
       alert("Por favor selecciona al menos una entrada para continuar.");
       return;
@@ -529,15 +589,137 @@ export default function PurchaseFlowPageComponent() {
     }, 50);
   };
 
-  // Simulación de Envío de Pago mediante la Pasarela Oficial
-  const handleSubmitPayment = (e: React.FormEvent) => {
-    e.preventDefault();
+  const completeSuccessfulCheckout = (response: SimulateCheckoutResponseModel) => {
+    setIsGatewayModalOpen(false);
+    setIsProcessing(false);
+    setPendingAsyncOrder(null);
+    setCheckoutResult(response);
+    expiresAtRef.current = null;
+    removePersistedCheckoutTimer(checkoutTimerKey);
+    setCurrentStep(3);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  };
+
+  const handleCheckoutDomainError = (error: { code: string; message?: string }) => {
+    setIsGatewayModalOpen(false);
+    setIsProcessing(false);
+    if (error.code === "AUTH_001" || error.code === "UNAUTHORIZED" || error.message?.toLowerCase().includes("sesión")) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (error.code === "COUPON_INVALID_OR_EXPIRED" || error.message?.toLowerCase().includes("cupón")) {
+      setAppliedCoupon(null);
+      setCouponError(
+        "El cupón de descuento ya no se encuentra disponible o ha expirado. Por favor retíralo o prueba con otro cupón.",
+      );
+      setPaymentError(
+        "El cupón de descuento ha dejado de ser válido o alcanzó su límite de canjes. Se ha desvinculado de la orden para que puedas reintentar.",
+      );
+      return;
+    }
+    setPaymentError(
+      error.message ||
+        "La transacción no pudo completarse en Culqi. Por favor verifica tus datos o prueba con otro medio de pago.",
+    );
+  };
+
+  // Respaldo de polling cada 3s mientras espera confirmación asíncrona (QR Billeteras, CIP PagoEfectivo, Cuotéalo)
+  useEffect(() => {
+    if (!pendingAsyncOrder || currentStep === 3 || isReservationExpired) return;
+
+    let isCancelled = false;
+    const pollStatus = async () => {
+      const statusRes = await getCulqiOrderStatusUseCase.execute(pendingAsyncOrder.orderPublicUuid);
+      if (isCancelled) return;
+
+      statusRes.match(
+        (data) => {
+          if (data.paymentCode && data.paymentCode !== pendingAsyncOrder.paymentCode) {
+            setPendingAsyncOrder((prev) =>
+              prev ? { ...prev, paymentCode: data.paymentCode } : null,
+            );
+          }
+          if (data.status === "paid" && data.checkoutResult) {
+            completeSuccessfulCheckout(data.checkoutResult);
+            return;
+          }
+          if (data.status === "expired" || data.status === "cancelled") {
+            setPendingAsyncOrder(null);
+            setPaymentError("La orden de pago expiró o fue cancelada. Puedes generar una nueva orden.");
+          }
+        },
+        () => {
+          // Continuar verificando en el siguiente intervalo sin interrumpir al usuario
+        },
+      );
+    };
+
+    const intervalId = setInterval(pollStatus, 3000);
+    return () => {
+      isCancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [pendingAsyncOrder?.orderPublicUuid, currentStep, isReservationExpired]);
+
+  const handleManualVerifyAsyncOrder = async () => {
+    if (!pendingAsyncOrder || isCheckingAsyncStatus) return;
+    setIsCheckingAsyncStatus(true);
+    setPaymentError(null);
+
+    const statusRes = await getCulqiOrderStatusUseCase.execute(pendingAsyncOrder.orderPublicUuid);
+    setIsCheckingAsyncStatus(false);
+
+    statusRes.match(
+      (data) => {
+        if (data.paymentCode) {
+          setPendingAsyncOrder((prev) =>
+            prev ? { ...prev, paymentCode: data.paymentCode } : null,
+          );
+        }
+        if (data.status === "paid" && data.checkoutResult) {
+          completeSuccessfulCheckout(data.checkoutResult);
+          return;
+        }
+        if (data.status === "expired" || data.status === "cancelled") {
+          setPendingAsyncOrder(null);
+          setPaymentError("Tu orden expiró o fue cancelada. Inicia nuevamente tu pago.");
+          return;
+        }
+        setPaymentError(
+          "Aún no recibimos confirmación de pago desde Culqi. Si acabas de abonar, vuelve a verificar en unos segundos.",
+        );
+      },
+      (err) => {
+        setPaymentError(err.message || "No se pudo consultar el estado en Culqi en este momento.");
+      },
+    );
+  };
+
+  const handleCancelPendingAsyncOrder = async () => {
+    if (!pendingAsyncOrder) return;
+    const orderUuid = pendingAsyncOrder.orderPublicUuid;
+    setPendingAsyncOrder(null);
+    setPaymentError(null);
+    await cancelPendingCulqiOrderUseCase.execute(orderUuid);
+  };
+
+  // Procesamiento real de pago mediante Culqi Checkout Custom + API v2 + 3DS
+  const handleSubmitPayment = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (isReservationExpired || isProcessing) return;
+    if (!event) {
+      setPaymentError(
+        "No se pudo cargar la taquilla oficial del evento seleccionado. Vuelve a la cartelera e ingresa nuevamente al evento.",
+      );
+      return;
+    }
     if (totalTickets === 0) {
       alert("Por favor selecciona al menos una entrada para continuar.");
       return;
     }
 
-    // Exigir autenticación activa antes de proceder al pago
     const activeToken = apiClient.getToken();
     if (!activeToken || !currentUser) {
       setShowAuthModal(true);
@@ -545,157 +727,167 @@ export default function PurchaseFlowPageComponent() {
     }
 
     setIsProcessing(true);
+    setIsGatewayModalOpen(false);
+    setProcessingLabel("Preparando orden en Culqi...");
     setPaymentError(null);
+    setPendingAsyncOrder(null);
 
     const selectedItems = ticketTiers
       .filter((t) => t.quantity > 0)
       .map((t) => ({ zoneId: t.id, quantity: t.quantity }));
 
-    const resolvedCustomerEmail = currentUser.email;
-    const resolvedCustomerName = `${currentUser.firstName} ${currentUser.lastName}`.trim() || currentUser.email;
+    const prepareRes = await prepareCulqiCheckoutUseCase.execute({
+      eventId: event ? event.publicUuid || event.id : eventId || "1",
+      showId: selectedFunctionId,
+      items: selectedItems,
+      paymentMethod,
+      couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+    });
 
-    // A. Pago mediante Izipay en Modo Incrustado (Para Tarjeta)
-    if (paymentMethod === "card") {
-      if (typeof window !== "undefined" && (window as any).KR) {
-        setIsProcessing(true);
-        setPaymentError(null);
-        (window as any).KR.submit();
-        return;
+    if (prepareRes.isErr()) {
+      handleCheckoutDomainError(prepareRes.error);
+      return;
+    }
+
+    const prepared = prepareRes.value;
+    const clientConfig = resolveCulqiClientConfig({
+      publicKey: prepared.publicKey,
+      checkoutScriptUrl: prepared.checkoutScriptUrl,
+      threeDsScriptUrl: prepared.threeDsScriptUrl,
+      rsaId: prepared.rsaId,
+      rsaPublicKey: prepared.rsaPublicKey,
+    });
+
+    const deviceFingerPrintId = await generateCulqiDeviceFingerprint(
+      clientConfig.publicKey,
+      clientConfig.threeDsScriptUrl,
+    );
+
+    setProcessingLabel("Completa tu pago en la ventana segura de Culqi...");
+    setIsGatewayModalOpen(true);
+
+    const modalOutcome = await openCulqiCheckoutModal({
+      publicKey: clientConfig.publicKey,
+      checkoutScriptUrl: clientConfig.checkoutScriptUrl,
+      rsaId: clientConfig.rsaId,
+      rsaPublicKey: clientConfig.rsaPublicKey,
+      logoUrl: clientConfig.logoUrl,
+      title: prepared.title,
+      currency: prepared.currency,
+      amountInCents: prepared.amountInCents,
+      culqiOrderId: prepared.culqiOrderId,
+      customerEmail: prepared.customer.email,
+      preferredMethod: paymentMethod,
+    });
+
+    setIsGatewayModalOpen(false);
+
+    if (modalOutcome.type === "CANCELLED") {
+      setProcessingLabel("Liberando reserva temporal...");
+      const cancelRes = await cancelPendingCulqiOrderUseCase.execute(prepared.orderPublicUuid);
+      if (cancelRes.isOk() && cancelRes.value.status === "paid") {
+        const paidCheck = await getCulqiOrderStatusUseCase.execute(prepared.orderPublicUuid);
+        if (paidCheck.isOk() && paidCheck.value.checkoutResult) {
+          completeSuccessfulCheckout(paidCheck.value.checkoutResult);
+          return;
+        }
       }
-      alert(
-        "La pasarela segura de Izipay se está terminando de inicializar. Por favor espera un momento e intenta nuevamente."
-      );
       setIsProcessing(false);
       return;
     }
 
-    // B. Pago mediante Izipay en Modo Pop-in (Para Yape)
-    if (paymentMethod === "yape") {
-      createIzipayPaymentUseCase
-        .execute({
-          eventId: event ? (event.publicUuid || event.id) : eventId || "1",
-          showId: selectedFunctionId,
-          items: selectedItems,
-          paymentMethod,
-          couponCode: appliedCoupon ? appliedCoupon.code : undefined,
-        })
-        .match(
-          (response) => {
-            setIsProcessing(false);
-            setIzipayModalData(response);
-            setShowIzipayPopin(true); // Despliega el Pop-in para Yape
-          },
-          (error) => {
-            setIsProcessing(false);
-            if (error.code === 'UNAUTHORIZED' || error.message?.toLowerCase().includes('sesión')) {
-              setShowAuthModal(true);
-              return;
-            }
-            if (error.code === 'COUPON_INVALID_OR_EXPIRED' || error.message?.toLowerCase().includes('cupón')) {
-              setAppliedCoupon(null);
-              setCouponError("El cupón de descuento ya no se encuentra disponible o ha expirado. Por favor retíralo o prueba con otro cupón.");
-              setPaymentError("El cupón de descuento ha dejado de ser válido o alcanzó su límite en este instante.");
-              return;
-            }
-            setPaymentError(
-              error.message ||
-              "No se pudo inicializar la pasarela de pagos de Izipay. Por favor intenta de nuevo."
-            );
-          }
-        );
+    if (modalOutcome.type === "ERROR") {
+      setProcessingLabel("Liberando reserva temporal...");
+      await cancelPendingCulqiOrderUseCase.execute(prepared.orderPublicUuid);
+      setIsProcessing(false);
+      setPaymentError(modalOutcome.message);
       return;
     }
 
-    // C. Otros Medios de Pago / Simulación
-    simulateCheckoutUseCase
-      .execute({
-        eventId: event ? (event.publicUuid || event.id) : eventId || "1",
-        showId: selectedFunctionId,
-        items: selectedItems,
-        paymentMethod,
-        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
-        customerEmail: resolvedCustomerEmail,
-        customerName: resolvedCustomerName,
-        forceFailure: forceFailureTest,
-      })
-      .match(
-        (response) => {
-          setIsProcessing(false);
-          setCheckoutResult(response);
-          setCurrentStep(3);
-          if (typeof window !== "undefined") {
-            window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-          }
-        },
-        (error) => {
-          setIsProcessing(false);
-          if (error.code === 'UNAUTHORIZED' || error.message?.toLowerCase().includes('sesión')) {
-            setShowAuthModal(true);
-            return;
-          }
-          if (error.code === 'COUPON_INVALID_OR_EXPIRED' || error.message?.toLowerCase().includes('cupón')) {
-            setAppliedCoupon(null);
-            setCouponError("El cupón de descuento ya no se encuentra disponible o ha expirado. Por favor retíralo o prueba con otro cupón.");
-            setPaymentError("El cupón de descuento ha dejado de ser válido o alcanzó su límite de canjes en este instante. Se ha desvinculado de la orden para que puedas reintentar tu pago.");
-            return;
-          }
-          setPaymentError(
-            error.message ||
-            "La transacción ha sido rechazada por la pasarela de pagos. Por favor verifica tu saldo o prueba con otro medio de pago."
-          );
-        }
-      );
-  };
+    if (modalOutcome.type === "ORDER") {
+      setIsProcessing(false);
+      setPendingAsyncOrder({
+        orderPublicUuid: prepared.orderPublicUuid,
+        orderCode: prepared.orderCode,
+        culqiOrderId: modalOutcome.culqiOrderId,
+        paymentCode: modalOutcome.paymentCode ?? null,
+        method: paymentMethod,
+      });
+      return;
+    }
 
-  const handleIzipayPaymentSuccess = (krAnswer?: any) => {
-    setShowIzipayPopin(false);
+    // Token recibido (Tarjeta de Crédito/Débito o Yape con código de aprobación)
+    const resolvedMethodForCharge = modalOutcome.isYapeToken ? "yape" : paymentMethod;
+    setProcessingLabel("Confirmando transacción con Culqi...");
 
-    const resolvedOrderCode = izipayModalData ? izipayModalData.orderCode : `#QPH-${Math.floor(100000 + Math.random() * 900000)}`;
-    const resolvedUuid = izipayModalData ? izipayModalData.orderPublicUuid : `ord-${Date.now()}`;
-    const resolvedTotal = izipayModalData ? izipayModalData.totalAmount : grandTotal;
-
-    const ticketsGenerated = ticketTiers
-      .filter((t) => t.quantity > 0)
-      .flatMap((t, idx) =>
-        Array.from({ length: t.quantity }).map((_, i) => ({
-          ticketId: `${idx + 1}${i + 1}`,
-          ticketUuid: `tkt-${Date.now()}-${idx}-${i}`,
-          ticketNumber: i + 1,
-          zoneName: t.name,
-          tierName: t.name,
-          unitPrice: t.price,
-          qrPayload: `QPH|ORD:${resolvedOrderCode}|ZONE:${t.name}|TKT:${i + 1}|TS:${Date.now()}`,
-        }))
-      );
-
-    setCheckoutResult({
-      success: true,
-      orderId: izipayModalData?.orderId || "1",
-      orderCode: resolvedOrderCode,
-      orderPublicUuid: resolvedUuid,
-      status: "paid",
-      subtotal: subtotal,
-      discountAmount: izipayModalData?.discountAmount || (appliedCoupon ? appliedCoupon.discountAmount : 0),
-      couponCode: izipayModalData?.couponCode || (appliedCoupon ? appliedCoupon.code : null),
-      totalAmount: resolvedTotal,
-      paymentMethod: paymentMethod,
-      txCode: krAnswer?.transactions?.[0]?.uuid || `IZI-${Math.floor(100000 + Math.random() * 900000)}`,
-      message: "¡Pago completado con éxito a través de Izipay!",
-      tickets: ticketsGenerated,
+    const chargeRes = await confirmCulqiChargeUseCase.execute({
+      orderPublicUuid: prepared.orderPublicUuid,
+      tokenId: modalOutcome.tokenId,
+      paymentMethod: resolvedMethodForCharge,
+      deviceFingerPrintId,
     });
 
-    setCurrentStep(3);
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (chargeRes.isErr()) {
+      handleCheckoutDomainError(chargeRes.error);
+      return;
     }
+
+    const chargeData = chargeRes.value;
+    if (chargeData.status === "PAID" && chargeData.checkoutResult) {
+      completeSuccessfulCheckout(chargeData.checkoutResult);
+      return;
+    }
+
+    if (chargeData.requires3DS) {
+      setProcessingLabel("Verificando seguridad bancaria 3D Secure...");
+      setIsGatewayModalOpen(true);
+      const threeDsOutcome = await authenticateWithCulqi3DS({
+        publicKey: clientConfig.publicKey,
+        threeDsScriptUrl: clientConfig.threeDsScriptUrl,
+        tokenId: modalOutcome.tokenId,
+        email: prepared.customer.email,
+        amountInCents: prepared.amountInCents,
+      });
+      setIsGatewayModalOpen(false);
+
+      if (!threeDsOutcome.ok) {
+        setIsProcessing(false);
+        setPaymentError(threeDsOutcome.message);
+        return;
+      }
+
+      setProcessingLabel("Confirmando cargo autenticado con Culqi...");
+      const retryChargeRes = await confirmCulqiChargeUseCase.execute({
+        orderPublicUuid: prepared.orderPublicUuid,
+        tokenId: modalOutcome.tokenId,
+        paymentMethod: resolvedMethodForCharge,
+        deviceFingerPrintId,
+        authentication3DS: threeDsOutcome.data,
+      });
+
+      retryChargeRes.match(
+        (retryData) => {
+          if (retryData.status === "PAID" && retryData.checkoutResult) {
+            completeSuccessfulCheckout(retryData.checkoutResult);
+            return;
+          }
+          setIsProcessing(false);
+          setPaymentError("No se pudo confirmar la autenticación 3D Secure con el emisor.");
+        },
+        (retryErr) => handleCheckoutDomainError(retryErr),
+      );
+      return;
+    }
+
+    setIsProcessing(false);
+    setPaymentError("No se recibió confirmación definitiva de Culqi. Intenta nuevamente.");
   };
 
   const paymentMethodLabel = {
-    card: "Tarjeta de crédito / débito (•••• 4829)",
-    yape: "Yape / Plin Móvil Oficial",
-    transfer: "PagoEfectivo / CIP Transferencia",
-    apple_pay: "Apple Pay",
-    google_pay: "Google Pay",
+    yape: "Yape / Plin (Billetera Digital)",
+    card: "Tarjeta de Crédito / Débito",
+    transfer: "PagoEfectivo (Código CIP)",
+    cuotealo: "Cuotéalo BCP",
   }[paymentMethod];
 
   // Pantalla de carga si se está cargando el evento
@@ -767,7 +959,11 @@ export default function PurchaseFlowPageComponent() {
       {/* =========================================================================
           CABECERA CONTEXTUAL DEL CHECKOUT (STITCH STYLE)
          ========================================================================= */}
-      <header className="bg-surface/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 border-b border-outline-variant/10">
+      <header
+        className={`bg-surface/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 border-b border-outline-variant/10 ${
+          isProcessing ? "pointer-events-none select-none" : ""
+        }`}
+      >
         <div className="flex justify-between items-center w-full px-4 sm:px-8 h-20 max-w-container-max mx-auto">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 group">
@@ -811,7 +1007,11 @@ export default function PurchaseFlowPageComponent() {
       {/* =========================================================================
           CONTENIDO PRINCIPAL
          ========================================================================= */}
-      <main className="flex-grow w-full max-w-container-max mx-auto px-4 sm:px-8 pt-8 sm:pt-12 pb-28 lg:pb-12">
+      <main
+        className={`flex-grow w-full max-w-container-max mx-auto px-4 sm:px-8 pt-8 sm:pt-12 pb-28 lg:pb-12 ${
+          isProcessing ? "pointer-events-none select-none" : ""
+        }`}
+      >
         <div className="max-w-container-max mx-auto">
           {/* STEPPER DE PROGRESO DE 3 PASOS */}
           <CheckoutStepper
@@ -823,14 +1023,52 @@ export default function PurchaseFlowPageComponent() {
             canNavigateToStep2={totalTickets > 0}
           />
 
-          {/* TIMER ALERT (URGENCIA POSITIVA) */}
-          <div className="mb-8 p-3.5 bg-electric-indigo/10 border border-electric-indigo/20 rounded-xl flex items-center justify-between max-w-4xl mx-auto shadow-sm">
+          {/* TIMER ALERT (URGENCIA DINÁMICA SEGÚN TIEMPO RESTANTE) */}
+          <div
+            className={`mb-8 p-3.5 rounded-xl flex items-center justify-between gap-3 max-w-4xl mx-auto shadow-sm border transition-colors ${
+              isReservationExpired
+                ? "bg-red-50 border-red-200"
+                : secondsRemaining <= 120
+                  ? "bg-amber-50 border-amber-300"
+                  : "bg-electric-indigo/10 border-electric-indigo/20"
+            }`}
+          >
             <div className="flex items-center gap-2.5 text-deep-slate text-xs sm:text-sm font-semibold">
-              <span className="material-symbols-outlined text-electric-indigo text-xl">timer</span>
-              <span>Tus entradas seleccionadas se reservan temporalmente:</span>
+              <span
+                className={`material-symbols-outlined text-xl ${
+                  isReservationExpired
+                    ? "text-red-600"
+                    : secondsRemaining <= 120
+                      ? "text-amber-600"
+                      : "text-electric-indigo"
+                }`}
+              >
+                {isReservationExpired ? "timer_off" : "timer"}
+              </span>
+              <span>
+                {isReservationExpired
+                  ? "Tu tiempo de reserva temporal ha expirado:"
+                  : "Tus entradas seleccionadas se reservan temporalmente:"}
+              </span>
             </div>
-            <div className="bg-white px-3 py-1 rounded-lg border border-electric-indigo/30 font-bold text-electric-indigo text-xs sm:text-sm flex items-center gap-1.5 shadow-sm font-mono">
-              <span className="w-2 h-2 rounded-full bg-vip-gold animate-pulse" />
+            <div
+              className={`bg-white px-3 py-1 rounded-lg border font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm font-mono shrink-0 ${
+                isReservationExpired
+                  ? "border-red-300 text-red-600"
+                  : secondsRemaining <= 120
+                    ? "border-amber-300 text-amber-700"
+                    : "border-electric-indigo/30 text-electric-indigo"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isReservationExpired
+                    ? "bg-red-500"
+                    : secondsRemaining <= 120
+                      ? "bg-red-500 animate-ping"
+                      : "bg-vip-gold animate-pulse"
+                }`}
+              />
               <span>{formatTimer(secondsRemaining)}</span>
             </div>
           </div>
@@ -918,6 +1156,7 @@ export default function PurchaseFlowPageComponent() {
                     }))}
                     zoneMapImageUrl={event?.zoneMapUrl}
                     selectedZoneId={primarySelectedTier?.id}
+                    selectedZoneNote={primarySelectedTier?.description}
                     onSelectZone={(selectedId) => {
                       setTicketTiers((prev) =>
                         prev.map((t) => {
@@ -931,20 +1170,20 @@ export default function PurchaseFlowPageComponent() {
                     occupancyPercentage={
                       event?.zones && event.zones.length > 0
                         ? Math.min(
-                          98,
-                          Math.max(
-                            52,
-                            Math.round(
-                              ((event.zones.reduce(
-                                (acc, z) => acc + (z.capacity - z.remainingTickets),
-                                0
-                              )) /
-                                (event.zones.reduce((acc, z) => acc + z.capacity, 0) || 1)) *
-                              100
+                            100,
+                            Math.max(
+                              0,
+                              Math.round(
+                                (event.zones.reduce(
+                                  (acc, z) => acc + Math.max(0, z.capacity - z.remainingTickets),
+                                  0
+                                ) /
+                                  (event.zones.reduce((acc, z) => acc + z.capacity, 0) || 1)) *
+                                  100
+                              )
                             )
                           )
-                        )
-                        : 88
+                        : 0
                     }
                   />
 
@@ -999,7 +1238,7 @@ export default function PurchaseFlowPageComponent() {
                       const isSelected = tier.quantity > 0;
                       const isPlusDisabled =
                         totalTickets >= remainingUserQuotaForEvent ||
-                        tier.quantity >= (tier.maxTicketsPerOrder ?? 6) ||
+                        tier.quantity >= (tier.maxTicketsPerOrder ?? 4) ||
                         tier.quantity >= (tier.remainingTickets ?? 999) ||
                         remainingUserQuotaForEvent <= 0;
 
@@ -1038,10 +1277,15 @@ export default function PurchaseFlowPageComponent() {
                               <p className="text-xs text-on-surface-variant max-w-md">
                                 {tier.description}
                               </p>
-                              <div className="text-sm text-electric-indigo font-bold">
-                                S/. {tier.price.toFixed(2)}{" "}
-                                <span className="text-xs text-platinum-silver font-normal">
-                                  / entrada oficial
+                              <div className="flex items-center gap-2.5 flex-wrap text-sm text-electric-indigo font-bold">
+                                <span>
+                                  S/. {tier.price.toFixed(2)}{" "}
+                                  <span className="text-xs text-platinum-silver font-normal">
+                                    / entrada oficial
+                                  </span>
+                                </span>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-gray text-on-surface-variant border border-surface-variant">
+                                  Máx. {tier.maxTicketsPerOrder ?? 4} por orden
                                 </span>
                               </div>
                             </div>
@@ -1097,216 +1341,376 @@ export default function PurchaseFlowPageComponent() {
               )}
 
               {/* =================================================================
-                  PASO 2: PASARELA DE PAGOS Y MÉTODOS SEGUROS
+                  PASO 2: PASARELA DE PAGOS Y MÉTODOS SEGUROS (PERÚ / CULQI READY)
                  ================================================================= */}
               {currentStep === 2 && (
                 <div
                   id="payment-methods-section"
-                  className="space-y-8 bg-white p-6 sm:p-8 rounded-2xl border border-surface-variant shadow-sm scroll-mt-24 md:scroll-mt-28"
+                  className="space-y-6 bg-white p-5 sm:p-8 rounded-2xl border border-surface-variant shadow-sm scroll-mt-24 md:scroll-mt-28 animate-in fade-in duration-200"
                 >
-                  <div>
-                    <h1 className="text-2xl font-black text-deep-slate mb-2">
-                      Método de Pago
-                    </h1>
-                    <p className="text-sm text-on-surface-variant">
-                      Selecciona tu forma de pago preferida para emitir tus entradas oficiales.
-                    </p>
+                  {/* Cabecera del Paso 2 */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-variant/60 pb-5">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-electric-indigo/10 text-electric-indigo text-[11px] font-bold mb-1.5">
+                        <span className="material-symbols-outlined text-[14px]">verified_user</span>
+                        <span>Pasarela Segura • Pagos en Soles (PEN)</span>
+                      </div>
+                      <h1 className="text-2xl font-black text-deep-slate tracking-tight">
+                        Elige cómo quieres pagar
+                      </h1>
+                      <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
+                        Al confirmar se abrirá la pasarela protegida para completar tu pago sin salir de la plataforma.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (pendingAsyncOrder) {
+                          void handleCancelPendingAsyncOrder();
+                        }
+                        setCurrentStep(1);
+                      }}
+                      className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-electric-indigo hover:bg-surface-gray border border-surface-variant/70 transition-colors cursor-pointer shrink-0"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+                      <span>Editar entradas</span>
+                    </button>
                   </div>
 
-                  {/* Alerta de Transacción Rechazada (Simulación de Fallo) */}
+                  {/* Panel de Seguimiento para Pagos Asíncronos (QR Billeteras / PagoEfectivo CIP / Cuotéalo) */}
+                  {pendingAsyncOrder && (
+                    <div className="p-5 rounded-2xl bg-electric-indigo/5 border-2 border-electric-indigo/30 space-y-4 animate-in fade-in duration-150">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-electric-indigo/15 text-electric-indigo flex items-center justify-center shrink-0">
+                          <div className="w-5 h-5 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center flex-wrap gap-2">
+                            <h4 className="font-extrabold text-sm text-deep-slate">
+                              Esperando confirmación de Culqi ({pendingAsyncOrder.orderCode})
+                            </h4>
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+                              En proceso
+                            </span>
+                          </div>
+                          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                            Tus entradas permanecen reservadas mientras completas la operación. Verificamos automáticamente cada pocos segundos para emitir tus códigos QR al instante.
+                          </p>
+                          {pendingAsyncOrder.paymentCode && (
+                            <div className="mt-3 p-3 rounded-xl bg-white border border-surface-variant flex items-center justify-between gap-3">
+                              <div>
+                                <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                                  Código de Pago (CIP / Referencia Culqi)
+                                </span>
+                                <span className="font-mono font-black text-base text-deep-slate tracking-wider">
+                                  {pendingAsyncOrder.paymentCode}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (typeof navigator !== "undefined" && pendingAsyncOrder.paymentCode) {
+                                    void navigator.clipboard.writeText(pendingAsyncOrder.paymentCode);
+                                  }
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold cursor-pointer shrink-0"
+                              >
+                                Copiar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleManualVerifyAsyncOrder}
+                          disabled={isCheckingAsyncStatus}
+                          className="px-4 py-2 rounded-xl bg-electric-indigo hover:bg-primary text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          {isCheckingAsyncStatus ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Verificando...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined text-[16px]">refresh</span>
+                              <span>Ya pagué, verificar ahora</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelPendingAsyncOrder}
+                          className="px-3.5 py-2 rounded-xl bg-white hover:bg-surface-gray border border-surface-variant text-deep-slate text-xs font-semibold cursor-pointer"
+                        >
+                          Cambiar método o cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Alerta de Transacción Rechazada */}
                   {paymentError && (
-                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-start gap-3">
+                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-start gap-3 animate-in fade-in duration-150">
                       <span className="material-symbols-outlined text-red-600 text-xl shrink-0 mt-0.5">
                         error
                       </span>
                       <div className="flex-1">
-                        <h4 className="font-bold text-sm">Transacción Rechazada por la Pasarela</h4>
+                        <h4 className="font-bold text-sm">Transacción no completada</h4>
                         <p className="text-xs text-red-700 mt-1">{paymentError}</p>
                         <p className="text-xs text-slate-600 mt-2">
-                          💡 <strong>Tus entradas continúan reservadas:</strong> Puedes cambiar de método de pago (por ejemplo, seleccionar <strong>Yape</strong> o <strong>Tarjeta</strong>) y volver a pulsar &quot;Pagar Ahora&quot;.
+                          💡 <strong>Tus entradas continúan reservadas:</strong> Puedes reintentar o elegir otro medio de pago (por ejemplo, Tarjeta o PagoEfectivo).
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setPaymentError(null)}
-                        className="text-red-500 hover:text-red-800 text-xs font-bold cursor-pointer"
+                        aria-label="Cerrar alerta"
+                        className="text-red-500 hover:text-red-800 text-xs font-bold cursor-pointer p-1"
                       >
                         ✕
                       </button>
                     </div>
                   )}
 
-                  {/* Toggle para pruebas de QA / Demostración */}
-                  <div className="p-3 bg-surface-container-low rounded-xl border border-surface-variant/60 flex flex-wrap items-center justify-between text-xs gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
-                        science
-                      </span>
-                      <span className="font-semibold text-deep-slate">
-                        Simulación de Pasarela
-                      </span>
-                      <span className="text-[11px] text-on-surface-variant">
-                        (80% Éxito / 20% Fallo aleatorio)
-                      </span>
-                    </div>
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-deep-slate">
-                      <input
-                        type="checkbox"
-                        checked={forceFailureTest}
-                        onChange={(e) => setForceFailureTest(e.target.checked)}
-                        className="rounded text-electric-indigo focus:ring-electric-indigo cursor-pointer"
-                      />
-                      <span className={`text-[11px] ${forceFailureTest ? "text-red-600 font-extrabold" : "text-slate-600"}`}>
-                        {forceFailureTest ? "Forzar fallo bancario" : "Forzar fallo para prueba"}
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* Opciones de Métodos de Pago */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Yape / Plin */}
+                  {/* Grid 2x2 de Métodos de Pago Oficiales Perú */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* 1. Yape / Plin */}
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("yape")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${paymentMethod === "yape"
-                          ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
-                          : "border-surface-variant bg-white hover:bg-surface-gray"
-                        }`}
+                      className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${
+                        paymentMethod === "yape"
+                          ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
+                          : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-700">
-                          <span className="material-symbols-outlined text-2xl">phone_iphone</span>
+                      <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-purple-600 text-white text-[9px] font-extrabold uppercase tracking-wider shadow-xs">
+                        Más usado
+                      </span>
+                      <div className="flex items-center gap-3.5 pr-2">
+                        <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 shrink-0 border border-purple-200/70">
+                          <span className="material-symbols-outlined text-2xl">qr_code_scanner</span>
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-deep-slate">Yape / Plin</span>
-                          <span className="text-xs text-on-surface-variant">Billetera móvil QR instantánea</span>
+                          <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
+                            Escanea el QR o usa código de aprobación
+                          </span>
                         </div>
                       </div>
-                      {paymentMethod === "yape" && (
-                        <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
-                      )}
+                      <span
+                        className={`material-symbols-outlined shrink-0 ${
+                          paymentMethod === "yape" ? "text-electric-indigo" : "text-slate-300"
+                        }`}
+                        style={{ fontVariationSettings: paymentMethod === "yape" ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        {paymentMethod === "yape" ? "check_circle" : "radio_button_unchecked"}
+                      </span>
                     </button>
 
-                    {/* Tarjeta */}
+                    {/* 2. Tarjeta de Crédito / Débito */}
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("card")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${paymentMethod === "card"
-                          ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
-                          : "border-surface-variant bg-white hover:bg-surface-gray"
-                        }`}
+                      className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${
+                        paymentMethod === "card"
+                          ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
+                          : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-electric-indigo/20 flex items-center justify-center text-electric-indigo">
+                      <div className="flex items-center gap-3.5 pr-2">
+                        <div className="w-11 h-11 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0 border border-electric-indigo/20">
                           <span className="material-symbols-outlined text-2xl">credit_card</span>
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-deep-slate">
-                            Tarjeta de Débito / Crédito
+                            Tarjeta de Crédito / Débito
                           </span>
-                          <span className="text-xs text-on-surface-variant">Visa, Mastercard, Diners, Amex</span>
+                          <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
+                            Visa, Mastercard, Amex y Diners
+                          </span>
                         </div>
                       </div>
-                      {paymentMethod === "card" && (
-                        <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
-                      )}
+                      <span
+                        className={`material-symbols-outlined shrink-0 ${
+                          paymentMethod === "card" ? "text-electric-indigo" : "text-slate-300"
+                        }`}
+                        style={{ fontVariationSettings: paymentMethod === "card" ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        {paymentMethod === "card" ? "check_circle" : "radio_button_unchecked"}
+                      </span>
                     </button>
 
-                    {/* PagoEfectivo */}
+                    {/* 3. PagoEfectivo / Agentes */}
                     <button
                       type="button"
                       onClick={() => setPaymentMethod("transfer")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${paymentMethod === "transfer"
-                          ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
-                          : "border-surface-variant bg-white hover:bg-surface-gray"
-                        }`}
+                      className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${
+                        paymentMethod === "transfer"
+                          ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
+                          : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-surface-gray flex items-center justify-center text-on-surface-variant">
+                      <div className="flex items-center gap-3.5 pr-2">
+                        <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 shrink-0 border border-amber-200/70">
                           <span className="material-symbols-outlined text-2xl">account_balance</span>
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-deep-slate">
                             PagoEfectivo / Agentes
                           </span>
-                          <span className="text-xs text-on-surface-variant">Código CIP para banca móvil y agentes</span>
+                          <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
+                            Código CIP en BCP, BBVA, Interbank y agentes
+                          </span>
                         </div>
                       </div>
-                      {paymentMethod === "transfer" && (
-                        <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
-                      )}
+                      <span
+                        className={`material-symbols-outlined shrink-0 ${
+                          paymentMethod === "transfer" ? "text-electric-indigo" : "text-slate-300"
+                        }`}
+                        style={{ fontVariationSettings: paymentMethod === "transfer" ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        {paymentMethod === "transfer" ? "check_circle" : "radio_button_unchecked"}
+                      </span>
                     </button>
 
-                    {/* Apple Pay */}
+                    {/* 4. Cuotéalo BCP */}
                     <button
                       type="button"
-                      onClick={() => setPaymentMethod("apple_pay")}
-                      className={`flex items-center justify-between p-4 border-2 rounded-xl text-left transition-all cursor-pointer ${paymentMethod === "apple_pay"
-                          ? "border-electric-indigo bg-electric-indigo/10 shadow-sm"
-                          : "border-surface-variant bg-white hover:bg-surface-gray"
-                        }`}
+                      onClick={() => setPaymentMethod("cuotealo")}
+                      className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${
+                        paymentMethod === "cuotealo"
+                          ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
+                          : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
+                      }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-surface-gray flex items-center justify-center text-on-surface-variant">
-                          <span className="material-symbols-outlined text-2xl">contactless</span>
+                      <div className="flex items-center gap-3.5 pr-2">
+                        <div className="w-11 h-11 rounded-xl bg-sky-50 flex items-center justify-center text-sky-700 shrink-0 border border-sky-200/70">
+                          <span className="material-symbols-outlined text-2xl">calendar_month</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">Apple Pay</span>
-                          <span className="text-xs text-on-surface-variant">Pago exprés con Face ID / Touch ID</span>
+                          <span className="font-bold text-sm text-deep-slate">Cuotéalo BCP</span>
+                          <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
+                            Financia en cuotas sin tarjeta con BCP
+                          </span>
                         </div>
                       </div>
-                      {paymentMethod === "apple_pay" && (
-                        <span className="material-symbols-outlined text-electric-indigo">check_circle</span>
-                      )}
+                      <span
+                        className={`material-symbols-outlined shrink-0 ${
+                          paymentMethod === "cuotealo" ? "text-electric-indigo" : "text-slate-300"
+                        }`}
+                        style={{ fontVariationSettings: paymentMethod === "cuotealo" ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        {paymentMethod === "cuotealo" ? "check_circle" : "radio_button_unchecked"}
+                      </span>
                     </button>
                   </div>
 
-                  {/* Formulario Incrustado Oficial de Izipay (Solo para método Tarjeta) */}
-                  {paymentMethod === "card" && (
-                    <IzipayEmbeddedForm
-                      formToken={izipayModalData?.formToken || null}
-                      publicKey={
-                        izipayModalData?.publicKey ||
-                        process.env.NEXT_PUBLIC_IZIPAY_PUBLIC_KEY ||
-                        "94556890:testpublickey_VZqyzt8aze4EY4vTeAQBCfNeK1k4qlF2Mv1upObB5fm2V"
-                      }
-                      clientEndpoint={
-                        izipayModalData?.clientEndpoint ||
-                        process.env.NEXT_PUBLIC_IZIPAY_CLIENT_ENDPOINT ||
-                        "https://api.micuentaweb.pe"
-                      }
-                      isLoadingToken={isLoadingIzipayToken}
-                      onPaymentSuccess={handleIzipayPaymentSuccess}
-                      onPaymentError={(errorMessage) => {
-                        setIsProcessing(false);
-                        setPaymentError(errorMessage);
-                      }}
-                    />
-                  )}
+                  {/* Panel Contextual del Método Seleccionado */}
+                  <div className="p-5 bg-surface-container-low/80 rounded-2xl border border-surface-variant space-y-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-electric-indigo/10 text-electric-indigo flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[22px]">
+                          {paymentMethod === "yape"
+                            ? "qr_code_2"
+                            : paymentMethod === "card"
+                            ? "shield_lock"
+                            : paymentMethod === "transfer"
+                            ? "receipt_long"
+                            : "payments"}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-deep-slate text-sm font-bold">
+                          {paymentMethod === "yape" && "Pago instantáneo con Yape o Plin"}
+                          {paymentMethod === "card" && "Pago cifrado con Tarjeta (Protección 3D Secure)"}
+                          {paymentMethod === "transfer" && "Pago con Código CIP vía PagoEfectivo"}
+                          {paymentMethod === "cuotealo" && "Financiamiento directo con Cuotéalo BCP"}
+                        </h3>
+                        <p className="text-on-surface-variant text-xs leading-relaxed">
+                          {paymentMethod === "yape" &&
+                            "Al confirmar, se desplegará el modal seguro donde podrás escanear el código QR con Yape/Plin o ingresar tu celular + código de aprobación de Yape."}
+                          {paymentMethod === "card" &&
+                            "Ingresa los datos de tu tarjeta Visa, Mastercard, Amex o Diners directamente en el entorno certificado PCI DSS. Si tu banco lo solicita, podrás autorizar con clave dinámica 3DS."}
+                          {paymentMethod === "transfer" &&
+                            "Se generará un código de pago CIP válido durante los próximos 10 minutos para que abones desde tu app bancaria o agente autorizado."}
+                          {paymentMethod === "cuotealo" &&
+                            "Completa la solicitud en línea ingresando con tu cuenta BCP y elige el plan de cuotas que mejor se adapte a ti sin usar tarjeta de crédito."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Aviso Inteligente de Límites para Yape / QR */}
+                    {paymentMethod === "yape" && grandTotal > 500 && grandTotal <= 2000 && (
+                      <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-[11px]">
+                        <span className="material-symbols-outlined text-amber-600 text-[17px] shrink-0 mt-0.5">
+                          info
+                        </span>
+                        <span>
+                          Para compras entre <strong>S/. 500 y S/. 2,000</strong>, selecciona la opción de <strong>Yape con Código de Aprobación</strong> dentro de la pasarela (o verifica tu límite diario en tu app).
+                        </span>
+                      </div>
+                    )}
+                    {paymentMethod === "yape" && grandTotal > 2000 && (
+                      <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-[11px]">
+                        <span className="material-symbols-outlined text-rose-600 text-[17px] shrink-0 mt-0.5">
+                          warning
+                        </span>
+                        <span>
+                          Tu compra supera el límite estándar por operación de Yape (<strong>S/. 2,000</strong>). Te recomendamos seleccionar <strong>Tarjeta</strong> o <strong>PagoEfectivo</strong>.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Micro-pasos de confirmación */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-surface-variant/70 text-[11px] font-semibold text-on-surface-variant">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
+                          1
+                        </span>
+                        <span>Confirma tu pedido</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
+                          2
+                        </span>
+                        <span>Autoriza en ventana segura</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
+                          3
+                        </span>
+                        <span>Recibe tus QR al instante</span>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Datos del Titular de la Orden (Usuario en Sesión) */}
-                  <div className="p-4 bg-surface-container-lowest rounded-xl border border-surface-variant flex items-center justify-between gap-3 shadow-xs">
+                  <div className="p-4 bg-surface-container-lowest rounded-2xl border border-surface-variant flex items-center justify-between gap-3 shadow-xs">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-electric-indigo/10 text-electric-indigo flex items-center justify-center font-bold text-sm">
+                      <div className="w-10 h-10 rounded-full bg-electric-indigo/10 text-electric-indigo flex items-center justify-center font-bold text-sm shrink-0">
                         <span className="material-symbols-outlined text-[20px]">person</span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-[11px] font-bold text-electric-indigo uppercase tracking-wider">
                             Titular de las entradas
                           </p>
                           {currentUser && (
-                            <span className="inline-block px-2 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">
+                            <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
                               Sesión Activa
                             </span>
                           )}
                         </div>
-                        <p className="text-sm font-bold text-deep-slate">
+                        <p className="text-sm font-bold text-deep-slate truncate">
                           {currentUser
                             ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
                             : "Usuario Invitado"}
                         </p>
-                        <p className="text-xs text-on-surface-variant">
+                        <p className="text-xs text-on-surface-variant truncate">
                           {currentUser?.email || "Las entradas se emitirán a tu cuenta"}
                         </p>
                       </div>
@@ -1315,32 +1719,63 @@ export default function PurchaseFlowPageComponent() {
                       <button
                         type="button"
                         onClick={() => setShowAuthModal(true)}
-                        className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1 cursor-pointer shrink-0"
                       >
                         Iniciar sesión <span className="material-symbols-outlined text-xs">arrow_forward</span>
                       </button>
                     )}
-                </div>
+                  </div>
 
-                  {/* Caja Informativa de Protección y Cifrado */}
-                  <div className="p-6 bg-surface-container-low rounded-xl border border-surface-variant space-y-4 pt-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0">
-                        <span className="material-symbols-outlined text-[24px]">verified_user</span>
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="text-deep-slate text-sm font-bold">
-                          Pasarela de pago oficial protegida y cifrada
-                        </h3>
-                        <p className="text-on-surface-variant text-xs sm:text-sm leading-relaxed">
-                          Al confirmar, tus entradas se reservarán y se emitirán con garantía de acceso criptográfico Ed25519 intransferible.
-                        </p>
-                      </div>
-                    </div>
+                  {/* Botón Principal de Acción en la Pasarela (Desktop / Tablet, estilo Stitch) */}
+                  <div className="hidden lg:block pt-2">
+                    <button
+                      type="button"
+                      onClick={handleSubmitPayment}
+                      disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0}
+                      className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-50 text-white rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-electric-indigo/25 active:scale-[0.99] cursor-pointer"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>{processingLabel}</span>
+                        </>
+                      ) : pendingAsyncOrder ? (
+                        <>
+                          <span className="material-symbols-outlined text-[20px]">hourglass_top</span>
+                          <span>Orden pendiente de confirmación...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[20px]">lock</span>
+                          <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-                    <div className="flex items-center gap-3 pt-3 text-xs text-on-surface-variant border-t border-surface-variant">
-                      <span className="material-symbols-outlined text-sm text-electric-indigo">lock</span>
-                      <span>Cifrado TLS de 256 bits y certificación PCI DSS de máxima seguridad</span>
+                  {/* Trust Badges de Seguridad (Móvil: 2 arriba + 1 abajo centrados; Desktop: 3 en fila centrados) */}
+                  <div className="pt-4 border-t border-surface-variant/60 text-on-surface-variant/80">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-y-2.5 gap-x-6">
+                      <div className="flex items-center justify-center gap-4 sm:gap-6">
+                        <div className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">lock</span>
+                          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+                            Cifrado SSL 256-bit
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">verified_user</span>
+                          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+                            Entradas Oficiales QPH
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="material-symbols-outlined text-[15px] text-electric-indigo">shield</span>
+                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+                          Estándar PCI DSS
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1585,13 +2020,18 @@ export default function PurchaseFlowPageComponent() {
                       <button
                         type="button"
                         onClick={handleSubmitPayment}
-                        disabled={isProcessing || totalTickets === 0}
+                        disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0}
                         className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-50 text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
                       >
                         {isProcessing ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Emitiendo entradas oficiales...</span>
+                            <span>{processingLabel}</span>
+                          </>
+                        ) : pendingAsyncOrder ? (
+                          <>
+                            <span className="material-symbols-outlined">hourglass_top</span>
+                            <span>Esperando pago Culqi...</span>
                           </>
                         ) : (
                           <>
@@ -1609,36 +2049,20 @@ export default function PurchaseFlowPageComponent() {
                       Métodos oficiales aceptados:
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-2">
-                      <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-purple-700 border border-surface-variant">
-                        Yape / Plin
+                      <span className="px-2 py-1 bg-purple-50 rounded text-[10px] font-bold text-purple-700 border border-purple-200/70">
+                        Yape / Plin QR
                       </span>
                       <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
-                        💳 VISA / Mastercard
+                        💳 Visa / Mastercard
                       </span>
-                      <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
-                        Apple Pay
+                      <span className="px-2 py-1 bg-amber-50 rounded text-[10px] font-bold text-amber-800 border border-amber-200/70">
+                        PagoEfectivo CIP
                       </span>
-                      <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
-                        Google Pay
+                      <span className="px-2 py-1 bg-sky-50 rounded text-[10px] font-bold text-sky-800 border border-sky-200/70">
+                        Cuotéalo BCP
                       </span>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Sellos de Seguridad */}
-              <div className="p-4 border border-surface-variant rounded-xl border-dashed bg-surface-container-low/50 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
-                  <span className="material-symbols-outlined text-electric-indigo text-lg">
-                    verified_user
-                  </span>
-                  <span>Garantía de entradas 100% auténticas QPH</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant">
-                  <span className="material-symbols-outlined text-electric-indigo text-lg">
-                    lock
-                  </span>
-                  <span>Reserva segura cifrada de extremo a extremo</span>
                 </div>
               </div>
             </div>
@@ -1650,7 +2074,11 @@ export default function PurchaseFlowPageComponent() {
       {/* =========================================================================
           FOOTER DEL PROCESO DE COMPRA
          ========================================================================= */}
-      <footer className="bg-deep-slate text-surface-container-lowest mt-16 border-t border-white/10">
+      <footer
+        className={`bg-deep-slate text-surface-container-lowest mt-16 border-t border-white/10 ${
+          isProcessing ? "pointer-events-none select-none" : ""
+        }`}
+      >
         <div className="w-full py-12 px-4 sm:px-8 max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -1750,102 +2178,280 @@ export default function PurchaseFlowPageComponent() {
     )
   }
 
+      {/* OVERLAY MODAL BLOQUEANTE: PROCESAMIENTO ACTIVO DEL PAGO */}
+      {isProcessing && !isGatewayModalOpen && !isReservationExpired && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-busy="true"
+          aria-labelledby="checkout-processing-title"
+          className="fixed inset-0 z-[75] flex items-center justify-center bg-deep-slate/65 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none"
+        >
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-electric-indigo/15 space-y-5 text-center">
+            <div className="w-16 h-16 bg-electric-indigo/10 border border-electric-indigo/20 text-electric-indigo rounded-2xl flex items-center justify-center mx-auto">
+              <div className="w-8 h-8 border-[3px] border-electric-indigo border-t-transparent rounded-full animate-spin" />
+            </div>
+            <div className="space-y-2">
+              <h3
+                id="checkout-processing-title"
+                className="text-xl font-black text-deep-slate tracking-tight"
+              >
+                Procesando tu pago de forma segura...
+              </h3>
+              <p className="text-sm font-semibold text-electric-indigo">
+                {processingLabel}
+              </p>
+              <p className="text-xs text-on-surface-variant leading-relaxed pt-1">
+                Por favor no cierres ni recargues esta ventana mientras confirmamos tu compra con la pasarela.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL BLOQUEANTE: TIEMPO DE RESERVA EN PASARELA AGOTADO */}
+      {isReservationExpired && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="checkout-expired-title"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+        >
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-red-100 space-y-5 text-center">
+            <div className="w-16 h-16 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-4xl">timer_off</span>
+            </div>
+            <div className="space-y-2">
+              <h3
+                id="checkout-expired-title"
+                className="text-xl font-black text-deep-slate tracking-tight"
+              >
+                ¡Tu tiempo se acabó!
+              </h3>
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                El tiempo límite de reserva temporal en la pasarela ha finalizado y tus entradas fueron liberadas. Por favor, inicia nuevamente tu proceso de compra desde el inicio.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/"
+                onClick={() => {
+                  expiresAtRef.current = null;
+                  removePersistedCheckoutTimer(checkoutTimerKey);
+                }}
+                className="w-full qph-btn-primary py-3.5 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-electric-indigo/25"
+              >
+                <span className="material-symbols-outlined text-[20px]">home</span>
+                <span>Volver al Inicio</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* =========================================================================
-          FOOTER FLOTANTE MÓVIL: TOTAL DE COMPRA SEGÚN SELECCIÓN (SOLO MÓVIL)
-          Muestra el total en tiempo real y desaparece automáticamente cuando el
-          botón oficial del resumen entra en pantalla (IntersectionObserver / scroll).
+          FOOTER FLOTANTE MÓVIL: RESUMEN EXPANDIBLE + CTA PRINCIPAL (SOLO MÓVIL)
+          En Paso 2 evita duplicar el monto total y ofrece el detalle desplegable.
          ========================================================================= */}
+      {isMobileSummaryExpanded && showMobileOrderFooter && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden bg-black/30 backdrop-blur-[1px] animate-in fade-in duration-150"
+          onClick={() => setIsMobileSummaryExpanded(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <aside
         aria-label="Total de la compra en versión móvil"
-        className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-md border-t border-surface-variant shadow-[0_-4px_25px_rgba(0,0,0,0.15)] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-all duration-300 ease-in-out ${
+        className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-md border-t border-surface-variant shadow-[0_-6px_30px_rgba(15,23,42,0.14)] transition-all duration-300 ease-in-out ${
           showMobileOrderFooter
-            ? "translate-y-0 opacity-100 pointer-events-auto"
+            ? `translate-y-0 opacity-100 ${isProcessing ? "pointer-events-none select-none" : "pointer-events-auto"}`
             : "translate-y-full opacity-0 pointer-events-none"
         }`}
       >
-        <div className="max-w-md mx-auto flex items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1">
-              <span>Total de la orden</span>
-              {appliedCoupon && (
-                <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
-                  -{appliedCoupon.code}
+        {/* Desplegable del Detalle de la Orden en Móvil */}
+        {isMobileSummaryExpanded && (
+          <div className="border-b border-surface-variant/80 bg-surface-container-low/95 px-4 py-3.5 max-h-[55vh] overflow-y-auto animate-in slide-in-from-bottom-2 duration-200">
+            <div className="max-w-md mx-auto space-y-2.5">
+              <div className="flex items-center justify-between border-b border-surface-variant/70 pb-2">
+                <span className="text-xs font-extrabold text-deep-slate uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                    receipt_long
+                  </span>
+                  <span>Detalle de la orden ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})</span>
                 </span>
-              )}
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-black text-electric-indigo tracking-tight">
-                S/. {grandTotal.toFixed(2)}
-              </span>
-              {appliedCoupon && effectiveDiscountAmount > 0 && (
-                <span className="text-[11px] text-platinum-silver line-through font-semibold">
-                  S/. {subtotal.toFixed(2)}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSummaryExpanded(false)}
+                  aria-label="Cerrar detalle"
+                  className="w-6 h-6 rounded-full bg-white border border-surface-variant flex items-center justify-center text-on-surface-variant hover:text-deep-slate cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                {ticketTiers
+                  .filter((t) => t.quantity > 0)
+                  .map((t) => (
+                    <div
+                      key={`mob-sum-${t.id}`}
+                      className="flex items-center justify-between text-xs py-1"
+                    >
+                      <span className="font-semibold text-deep-slate">
+                        {t.quantity} {t.name}
+                      </span>
+                      <span className="font-bold text-deep-slate tabular-nums">
+                        S/. {(t.price * t.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+
+                {totalTickets === 0 && (
+                  <p className="text-xs text-on-surface-variant italic py-1">
+                    No has seleccionado entradas aún.
+                  </p>
+                )}
+
+                {appliedCoupon && effectiveDiscountAmount > 0 && (
+                  <div className="flex items-center justify-between text-xs py-1 text-emerald-700 font-semibold border-t border-dashed border-surface-variant/80 pt-1.5">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">local_offer</span>
+                      <span>Cupón {appliedCoupon.code}</span>
+                    </span>
+                    <span className="font-bold tabular-nums">
+                      -S/. {effectiveDiscountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-surface-variant/80 text-xs">
+                <span className="font-bold text-on-surface-variant">Total a pagar</span>
+                <span className="font-black text-electric-indigo text-sm tabular-nums">
+                  S/. {grandTotal.toFixed(2)}
                 </span>
-              )}
-              <span className="text-[11px] text-platinum-silver font-medium">
-                ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
-              </span>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Botón CTA en Móvil según el Paso Actual */}
-          {currentStep === 1 ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (totalTickets === 0) {
-                  const selector = document.getElementById("tickets-selector-section");
-                  if (selector) {
-                    selector.scrollIntoView({ behavior: "smooth", block: "start" });
+        <div className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+            {/* Lado Izquierdo: En Paso 2 muestra Resumen Expandible limpio (sin repetir el monto); en Paso 1 muestra el Total + toggle */}
+            {currentStep === 2 ? (
+              <button
+                type="button"
+                onClick={() => setIsMobileSummaryExpanded((prev) => !prev)}
+                aria-expanded={isMobileSummaryExpanded}
+                className="flex items-center gap-2 text-left py-1 pr-2 rounded-xl hover:bg-surface-gray/70 active:scale-[0.98] transition-all cursor-pointer min-w-0"
+              >
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-extrabold text-deep-slate flex items-center gap-1 whitespace-nowrap">
+                    <span>Detalle de orden</span>
+                    <span className="material-symbols-outlined text-[18px] text-electric-indigo">
+                      {isMobileSummaryExpanded ? "expand_more" : "expand_less"}
+                    </span>
+                  </span>
+                  <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5 whitespace-nowrap">
+                    <span>
+                      ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
+                    </span>
+                    {appliedCoupon && (
+                      <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                        -{appliedCoupon.code}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => totalTickets > 0 && setIsMobileSummaryExpanded((prev) => !prev)}
+                aria-expanded={isMobileSummaryExpanded}
+                className="flex flex-col text-left cursor-pointer min-w-0"
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1 whitespace-nowrap">
+                  <span>Total de la orden</span>
+                  {appliedCoupon && (
+                    <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                      -{appliedCoupon.code}
+                    </span>
+                  )}
+                  {totalTickets > 0 && (
+                    <span className="material-symbols-outlined text-[14px] text-electric-indigo">
+                      {isMobileSummaryExpanded ? "expand_more" : "expand_less"}
+                    </span>
+                  )}
+                </span>
+                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                  <span className="text-lg font-black text-electric-indigo tracking-tight tabular-nums">
+                    S/. {grandTotal.toFixed(2)}
+                  </span>
+                  {appliedCoupon && effectiveDiscountAmount > 0 && (
+                    <span className="text-[11px] text-platinum-silver line-through font-semibold">
+                      S/. {subtotal.toFixed(2)}
+                    </span>
+                  )}
+                  <span className="text-[11px] text-platinum-silver font-medium">
+                    ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
+                  </span>
+                </div>
+              </button>
+            )}
+
+            {/* Botón CTA en Móvil según el Paso Actual */}
+            {currentStep === 1 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (totalTickets === 0) {
+                    const selector = document.getElementById("tickets-selector-section");
+                    if (selector) {
+                      selector.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                    return;
                   }
-                  return;
-                }
-                handleProceedToStep2();
-              }}
-              className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer"
-            >
-              <span>{totalTickets === 0 ? "Elegir entradas" : "Continuar"}</span>
-              <span className="material-symbols-outlined text-base">arrow_forward</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSubmitPayment}
-              disabled={isProcessing || totalTickets === 0}
-              className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Procesando...</span>
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-base">lock</span>
-                  <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
-                </>
-              )}
-            </button>
-          )}
+                  setIsMobileSummaryExpanded(false);
+                  handleProceedToStep2();
+                }}
+                className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+              >
+                <span>{totalTickets === 0 ? "Elegir entradas" : "Continuar"}</span>
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileSummaryExpanded(false);
+                  handleSubmitPayment();
+                }}
+                disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0}
+                className="px-4 py-3 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Procesando...</span>
+                  </>
+                ) : pendingAsyncOrder ? (
+                  <>
+                    <span className="material-symbols-outlined text-[16px]">hourglass_top</span>
+                    <span>En espera...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[16px]">lock</span>
+                    <span>Pagar S/. {grandTotal.toFixed(2)}</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </aside>
-
-      {/* =========================================================================
-          MODAL POP-IN OFICIAL DE IZIPAY (SMARTFORM POPIN)
-         ========================================================================= */}
-      {showIzipayPopin && izipayModalData && (
-        <IzipayPopinModal
-          isOpen={showIzipayPopin}
-          onClose={() => setShowIzipayPopin(false)}
-          formToken={izipayModalData.formToken}
-          publicKey={izipayModalData.publicKey}
-          clientEndpoint={izipayModalData.clientEndpoint}
-          orderCode={izipayModalData.orderCode}
-          totalAmount={izipayModalData.totalAmount}
-          paymentMethodText={paymentMethodLabel}
-          onPaymentSuccess={handleIzipayPaymentSuccess}
-        />
-      )}
     </div>
   );
 }

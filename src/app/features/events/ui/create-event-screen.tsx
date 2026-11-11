@@ -105,7 +105,7 @@ export default function CreateEventScreen() {
 
   // Reglas de Acceso e Información Operativa
   const [ageRestriction, setAgeRestriction] = useState(AGE_RESTRICTIONS[0].id); // ALL_AGES
-  const [userTicketLimit, setUserTicketLimit] = useState<number>(4);
+  const [userTicketLimit, setUserTicketLimit] = useState<number>(6);
   const [entryRequirements, setEntryRequirements] = useState('');
   const [openingHoursComment, setOpeningHoursComment] = useState('');
   const [termsAndConditionsUrl, setTermsAndConditionsUrl] = useState('');
@@ -338,8 +338,7 @@ export default function CreateEventScreen() {
         regularPrice: z.regularPrice,
         serviceFee: z.serviceFee,
         benefits: z.benefits,
-        maxTicketsPerOrder: z.maxTicketsPerOrder,
-        maxTicketsPerUser: z.maxTicketsPerUser,
+        maxTicketsPerOrder: Math.min(z.maxTicketsPerOrder || 4, userTicketLimit),
         salesStartAt: z.salesStartAt,
         tiers: z.tiers?.map((t) => ({
           tierNumber: t.tierNumber,
@@ -924,16 +923,18 @@ export default function CreateEventScreen() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="font-bold text-xs text-deep-slate">Límite Global de Entradas por Usuario</label>
+                    <label className="font-bold text-xs text-deep-slate">Límite de Entradas por Usuario (Todo el Evento)</label>
                     <input
                       type="number"
                       min="1"
-                      max="20"
+                      max="50"
                       value={userTicketLimit}
-                      onChange={(e) => setUserTicketLimit(Number(e.target.value))}
+                      onChange={(e) => setUserTicketLimit(Math.max(1, Number(e.target.value) || 1))}
                       className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs font-bold text-deep-slate outline-none"
                     />
-                    <p className="text-[10px] text-on-surface-variant">Tope de seguridad por comprador para evitar la reventa.</p>
+                    <p className="text-[10px] text-on-surface-variant">
+                      Total acumulado que un comprador puede adquirir en todo el evento (en una o varias compras).
+                    </p>
                   </div>
 
                   <div className="space-y-1">
@@ -1214,7 +1215,11 @@ export default function CreateEventScreen() {
             </div>
           </div>
 
-          <ZonesManager zones={zones} onChange={(updated) => setZones(updated)} />
+          <ZonesManager
+            zones={zones}
+            onChange={(updated) => setZones(updated)}
+            eventTicketLimit={userTicketLimit}
+          />
         </section>
 
         {/* =========================================================================

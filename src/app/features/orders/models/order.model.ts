@@ -20,7 +20,7 @@ export interface SimulateCheckoutParams {
   eventId: string;
   showId: string;
   items: SimulateCheckoutItem[];
-  paymentMethod: 'card' | 'yape' | 'transfer' | 'apple_pay' | 'google_pay';
+  paymentMethod: 'card' | 'yape' | 'transfer' | 'cuotealo' | 'apple_pay' | 'google_pay';
   couponCode?: string;
   customerEmail?: string;
   customerName?: string;
@@ -52,6 +52,79 @@ export interface SimulateCheckoutResponseModel {
   txCode: string;
   message: string;
   tickets: IssuedTicketModel[];
+}
+
+export type CheckoutPaymentMethod = 'card' | 'yape' | 'transfer' | 'cuotealo';
+
+export interface PrepareCulqiCheckoutParams {
+  eventId: string;
+  showId: string;
+  items: SimulateCheckoutItem[];
+  paymentMethod: CheckoutPaymentMethod;
+  couponCode?: string;
+  customerPhone?: string;
+}
+
+export interface PrepareCulqiCheckoutModel {
+  orderId: string;
+  orderCode: string;
+  orderPublicUuid: string;
+  culqiOrderId: string;
+  amountInCents: number;
+  totalAmount: number;
+  currency: 'PEN';
+  title: string;
+  description: string;
+  expiresAt: string;
+  publicKey: string;
+  checkoutScriptUrl: string;
+  threeDsScriptUrl: string;
+  rsaId: string | null;
+  rsaPublicKey: string | null;
+  customer: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+}
+
+export interface Authentication3DSModel {
+  eci: string;
+  xid: string;
+  cavv: string;
+  protocolVersion: string;
+}
+
+export interface ConfirmCulqiChargeParams {
+  orderPublicUuid: string;
+  tokenId: string;
+  paymentMethod?: CheckoutPaymentMethod;
+  deviceFingerPrintId?: string;
+  installments?: number;
+  authentication3DS?: Authentication3DSModel;
+}
+
+export interface ConfirmCulqiChargeModel {
+  status: 'PAID' | 'REQUIRES_3DS';
+  requires3DS: boolean;
+  orderPublicUuid: string;
+  tokenId: string;
+  checkoutResult: SimulateCheckoutResponseModel | null;
+}
+
+export interface CulqiOrderStatusModel {
+  orderPublicUuid: string;
+  status: 'pending' | 'paid' | 'expired' | 'cancelled' | string;
+  culqiState?: string | null;
+  paymentCode?: string | null;
+  expiresAt?: string | null;
+  checkoutResult?: SimulateCheckoutResponseModel | null;
+}
+
+export interface CancelPendingCulqiOrderModel {
+  released: boolean;
+  status: string;
 }
 
 export interface ValidateCouponParams {
@@ -105,25 +178,4 @@ export interface UserOrderModel {
   isPast: boolean;
   zoneName: string;
   tickets: UserOrderTicketModel[];
-}
-
-export interface CreateIzipayPaymentParams {
-  eventId: string;
-  showId: string;
-  items: Array<{ zoneId: string; quantity: number }>;
-  paymentMethod?: string;
-  couponCode?: string;
-}
-
-export interface CreateIzipayPaymentResponse {
-  success: boolean;
-  formToken: string;
-  publicKey: string;
-  orderId: string;
-  orderCode: string;
-  orderPublicUuid: string;
-  totalAmount: number;
-  discountAmount: number;
-  couponCode: string | null;
-  clientEndpoint: string;
 }

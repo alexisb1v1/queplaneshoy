@@ -20,7 +20,6 @@ export interface EventZoneModel {
   remainingTickets: number;
   isSoldOut: boolean;
   maxTicketsPerOrder?: number;
-  maxTicketsPerUser?: number;
 }
 
 export interface EventDetailModel {

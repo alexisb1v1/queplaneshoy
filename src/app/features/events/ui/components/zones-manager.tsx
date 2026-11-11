@@ -21,7 +21,6 @@ export interface ZoneConfigItem {
   serviceFee: number;
   benefits?: string;
   maxTicketsPerOrder: number;
-  maxTicketsPerUser: number;
   salesStartAt?: string;
   tiers: PricingTierItem[];
 }
@@ -29,6 +28,7 @@ export interface ZoneConfigItem {
 interface ZonesManagerProps {
   zones: ZoneConfigItem[];
   onChange: (zones: ZoneConfigItem[]) => void;
+  eventTicketLimit?: number;
 }
 
 const PRESET_COLORS = [
@@ -42,7 +42,7 @@ const PRESET_COLORS = [
   '#EC4899', // Pink
 ];
 
-export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
+export function ZonesManager({ zones, onChange, eventTicketLimit = 6 }: ZonesManagerProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
 
@@ -54,8 +54,7 @@ export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
   const [regularPrice, setRegularPrice] = useState<number | ''>(145);
   const [serviceFee, setServiceFee] = useState<number | ''>(14.5);
   const [benefits, setBenefits] = useState('');
-  const [maxPerOrder, setMaxPerOrder] = useState<number>(6);
-  const [maxPerUser, setMaxPerUser] = useState<number>(10);
+  const [maxPerOrder, setMaxPerOrder] = useState<number>(Math.min(4, eventTicketLimit));
   const [salesStartAt, setSalesStartAt] = useState('');
   const [tiers, setTiers] = useState<PricingTierItem[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
@@ -74,8 +73,7 @@ export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
         ? 'Acceso preferencial, barra libre & hospitality.'
         : 'Acceso general central al campo y escenarios.'
     );
-    setMaxPerOrder(6);
-    setMaxPerUser(10);
+    setMaxPerOrder(Math.min(4, eventTicketLimit));
     setSalesStartAt('');
     setTiers([]);
     setFormError(null);
@@ -91,8 +89,7 @@ export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
     setRegularPrice(z.regularPrice);
     setServiceFee(z.serviceFee);
     setBenefits(z.benefits || '');
-    setMaxPerOrder(z.maxTicketsPerOrder || 6);
-    setMaxPerUser(z.maxTicketsPerUser || 10);
+    setMaxPerOrder(Math.min(z.maxTicketsPerOrder || 4, eventTicketLimit));
     setSalesStartAt(z.salesStartAt || '');
     setTiers(z.tiers ? [...z.tiers] : []);
     setFormError(null);
@@ -186,6 +183,13 @@ export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
       }
     }
 
+    if (Number(maxPerOrder) > eventTicketLimit) {
+      setFormError(
+        `El máximo por orden (${maxPerOrder}) no puede superar el límite global del evento (${eventTicketLimit} entradas por usuario).`
+      );
+      return;
+    }
+
     const savedItem: ZoneConfigItem = {
       id: editingZoneId || 'zone-' + Date.now(),
       name: name.trim().toUpperCase(),
@@ -195,8 +199,7 @@ export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
       regularPrice: Number(regularPrice),
       serviceFee: serviceFee === '' ? 0 : Number(serviceFee),
       benefits: benefits.trim() || undefined,
-      maxTicketsPerOrder: Number(maxPerOrder) || 6,
-      maxTicketsPerUser: Number(maxPerUser) || 10,
+      maxTicketsPerOrder: Number(maxPerOrder) || Math.min(4, eventTicketLimit),
       salesStartAt: salesStartAt || undefined,
       tiers,
     };
@@ -331,6 +334,12 @@ export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
                       <span>Comisión QPH (10%):</span>
                       <span className="font-medium text-slate-700">
                         S/ {feeCalculated.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-500">
+                      <span>Máx. por compra (orden):</span>
+                      <span className="font-bold text-slate-700">
+                        {zone.maxTicketsPerOrder || 4} tickets
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-slate-500">
@@ -536,30 +545,28 @@ export function ZonesManager({ zones, onChange }: ZonesManagerProps) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 items-center">
                     <div className="space-y-1">
                       <label className="font-bold text-xs text-deep-slate block">
-                        Máx. Entradas por Orden
+                        Máx. Entradas por Orden (Compra)
                       </label>
                       <input
                         type="number"
                         min={1}
+                        max={eventTicketLimit}
                         value={maxPerOrder}
-                        onChange={(e) => setMaxPerOrder(parseInt(e.target.value) || 6)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none focus:border-electric-indigo"
+                        onChange={(e) => setMaxPerOrder(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-surface-variant/70 text-xs font-bold text-deep-slate outline-none focus:border-electric-indigo"
                       />
+                      <p className="text-[10px] text-slate-400">
+                        Tope en una sola transacción para esta zona.
+                      </p>
                     </div>
-                    <div className="space-y-1">
-                      <label className="font-bold text-xs text-deep-slate block">
-                        Máx. Acumulado por Usuario
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={maxPerUser}
-                        onChange={(e) => setMaxPerUser(parseInt(e.target.value) || 10)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none focus:border-electric-indigo"
-                      />
+                    <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-[11px] text-slate-600 leading-snug">
+                      <span className="font-bold text-electric-indigo block mb-0.5">
+                        Tope Global del Evento: {eventTicketLimit} por usuario
+                      </span>
+                      Un cliente podrá comprar hasta {eventTicketLimit} entradas acumuladas en todo el evento, en órdenes de máx. {maxPerOrder}.
                     </div>
                   </div>
                 </div>

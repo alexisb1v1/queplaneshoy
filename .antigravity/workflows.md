@@ -194,18 +194,10 @@ Integra la experiencia visual interactiva de Stitch con validación robusta de 6
 
 ---
 
-## 9. Pasarela Oficial Izipay en Modo Pop-in y Webhook IPN
+## 9. Pasarela de Pagos (Transición a Culqi)
 
-1. **Selector de Medios de Pago Contextual:**
-   - Si el comprador elige **Tarjeta de Débito/Crédito** (`card`) o **Yape/Plin** (`yape`), el botón "Confirmar y Pagar" solicita el `formToken` oficial a `POST /api/orders/izipay/create-payment`.
-   - Abre de forma superpuesta el componente modal [`IzipayPopinModal`](file:///d:/Personal/queplaneshoy/src/app/features/orders/ui/components/izipay-popin-modal.tsx) (Krypton SmartForm Pop-in).
-2. **Ciclo de Cobro y Cierre:**
-   - El cliente introduce su tarjeta o confirma Yape directamente en los campos seguros de Izipay.
-   - Al completarse el pago, `KR.onSubmit` captura la aprobación y transiciona al Paso 3 posicionando la vista arriba (`top: 0`).
-   - Si el usuario cancela o cierra el modal, el checkout permanece en el Paso 2 con sus entradas y resumen intactos.
-3. **Webhook IPN (Server to Server):**
-   - En backend (`POST /api/orders/izipay/ipn`), Izipay notifica la transacción autenticada mediante firma criptográfica **HMAC-SHA256**.
-   - Garantiza idempotencia: valida si la orden ya fue procesada y emite los tickets con firma Ed25519 en PostgreSQL.
+> 💡 **Estado Actual:** Se ha removido completamente la integración previa con Izipay. El flujo de compra utiliza temporalmente `simulateCheckoutUseCase` para pruebas mientras se implementa la nueva integración oficial con **Culqi** (soporte nativo para Yape, Plin, Billeteras QR y Tarjetas).
+
 
 
 
