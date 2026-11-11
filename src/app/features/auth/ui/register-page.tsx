@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { registerUseCase } from '../index';
+import { GoogleAuthButton } from './components/google-auth-button';
 
 export default function RegisterPageComponent() {
   const router = useRouter();
@@ -203,30 +204,13 @@ export default function RegisterPageComponent() {
             </div>
           )}
 
-          {/* Botones de Registro Social */}
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => alert('Próximamente: Registro con Google en desarrollo')}
-              className="flex items-center justify-center gap-2 py-3 px-4 border border-outline-variant/40 rounded-xl hover:bg-surface-gray transition-all active:scale-95 duration-200 bg-white shadow-xs cursor-pointer"
-            >
-              <img
-                alt="Google"
-                className="w-5 h-5"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkPlXtlKfXALOwYmnR3qmXAa_bGYHgiytGc4DSwQyu0aOTmJheUSBuZc6UB-kpyx_GiLM6P22Rm8RKp0RnyW0ZF0sAJRl9wrx4lZvJOsIxo6q7BtbLxVX57aL3GGBC2WCUNax0PI2izv7cUxe-AgnVEcWkLiD28BH0ChJBCA5BurHpkrhnUM_4EfmwQ4iViG1afgNq-cGQ6hfBeUn83wzDSCpwABA4Q0s0VaguHSECIV9NtzKT-FIqD4OaCgQibDpoWQk074W_Gi8s"
-              />
-              <span className="font-semibold text-deep-slate text-sm">Google</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => alert('Próximamente: Registro con Apple en desarrollo')}
-              className="flex items-center justify-center gap-2 py-3 px-4 border border-outline-variant/40 rounded-xl hover:bg-surface-gray transition-all active:scale-95 duration-200 bg-white shadow-xs cursor-pointer"
-            >
-              <svg className="w-5 h-5 fill-current text-deep-slate" viewBox="0 0 384 512">
-                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 21.8-88.5 21.8-11.4 0-51.1-20.8-82.3-20.8-41.1 0-78.9 23-99.3 58.5-41.2 71.3-10.5 177.3 30.1 236 19.9 28.5 43.8 60.5 74.4 59.3 29.3-1.1 40.5-19 75.8-19 35.4 0 45.6 19 76.8 18.3 31.9-.7 52.7-28.5 72.3-56.9 22.6-32.9 32-64.8 32.4-66.5-1.4-.6-62.8-24.1-63-95.3zM289 110.4c17.5-21 28.9-50.1 25.7-79.3-25.2 1-55.9 16.9-73.9 38.1-16.2 18.7-30.3 48.6-26.5 76.9 28.3 2.2 57.2-14.7 74.7-35.7z"></path>
-              </svg>
-              <span className="font-semibold text-deep-slate text-sm">Apple</span>
-            </button>
+          {/* Registro Social (Únicamente Google) */}
+          <div>
+            <GoogleAuthButton
+              disabled={isLoading || success}
+              label="Continuar con Google"
+              onError={(msg) => setErrorMsg(msg)}
+            />
           </div>
 
           <div className="relative py-1">

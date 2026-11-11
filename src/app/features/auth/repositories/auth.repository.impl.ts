@@ -289,4 +289,53 @@ export class AuthRepositoryImpl implements AuthRepository {
         return { token: res.token, user: userModel };
       });
   }
+
+  /**
+   * Obtiene la URL oficial de autorización OAuth 2.0 de Google
+   */
+  getGoogleAuthUrl(redirectTo?: string): ResultAsync<{ url: string }, DomainError> {
+    const query =
+      redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+        ? `?redirect=${encodeURIComponent(redirectTo)}`
+        : '';
+
+    return apiClient.requestResult<{ url: string }>(
+      apiClient.get(`/auth/google/url${query}`)
+    );
+  }
+
+  /**
+   * Intercambia code y state recibidos en /auth/google/callback e inicia la sesión en QPH
+   */
+  loginWithGoogleCallback(
+    code: string,
+    state: string
+  ): ResultAsync<{ token: string; user: UserModel; redirectTo: string }, DomainError> {
+    return apiClient
+      .requestResult<AuthResponseDto & { redirectTo?: string }>(
+        apiClient.post('/auth/google/callback', {
+          code: code.trim(),
+          state: state.trim(),
+        })
+      )
+      .map((res) => {
+        const userModel = mapAuthUserToModel(res.user);
+        apiClient.setToken(res.token);
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userModel));
+        }
+
+        const safeRedirect =
+          res.redirectTo && res.redirectTo.startsWith('/') && !res.redirectTo.startsWith('//')
+            ? res.redirectTo
+            : '/';
+
+        return {
+          token: res.token,
+          user: userModel,
+          redirectTo: safeRedirect,
+        };
+      });
+  }
 }
