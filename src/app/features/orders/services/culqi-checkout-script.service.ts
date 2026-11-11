@@ -107,27 +107,37 @@ function isValidEnvKey(val?: string | null): val is string {
   );
 }
 
+const QPH_LOCAL_FALLBACK_LOGO_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">' +
+  '<rect width="100" height="100" rx="20" fill="#6366f1"/>' +
+  '<text x="50" y="65" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="42" fill="#ffffff" text-anchor="middle" letter-spacing="-2">QPH</text>' +
+  '</svg>';
+
 /**
- * Resuelve una URL pública HTTPS para el logotipo dentro del iframe seguro de Culqi Checkout.
- * En entornos locales HTTP (`localhost`) sin URL HTTPS explícita retorna `null` para evitar bloqueos por Mixed Content.
+ * Resuelve el logotipo del comercio para el iframe seguro de Culqi Checkout.
+ * Prioriza `NEXT_PUBLIC_CULQI_LOGO_URL` HTTPS; en entornos HTTPS usa `/logo-qph.png`
+ * y en desarrollo local HTTP usa Data URI SVG para no ser bloqueado por `upgrade-insecure-requests`.
  */
-function resolveHttpsLogoUrl(explicitUrl?: string | null): string | null {
+function resolveCheckoutLogoUrl(explicitUrl?: string | null): string | null {
   const candidate = (explicitUrl || '').trim();
-  const isHttpsBrowser =
-    typeof window !== 'undefined' && window.location?.protocol === 'https:';
+  const hasWindow = typeof window !== 'undefined';
+  const isHttpsBrowser = hasWindow && window.location?.protocol === 'https:';
 
   if (candidate && isValidEnvKey(candidate)) {
-    if (candidate.startsWith('https://')) {
+    if (candidate.startsWith('https://') || candidate.startsWith('data:image/')) {
       return candidate;
     }
     if (candidate.startsWith('/') && isHttpsBrowser) {
       return `${window.location.origin}${candidate}`;
     }
-    return null;
   }
 
   if (isHttpsBrowser) {
     return `${window.location.origin}/logo-qph.png`;
+  }
+
+  if (hasWindow && typeof window.btoa === 'function') {
+    return `data:image/svg+xml;base64,${window.btoa(QPH_LOCAL_FALLBACK_LOGO_SVG)}`;
   }
 
   return null;
@@ -169,7 +179,7 @@ export function resolveCulqiClientConfig(backendFallback: {
   const rawRsaPub =
     (envRsaPublicKey && envRsaPublicKey.trim()) || backendFallback.rsaPublicKey || null;
   const rsaPublicKey = rawRsaPub ? rawRsaPub.replace(/\\n/g, '\n') : null;
-  const logoUrl = resolveHttpsLogoUrl(envLogoUrl);
+  const logoUrl = resolveCheckoutLogoUrl(envLogoUrl);
 
   return {
     publicKey,
@@ -481,7 +491,17 @@ export async function openCulqiCheckoutModal(
     paymentMethodsSort: sortedMethods,
   };
 
-  const resolvedLogoUrl = resolveHttpsLogoUrl(params.logoUrl);
+  const resolvedLogoUrl = resolveCheckoutLogoUrl(params.logoUrl);
+
+  // Culqi Joi schema solo permite bannerColor, buttonBackground, menuColor, linksColor, buttonTextColor y priceColor.
+  const defaultStylePayload = {
+    bannerColor: '#0F172A',
+    buttonBackground: '#4F46E5',
+    menuColor: '#4F46E5',
+    linksColor: '#4F46E5',
+    buttonTextColor: '#FFFFFF',
+    priceColor: '#4F46E5',
+  };
 
   const appearancePayload: Record<string, unknown> = {
     theme: 'default',
@@ -492,14 +512,7 @@ export async function openCulqiCheckoutModal(
     hiddenEmail: false,
     menuType: 'sidebar',
     ...(resolvedLogoUrl ? { logo: resolvedLogoUrl } : {}),
-    defaultStyle: {
-      bannerColor: '#0F172A',
-      buttonBackground: '#4F46E5',
-      menuColor: '#4F46E5',
-      linksColor: '#4F46E5',
-      textColor: '#0F172A',
-      priceColor: '#4F46E5',
-    },
+    defaultStyle: defaultStylePayload,
   };
 
   return new Promise<CulqiCheckoutModalOutcome>((resolve) => {
@@ -639,7 +652,13 @@ export async function openCulqiCheckoutModal(
     if (window.Culqi) {
       window.Culqi.publicKey = params.publicKey;
       window.Culqi.settings(settingsPayload);
-      window.Culqi.options(optionsPayload);
+      window.Culqi.options({
+        ...optionsPayload,
+        style: {
+          ...(resolvedLogoUrl ? { logo: resolvedLogoUrl } : {}),
+          ...defaultStylePayload,
+        },
+      });
       window.Culqi.open();
       return;
     }
