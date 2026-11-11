@@ -12,3 +12,4 @@ export class GetGoogleAuthUrlUseCase {
     return this.authRepository.getGoogleAuthUrl(redirectTo);
   }
 }
+

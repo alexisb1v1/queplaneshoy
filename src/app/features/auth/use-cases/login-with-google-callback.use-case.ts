@@ -25,3 +25,4 @@ export class LoginWithGoogleCallbackUseCase {
     return this.authRepository.loginWithGoogleCallback(code, state);
   }
 }
+
