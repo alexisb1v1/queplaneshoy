@@ -971,18 +971,6 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setShowPreviewModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors cursor-pointer"
-              title="Previsualizar ficha del evento"
-            >
-              <span className="material-symbols-outlined text-[17px] text-electric-indigo">
-                visibility
-              </span>
-              <span className="hidden sm:inline">Previsualizar</span>
-            </button>
-
-            <button
-              type="button"
               onClick={handleSaveDraft}
               disabled={isProcessing}
               className="inline-flex items-center gap-1.5 px-3.5 sm:px-5 py-2 rounded-xl bg-electric-indigo hover:bg-primary text-white text-xs font-bold shadow-sm shadow-electric-indigo/25 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
