@@ -494,13 +494,14 @@ export async function openCulqiCheckoutModal(
   const resolvedLogoUrl = resolveCheckoutLogoUrl(params.logoUrl);
 
   // Culqi Joi schema solo permite bannerColor, buttonBackground, menuColor, linksColor, buttonTextColor y priceColor.
+  // Sincronizado con la paleta oficial "Electric Festival" (Coral Neón #F43F5E + Deep Slate #0F172A)
   const defaultStylePayload = {
     bannerColor: '#0F172A',
-    buttonBackground: '#4F46E5',
-    menuColor: '#4F46E5',
-    linksColor: '#4F46E5',
+    buttonBackground: '#F43F5E',
+    menuColor: '#7C3AED',
+    linksColor: '#F43F5E',
     buttonTextColor: '#FFFFFF',
-    priceColor: '#4F46E5',
+    priceColor: '#F43F5E',
   };
 
   const appearancePayload: Record<string, unknown> = {

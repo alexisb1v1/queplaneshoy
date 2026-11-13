@@ -11,13 +11,16 @@ export class EventApiService {
     return apiClient.get<EventDto[]>('/events');
   }
 
-  async getOrganizerEvents(params?: { status?: string; q?: string }): Promise<OrganizerEventDto[]> {
+  async getOrganizerEvents(params?: { status?: string; q?: string; period?: '3m' | '6m' | '12m' | 'all' }): Promise<OrganizerEventDto[]> {
     const query = new URLSearchParams();
     if (params?.status && params.status !== 'all') {
       query.set('status', params.status);
     }
     if (params?.q && params.q.trim()) {
       query.set('q', params.q.trim());
+    }
+    if (params?.period) {
+      query.set('period', params.period);
     }
     const qs = query.toString();
     return apiClient.get<OrganizerEventDto[]>(`/events/organizer${qs ? `?${qs}` : ''}`);

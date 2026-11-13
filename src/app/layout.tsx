@@ -4,6 +4,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "queplaneshoy - Eventos Premium",
   description: "Tu puerta de acceso a las experiencias más exclusivas de entretenimiento. Siente la vida en cada evento.",
+  icons: {
+    icon: [
+      { url: "/logo-qph.svg", type: "image/svg+xml" },
+      { url: "/logo-qph.png", type: "image/png" },
+    ],
+    apple: "/logo-qph.png",
+  },
 };
 
 export default function RootLayout({

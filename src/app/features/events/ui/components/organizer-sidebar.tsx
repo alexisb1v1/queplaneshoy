@@ -28,15 +28,6 @@ export function OrganizerSidebar({
   const renderNavLinks = (closeOnNavigate: boolean) => (
     <nav className="flex flex-col gap-1.5">
       <Link
-        href="/organizer/events/new?from=events"
-        onClick={closeOnNavigate ? onCloseMobileMenu : undefined}
-        className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-white bg-electric-indigo shadow-sm hover:bg-primary transition-all text-left w-full mb-1"
-      >
-        <span className="material-symbols-outlined text-[20px]">add_circle</span>
-        <span>Crear Evento</span>
-      </Link>
-
-      <Link
         href="/organizer/events"
         onClick={closeOnNavigate ? onCloseMobileMenu : undefined}
         className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all text-left w-full ${

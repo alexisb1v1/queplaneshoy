@@ -14,7 +14,8 @@ import {
 import { getCategoryById } from '../constants/eventConstants';
 import { OrganizerSidebar } from './components/organizer-sidebar';
 
-type FilterState = 'all' | 'on_sale' | 'sold_out' | 'draft' | 'completed' | 'inactive';
+type FilterState = 'all' | 'on_sale' | 'sold_out' | 'draft' | 'in_review' | 'observed' | 'completed' | 'inactive';
+type PeriodFilter = '3m' | '6m' | '12m' | 'all';
 
 function formatSoles(amount: number): string {
   return (Number(amount) || 0).toLocaleString('es-PE', {
@@ -36,6 +37,18 @@ function getEventStatusVisual(event: OrganizerEventModel): {
   if (event.status === 'published') {
     return {
       badgeClasses: 'bg-indigo-50 text-electric-indigo border border-indigo-200/80',
+      showPulseDot: true,
+    };
+  }
+  if (event.status === 'observed') {
+    return {
+      badgeClasses: 'bg-amber-50 text-amber-800 border border-amber-300 font-extrabold',
+      showPulseDot: false,
+    };
+  }
+  if (event.status === 'in_review') {
+    return {
+      badgeClasses: 'bg-sky-50 text-sky-700 border border-sky-200',
       showPulseDot: true,
     };
   }
@@ -89,6 +102,7 @@ export default function OrganizerEventsScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [filterState, setFilterState] = useState<FilterState>('all');
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('3m');
   const [searchQuery, setSearchQuery] = useState('');
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -106,7 +120,7 @@ export default function OrganizerEventsScreen() {
     }, 3500);
   };
 
-  const loadOrganizerPanel = async () => {
+  const loadOrganizerPanel = async (selectedPeriod: PeriodFilter = periodFilter) => {
     setIsLoading(true);
     setLoadError(null);
 
@@ -118,7 +132,7 @@ export default function OrganizerEventsScreen() {
 
     setCurrentUser(userRes.value);
 
-    const eventsRes = await getOrganizerEventsUseCase.execute();
+    const eventsRes = await getOrganizerEventsUseCase.execute({ period: selectedPeriod });
     eventsRes.match(
       (data) => {
         setEvents(data);
@@ -131,6 +145,11 @@ export default function OrganizerEventsScreen() {
     );
   };
 
+  const handlePeriodChange = (newPeriod: PeriodFilter) => {
+    setPeriodFilter(newPeriod);
+    void loadOrganizerPanel(newPeriod);
+  };
+
   useEffect(() => {
     void loadOrganizerPanel();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,6 +159,8 @@ export default function OrganizerEventsScreen() {
     let onSale = 0;
     let soldOut = 0;
     let draft = 0;
+    let inReview = 0;
+    let observed = 0;
     let completed = 0;
     let inactive = 0;
 
@@ -147,6 +168,10 @@ export default function OrganizerEventsScreen() {
       if (ev.status === 'published') {
         if (ev.isSoldOut) soldOut += 1;
         else onSale += 1;
+      } else if (ev.status === 'observed') {
+        observed += 1;
+      } else if (ev.status === 'in_review') {
+        inReview += 1;
       } else if (ev.status === 'draft') {
         draft += 1;
       } else if (ev.status === 'completed') {
@@ -161,6 +186,8 @@ export default function OrganizerEventsScreen() {
       onSale,
       soldOut,
       draft,
+      inReview,
+      observed,
       completed,
       inactive,
     };
@@ -184,6 +211,10 @@ export default function OrganizerEventsScreen() {
           return ev.status === 'published' && !ev.isSoldOut;
         case 'sold_out':
           return ev.status === 'published' && ev.isSoldOut;
+        case 'observed':
+          return ev.status === 'observed';
+        case 'in_review':
+          return ev.status === 'in_review';
         case 'draft':
           return ev.status === 'draft';
         case 'completed':
@@ -419,13 +450,32 @@ export default function OrganizerEventsScreen() {
                 </p>
               </div>
 
-              <Link
-                href="/organizer/events/new?from=events"
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-electric-indigo text-white font-bold text-xs shadow-md shadow-electric-indigo/25 hover:bg-primary transition-all active:scale-95 cursor-pointer shrink-0"
-              >
-                <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                <span>Crear Nuevo Evento</span>
-              </Link>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => void loadOrganizerPanel()}
+                  disabled={isLoading}
+                  className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white border border-surface-variant hover:border-electric-indigo/40 hover:text-electric-indigo text-slate-700 font-bold text-xs shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                  title="Actualizar datos del panel"
+                >
+                  <span
+                    className={`material-symbols-outlined text-[18px] ${
+                      isLoading ? 'animate-spin text-electric-indigo' : 'text-slate-500'
+                    }`}
+                  >
+                    refresh
+                  </span>
+                  <span>{isLoading ? 'Actualizando...' : 'Actualizar'}</span>
+                </button>
+
+                <Link
+                  href="/organizer/events/new?from=events"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-electric-indigo text-white font-bold text-xs shadow-md shadow-electric-indigo/25 hover:bg-primary transition-all active:scale-95 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                  <span>Crear Nuevo Evento</span>
+                </Link>
+              </div>
             </div>
 
             {/* Error de carga */}
@@ -451,7 +501,8 @@ export default function OrganizerEventsScreen() {
             {/* Buscador y Filtros alineados a estados reales */}
             {events.length > 0 && (
               <div className="bg-white p-4 rounded-2xl border border-surface-variant shadow-xs flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                {/* Fila 1: Buscador + Filtro Temporal inteligente */}
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                   <div className="relative flex-1">
                     <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-platinum-silver text-[20px]">
                       search
@@ -461,80 +512,159 @@ export default function OrganizerEventsScreen() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Buscar evento por nombre, recinto, ciudad o código (#EV-...)..."
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-surface-variant text-sm text-deep-slate placeholder:text-platinum-silver focus:ring-1 focus:ring-electric-indigo focus:border-electric-indigo outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-2 rounded-xl border border-surface-variant text-sm text-deep-slate placeholder:text-platinum-silver focus:ring-1 focus:ring-electric-indigo focus:border-electric-indigo outline-none transition-all"
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold scrollbar-thin">
+                  {/* Selector de Rango Temporal */}
+                  <div className="flex items-center gap-1.5 p-1 bg-surface-gray rounded-xl border border-surface-variant/50 self-start md:self-auto shrink-0">
+                    <span className="material-symbols-outlined text-[17px] text-slate-400 pl-1">
+                      date_range
+                    </span>
                     <button
                       type="button"
-                      onClick={() => setFilterState('all')}
-                      className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
-                        filterState === 'all'
-                          ? 'bg-electric-indigo text-white shadow-xs'
-                          : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                      onClick={() => handlePeriodChange('3m')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        periodFilter === '3m'
+                          ? 'bg-electric-indigo text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-deep-slate'
                       }`}
                     >
-                      Todos ({counts.all})
+                      3 meses
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFilterState('on_sale')}
-                      className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
-                        filterState === 'on_sale'
-                          ? 'bg-electric-indigo text-white shadow-xs'
-                          : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                      onClick={() => handlePeriodChange('6m')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        periodFilter === '6m'
+                          ? 'bg-electric-indigo text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-deep-slate'
                       }`}
                     >
-                      En Venta ({counts.onSale})
+                      6 meses
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFilterState('sold_out')}
-                      className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
-                        filterState === 'sold_out'
-                          ? 'bg-electric-indigo text-white shadow-xs'
-                          : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                      onClick={() => handlePeriodChange('12m')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        periodFilter === '12m'
+                          ? 'bg-electric-indigo text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-deep-slate'
                       }`}
                     >
-                      Sold Out ({counts.soldOut})
+                      1 año
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFilterState('draft')}
-                      className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
-                        filterState === 'draft'
-                          ? 'bg-electric-indigo text-white shadow-xs'
-                          : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                      onClick={() => handlePeriodChange('all')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        periodFilter === 'all'
+                          ? 'bg-electric-indigo text-white shadow-2xs'
+                          : 'text-slate-600 hover:text-deep-slate'
                       }`}
                     >
-                      Borradores ({counts.draft})
+                      Todos
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setFilterState('completed')}
-                      className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
-                        filterState === 'completed'
-                          ? 'bg-electric-indigo text-white shadow-xs'
-                          : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
-                      }`}
-                    >
-                      Finalizados ({counts.completed})
-                    </button>
-                    {counts.inactive > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setFilterState('inactive')}
-                        className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
-                          filterState === 'inactive'
-                            ? 'bg-electric-indigo text-white shadow-xs'
-                            : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
-                        }`}
-                      >
-                        Pausados/Canc. ({counts.inactive})
-                      </button>
-                    )}
                   </div>
+                </div>
+
+                {/* Fila 2: Pestañas por estado del evento */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold scrollbar-thin border-t border-surface-variant/40 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setFilterState('all')}
+                    className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                      filterState === 'all'
+                        ? 'bg-electric-indigo text-white shadow-xs'
+                        : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                    }`}
+                  >
+                    Todos ({counts.all})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterState('on_sale')}
+                    className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                      filterState === 'on_sale'
+                        ? 'bg-electric-indigo text-white shadow-xs'
+                        : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                    }`}
+                  >
+                    En Venta ({counts.onSale})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterState('sold_out')}
+                    className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                      filterState === 'sold_out'
+                        ? 'bg-electric-indigo text-white shadow-xs'
+                        : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                    }`}
+                  >
+                    Sold Out ({counts.soldOut})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterState('draft')}
+                    className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                      filterState === 'draft'
+                        ? 'bg-electric-indigo text-white shadow-xs'
+                        : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                    }`}
+                  >
+                    Borradores ({counts.draft})
+                  </button>
+                  {counts.observed > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setFilterState('observed')}
+                      className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                        filterState === 'observed'
+                          ? 'bg-amber-500 text-white shadow-xs'
+                          : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">warning</span>
+                      <span>Observados ({counts.observed})</span>
+                    </button>
+                  )}
+                  {counts.inReview > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setFilterState('in_review')}
+                      className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                        filterState === 'in_review'
+                          ? 'bg-sky-600 text-white shadow-xs'
+                          : 'bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100'
+                      }`}
+                    >
+                      En Revisión ({counts.inReview})
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setFilterState('completed')}
+                    className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                      filterState === 'completed'
+                        ? 'bg-electric-indigo text-white shadow-xs'
+                        : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                    }`}
+                  >
+                    Finalizados ({counts.completed})
+                  </button>
+                  {counts.inactive > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setFilterState('inactive')}
+                      className={`px-3.5 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                        filterState === 'inactive'
+                          ? 'bg-electric-indigo text-white shadow-xs'
+                          : 'bg-surface-gray text-on-surface-variant hover:text-deep-slate'
+                      }`}
+                    >
+                      Pausados/Canc. ({counts.inactive})
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -594,6 +724,8 @@ export default function OrganizerEventsScreen() {
                 const categoryMeta = getCategoryById(event.category);
                 const statusVisual = getEventStatusVisual(event);
                 const isDraft = event.status === 'draft';
+                const isObserved = event.status === 'observed';
+                const isInReview = event.status === 'in_review';
                 const isCompleted = event.status === 'completed';
                 const isCancelled = event.status === 'cancelled';
                 const targetPct =
@@ -671,8 +803,8 @@ export default function OrganizerEventsScreen() {
                           </div>
                         </div>
 
-                        {/* Bloque financiero de recaudación (oculto en borradores) */}
-                        {!isDraft && (
+                        {/* Bloque financiero de recaudación (oculto en borradores, observados y en revisión) */}
+                        {!isDraft && !isObserved && !isInReview && (
                           <div className="bg-surface-gray px-5 py-3.5 rounded-xl border border-surface-variant/50 flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-1 shrink-0">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
                               Recaudación Actual
@@ -696,8 +828,53 @@ export default function OrganizerEventsScreen() {
                         )}
                       </div>
 
-                      {/* Contenido de progreso: Borrador vs Evento activo/finalizado */}
-                      {isDraft ? (
+                      {/* Contenido de progreso / advertencia según estado */}
+                      {isInReview ? (
+                        <div className="p-4 rounded-xl bg-sky-50/80 border border-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <span className="material-symbols-outlined text-sky-600 text-[24px] shrink-0 mt-0.5">
+                              hourglass_top
+                            </span>
+                            <div>
+                              <p className="text-xs font-black text-sky-900 uppercase tracking-wide">
+                                Evento en Revisión por Moderación
+                              </p>
+                              <p className="text-xs text-sky-950 font-medium mt-1 leading-relaxed">
+                                Tu evento se encuentra en cola de moderación. El equipo de administración está revisando los detalles y el tarifario oficial. Durante esta fase el evento no puede ser modificado.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-100 text-sky-900 font-bold text-xs shrink-0 border border-sky-200">
+                            <span className="material-symbols-outlined text-[18px]">lock</span>
+                            <span>En Espera de Aprobación</span>
+                          </span>
+                        </div>
+                      ) : isObserved ? (
+                        <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <span className="material-symbols-outlined text-amber-600 text-[24px] shrink-0 mt-0.5">
+                              warning
+                            </span>
+                            <div>
+                              <p className="text-xs font-black text-amber-900 uppercase tracking-wide">
+                                Evento Observado por Moderación
+                              </p>
+                              <p className="text-xs text-amber-950 font-medium mt-1 leading-relaxed">
+                                {event.observationReason
+                                  ? `Motivo: "${event.observationReason}"`
+                                  : 'El equipo de administración ha solicitado correcciones en los datos del evento antes de autorizar su publicación.'}
+                              </p>
+                            </div>
+                          </div>
+                          <Link
+                            href={`/organizer/events/${event.publicUuid}/edit`}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shrink-0 shadow-xs transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                            <span>Subsanar y Corregir</span>
+                          </Link>
+                        </div>
+                      ) : isDraft ? (
                         <div className="p-4 rounded-xl bg-surface-gray border border-surface-variant/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex items-start gap-3">
                             <span className="material-symbols-outlined text-vip-gold text-[20px] shrink-0 mt-0.5">
@@ -839,7 +1016,51 @@ export default function OrganizerEventsScreen() {
                       {/* Footer de acciones operativas según estado */}
                       <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-surface-variant/40">
                         <div className="flex flex-wrap items-center gap-2">
-                          {isDraft ? (
+                          {isInReview ? (
+                            <>
+                              <button
+                                type="button"
+                                disabled
+                                title="El evento no puede editarse mientras está en revisión por moderación"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 text-slate-400 font-bold text-xs cursor-not-allowed border border-slate-200"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">lock</span>
+                                <span>Edición Bloqueada (En Revisión)</span>
+                              </button>
+                              {event.hasLandingPage && event.slug && (
+                                <Link
+                                  href={`/e/${event.slug}`}
+                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-surface-gray text-on-surface-variant font-bold text-xs transition-all"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">
+                                    visibility
+                                  </span>
+                                  <span>Previsualizar Landing</span>
+                                </Link>
+                              )}
+                            </>
+                          ) : isObserved ? (
+                            <>
+                              <Link
+                                href={`/organizer/events/${event.publicUuid}/edit`}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                                <span>Editar y Subsanar Observaciones</span>
+                              </Link>
+                              {event.hasLandingPage && event.slug && (
+                                <Link
+                                  href={`/e/${event.slug}`}
+                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-surface-gray text-on-surface-variant font-bold text-xs transition-all"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">
+                                    visibility
+                                  </span>
+                                  <span>Previsualizar Landing</span>
+                                </Link>
+                              )}
+                            </>
+                          ) : isDraft ? (
                             <>
                               <button
                                 type="button"
@@ -877,7 +1098,8 @@ export default function OrganizerEventsScreen() {
                                 <span>Ver Ventas y Reporte</span>
                               </Link>
 
-                              {isCompleted ? (
+                              {/* Si el evento está completado (sus shows concluyeron): Se activa Liquidación Final */}
+                              {isCompleted && (
                                 <Link
                                   href={`/organizer/settlement?eventId=${event.publicUuid}&mode=liquidacion`}
                                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs transition-all cursor-pointer"
@@ -887,18 +1109,19 @@ export default function OrganizerEventsScreen() {
                                   </span>
                                   <span>{getSettlementLabel(event.settlementStatus)}</span>
                                 </Link>
-                              ) : (
-                                !isCancelled && (
-                                  <Link
-                                    href={`/organizer/settlement?eventId=${event.publicUuid}&mode=adelanto`}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary-container/50 hover:bg-secondary-container text-primary font-bold text-xs transition-all cursor-pointer"
-                                  >
-                                    <span className="material-symbols-outlined text-[18px]">
-                                      payments
-                                    </span>
-                                    <span>Solicitar Adelanto</span>
-                                  </Link>
-                                )
+                              )}
+
+                              {/* Si el evento está en venta (published): Se activa Solicitar Adelanto de Liquidación */}
+                              {event.status === 'published' && !isCompleted && !isCancelled && (
+                                <Link
+                                  href={`/organizer/settlement?eventId=${event.publicUuid}&mode=adelanto`}
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary-container/50 hover:bg-secondary-container text-primary font-bold text-xs transition-all cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">
+                                    payments
+                                  </span>
+                                  <span>Solicitar Adelanto</span>
+                                </Link>
                               )}
 
                               <button
@@ -929,7 +1152,8 @@ export default function OrganizerEventsScreen() {
                           )}
                         </div>
 
-                        {!isDraft && (
+                        {/* Botón de manifiesto CSV solo para eventos que ya están o estuvieron publicados */}
+                        {!isDraft && !isInReview && !isObserved && (
                           <div className="flex items-center gap-2">
                             <button
                               type="button"

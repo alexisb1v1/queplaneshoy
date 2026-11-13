@@ -162,7 +162,7 @@ export function EventCard({
           </div>
           <Link
             href={ctaHref}
-            className="px-3.5 py-2 bg-electric-indigo text-white rounded-xl font-label-bold text-[12px] hover:bg-primary transition-all shadow-sm"
+            className="px-3.5 py-2 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-xl font-label-bold text-[12px] transition-all shadow-sm shadow-rose-500/25 cursor-pointer"
           >
             {ctaText}
           </Link>

@@ -26,10 +26,11 @@ export function EventLandingView({ event }: EventLandingViewProps) {
   }, []);
 
   const config = event.landingConfig || {};
-  const theme = config.theme || {
-    primaryColor: "#6366F1",
-    backgroundType: "color",
-    backgroundColor: "#0F172A",
+  const theme = {
+    primaryColor: config.theme?.primaryColor || "#f43f5e",
+    backgroundType: config.theme?.backgroundType || "color",
+    backgroundColor: config.theme?.backgroundColor || "#0F172A",
+    backgroundPatternUrl: config.theme?.backgroundPatternUrl,
   };
   const header = config.header || {};
   const body = config.body || {};

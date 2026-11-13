@@ -9,7 +9,7 @@ interface LandingHeaderProps {
 }
 
 export function LandingHeader({
-  primaryColor = "#6366F1",
+  primaryColor = "#f43f5e",
   ctaText = "Comprar Entradas",
 }: LandingHeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);

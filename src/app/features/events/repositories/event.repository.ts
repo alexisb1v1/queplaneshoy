@@ -23,6 +23,7 @@ export interface SearchEventsParams {
 export interface GetOrganizerEventsParams {
   status?: string;
   q?: string;
+  period?: '3m' | '6m' | '12m' | 'all';
 }
 
 export abstract class EventRepository {

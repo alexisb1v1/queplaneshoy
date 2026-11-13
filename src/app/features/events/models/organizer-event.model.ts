@@ -1,5 +1,7 @@
 export type OrganizerEventStatus =
   | 'draft'
+  | 'in_review'
+  | 'observed'
   | 'published'
   | 'paused'
   | 'completed'
@@ -41,6 +43,7 @@ export interface OrganizerEventModel {
   name: string;
   category: string;
   status: OrganizerEventStatus;
+  observationReason?: string | null;
   isSoldOut: boolean;
   statusLabel: string;
   hasLandingPage: boolean;

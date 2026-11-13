@@ -598,14 +598,21 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
 
   const stepCompletion = useMemo<Record<StepId, boolean>>(
     () => ({
-      datos: Boolean(title.trim() && description.trim() && venueName.trim() && venueAddress.trim()),
+      datos: Boolean(
+        title.trim() &&
+        description.trim() &&
+        organizerName.trim() &&
+        organizerDocumentNumber.trim() &&
+        venueName.trim() &&
+        venueAddress.trim()
+      ),
       multimedia: Boolean(mainBannerUrl),
       funciones: shows.length > 0,
       localidades: zones.length > 0,
-      landing: hasDedicatedLanding,
-      cupones: coupons.length > 0 || faqs.length > 0,
+      landing: true, // Paso opcional
+      cupones: true, // Paso opcional
     }),
-    [title, description, venueName, venueAddress, mainBannerUrl, shows.length, zones.length, hasDedicatedLanding, coupons.length, faqs.length]
+    [title, description, organizerName, organizerDocumentNumber, venueName, venueAddress, mainBannerUrl, shows.length, zones.length]
   );
 
   const essentialCompletedCount = useMemo(() => {
@@ -613,17 +620,100 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
     return keys.filter((k) => stepCompletion[k]).length;
   }, [stepCompletion]);
 
+  // Validación de la etapa actual con mensajes detallados
+  const validateStep = (stepId: StepId): { valid: boolean; message?: string; focusId?: string } => {
+    if (stepId === 'datos') {
+      if (!title.trim()) {
+        return { valid: false, message: 'Ingresa el nombre oficial del evento.', focusId: 'event-title' };
+      }
+      if (!description.trim()) {
+        return { valid: false, message: 'Ingresa una descripción para tu evento.' };
+      }
+      if (!organizerName.trim()) {
+        return { valid: false, message: 'Ingresa la razón social o nombre comercial de la productora.' };
+      }
+      if (!organizerDocumentNumber.trim()) {
+        return { valid: false, message: 'Ingresa el número de documento de la productora.' };
+      }
+      if (!venueName.trim()) {
+        return { valid: false, message: 'Ingresa el nombre del recinto o local del evento.' };
+      }
+      if (!venueAddress.trim()) {
+        return { valid: false, message: 'Ingresa la dirección exacta del recinto.' };
+      }
+      return { valid: true };
+    }
+
+    if (stepId === 'multimedia') {
+      if (!mainBannerUrl) {
+        return { valid: false, message: 'Debes subir el Banner Principal del evento para continuar.' };
+      }
+      return { valid: true };
+    }
+
+    if (stepId === 'funciones') {
+      if (shows.length === 0) {
+        return { valid: false, message: 'Debes añadir al menos una función o fecha para el evento.' };
+      }
+      return { valid: true };
+    }
+
+    if (stepId === 'localidades') {
+      if (zones.length === 0) {
+        return { valid: false, message: 'Debes configurar al menos una zona o tarifa de entradas.' };
+      }
+      return { valid: true };
+    }
+
+    return { valid: true };
+  };
+
   const activeStepIndex = WIZARD_STEPS.findIndex((s) => s.id === activeStep);
   const currentStepObj = WIZARD_STEPS[activeStepIndex] || WIZARD_STEPS[0];
   const prevStepObj = activeStepIndex > 0 ? WIZARD_STEPS[activeStepIndex - 1] : null;
   const nextStepObj = activeStepIndex < WIZARD_STEPS.length - 1 ? WIZARD_STEPS[activeStepIndex + 1] : null;
 
   const goToStep = (stepId: StepId) => {
+    const targetIdx = WIZARD_STEPS.findIndex((s) => s.id === stepId);
+    
+    // Si intenta avanzar a un paso posterior, validar paso a paso que los anteriores estén completos
+    if (targetIdx > activeStepIndex) {
+      for (let i = 0; i < targetIdx; i++) {
+        const stepToCheck = WIZARD_STEPS[i].id;
+        const validation = validateStep(stepToCheck);
+        if (!validation.valid) {
+          showToast(validation.message || `Completa primero la etapa "${WIZARD_STEPS[i].label}".`);
+          if (stepToCheck !== activeStep) {
+            setActiveStep(stepToCheck);
+          }
+          if (validation.focusId) {
+            const elId = validation.focusId;
+            setTimeout(() => document.getElementById(elId)?.focus(), 100);
+          }
+          return;
+        }
+      }
+    }
+
     setActiveStep(stepId);
     setMobileMenuOpen(false);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const handleNextStep = () => {
+    if (!nextStepObj) return;
+    const validation = validateStep(activeStep);
+    if (!validation.valid) {
+      showToast(validation.message || 'Completa todos los campos obligatorios de esta etapa.');
+      if (validation.focusId) {
+        const elId = validation.focusId;
+        setTimeout(() => document.getElementById(elId)?.focus(), 100);
+      }
+      return;
+    }
+    goToStep(nextStepObj.id);
   };
 
   // Armar Payload Consolidado
@@ -2152,7 +2242,7 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
             {nextStepObj ? (
               <button
                 type="button"
-                onClick={() => goToStep(nextStepObj.id)}
+                onClick={handleNextStep}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white text-xs font-bold shadow-md shadow-electric-indigo/25 transition-all active:scale-95 cursor-pointer"
               >
                 <span>
@@ -2301,13 +2391,13 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
       )}
 
       {/* =====================================================================
-          MODAL: ETAPA DE APROBACIÓN Y PUBLICACIÓN (Liquidación Oficial)
+          DRAWER / MODAL LATERAL: RESUMEN DEL EVENTO Y ENVÍO A REVISIÓN
          ===================================================================== */}
       {showApprovalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-3xl w-full my-8 p-6 sm:p-8 shadow-2xl border border-surface-variant flex flex-col max-h-[90vh]">
-            {/* Cabecera */}
-            <div className="flex items-start justify-between gap-4 pb-4 border-b border-surface-variant/50">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200 border-l border-surface-variant">
+            {/* Cabecera del Drawer */}
+            <div className="p-6 border-b border-surface-variant/60 flex items-start justify-between gap-4 bg-white sticky top-0 z-10">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-electric-indigo flex items-center justify-center shrink-0">
                   <span className="material-symbols-outlined text-[28px]">verified</span>
@@ -2315,64 +2405,147 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-black uppercase tracking-wider text-electric-indigo">
-                      Etapa de Aprobación
+                      Revisión del Evento
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
-                      Liquidación Oficial
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-electric-indigo text-[10px] font-bold border border-indigo-200">
+                      Tarifario Oficial QPH
                     </span>
                   </div>
                   <h3 className="text-lg sm:text-xl font-black text-deep-slate tracking-tight">
-                    Resumen Financiero y Envío a Revisión
+                    Resumen del Evento y Envío a Moderación
                   </h3>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowApprovalModal(false)}
-                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-deep-slate transition-colors cursor-pointer"
+                className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-deep-slate transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <span className="material-symbols-outlined text-[22px]">close</span>
               </button>
             </div>
 
             {/* Contenido con Scroll */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-5 pr-1">
-              {/* Tarjeta de Escala Oficial de QuePlanesHoy */}
-              <div className="rounded-2xl bg-indigo-50/60 border border-indigo-100 p-4 space-y-2">
-                <div className="flex items-center gap-2 text-electric-indigo font-bold text-xs uppercase tracking-wider">
-                  <span className="material-symbols-outlined text-[18px]">policy</span>
-                  <span>Escala Oficial de Tarifas QuePlanesHoy</span>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* =============================================================
+                  BLOQUE 1: DATOS DEL EVENTO (VERIFICACIÓN RÁPIDA)
+                 ============================================================= */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+                    fact_check
+                  </span>
+                  <h4 className="font-extrabold text-xs text-deep-slate uppercase tracking-wider">
+                    1. Datos del Evento
+                  </h4>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                  <div className="bg-white/80 rounded-xl p-2.5 border border-indigo-100/70">
-                    <span className="text-[11px] text-slate-500 block">{QPH_FEE_RULES.TIER_1.label}</span>
-                    <strong className="text-deep-slate font-extrabold">S/ {QPH_FEE_RULES.TIER_1.value.toFixed(2)} / entrada</strong>
+
+                <div className="bg-slate-50/80 rounded-2xl p-4 border border-surface-variant/70 space-y-3 text-xs">
+                  {/* Show: Nombre y Fechas */}
+                  <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 pb-2.5 border-b border-surface-variant/50">
+                    <span className="text-slate-500 font-bold uppercase text-[10px] tracking-wider shrink-0">
+                      Show / Espectáculo:
+                    </span>
+                    <div className="text-left sm:text-right">
+                      <strong className="text-deep-slate font-extrabold block text-sm">
+                        {title.trim() || 'Sin título asignado'}
+                      </strong>
+                      <span className="text-[11px] text-electric-indigo font-bold block mt-0.5">
+                        {shows.length > 0
+                          ? shows
+                              .map((s) => {
+                                const rawTime = s.startTime;
+                                const d = rawTime ? new Date(rawTime) : null;
+                                return d && !isNaN(d.getTime())
+                                  ? d.toLocaleDateString('es-PE', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })
+                                  : s.startTime || s.name;
+                              })
+                              .filter(Boolean)
+                              .join(' • ')
+                          : 'Fecha por programar'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="bg-white/80 rounded-xl p-2.5 border border-indigo-100/70">
-                    <span className="text-[11px] text-slate-500 block">{QPH_FEE_RULES.TIER_2.label}</span>
-                    <strong className="text-deep-slate font-extrabold">S/ {QPH_FEE_RULES.TIER_2.value.toFixed(2)} / entrada</strong>
+
+                  {/* Lugar: Dirección exacta */}
+                  <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 pb-2.5 border-b border-surface-variant/50">
+                    <span className="text-slate-500 font-bold uppercase text-[10px] tracking-wider shrink-0">
+                      Lugar y Recinto:
+                    </span>
+                    <div className="text-left sm:text-right">
+                      <strong className="text-deep-slate font-bold block">
+                        {venueName.trim() || 'Recinto no especificado'}
+                      </strong>
+                      <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
+                        {venueAddress.trim()
+                          ? `${venueAddress}${readableLocation ? ` • ${readableLocation}` : ''}`
+                          : readableLocation || 'Dirección por definir'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="bg-white/80 rounded-xl p-2.5 border border-indigo-100/70">
-                    <span className="text-[11px] text-slate-500 block">{QPH_FEE_RULES.TIER_3.label}</span>
-                    <strong className="text-deep-slate font-extrabold">{QPH_FEE_RULES.TIER_3.value * 100}% del precio</strong>
+
+                  {/* Aforo Total y Cupones */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="bg-white rounded-xl p-3 border border-surface-variant/60 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-indigo-50 text-electric-indigo flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">Aforo Total</span>
+                        <strong className="text-sm font-black text-deep-slate">
+                          {zones.reduce((acc, z) => acc + (Number(z.capacity) || 0), 0).toLocaleString()}{' '}
+                          <span className="text-xs font-semibold text-slate-500">entradas</span>
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-3 border border-surface-variant/60 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[20px]">sell</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">Cupones</span>
+                        <strong className="text-sm font-black text-deep-slate">
+                          {coupons.length > 0 ? (
+                            <span className="text-purple-700">
+                              {coupons.length}{' '}
+                              {coupons.length === 1 ? 'código de descuento activo' : 'códigos de descuento activos'}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 font-semibold text-xs">Sin cupones</span>
+                          )}
+                        </strong>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 pt-1">
-                  * Esta escala se aplica de forma automática tanto a precios regulares como a preventas para calcular la Tarifa Final y la liquidación.
-                </p>
               </div>
 
-              {/* Tabla de Zonas y Liquidación Estimada */}
-              <div className="space-y-2">
+              {/* =============================================================
+                  BLOQUE 2: ACUERDO COMERCIAL (DESGLOSE POR ZONA)
+                 ============================================================= */}
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-xs text-deep-slate uppercase tracking-wider">
-                    Desglose por Localidad Configurada ({zones.length})
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+                      payments
+                    </span>
+                    <h4 className="font-extrabold text-xs text-deep-slate uppercase tracking-wider">
+                      2. Acuerdo Comercial por Localidad ({zones.length})
+                    </h4>
+                  </div>
                   <span className="text-[11px] text-slate-500">
-                    Moneda oficial: <strong>Soles (PEN)</strong>
+                    Moneda: <strong>Soles (PEN)</strong>
                   </span>
                 </div>
 
+                {/* Desglose de Zonas: Sector, Precio Base, Modalidad, Tarifa Final */}
                 <div className="overflow-x-auto rounded-2xl border border-surface-variant/70">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
@@ -2381,8 +2554,6 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                         <th className="py-2.5 px-3 text-right">Aforo</th>
                         <th className="py-2.5 px-3 text-right">Precio Base</th>
                         <th className="py-2.5 px-3 text-center">Modalidad</th>
-                        <th className="py-2.5 px-3 text-right">Comisión QPH</th>
-                        <th className="py-2.5 px-3 text-right">Neto Promotor</th>
                         <th className="py-2.5 px-3 text-right">Tarifa Final</th>
                         <th className="py-2.5 px-3 text-right">Neto Estimado</th>
                       </tr>
@@ -2434,12 +2605,6 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                                 {isInc ? 'Incluida' : 'Sumada'}
                               </span>
                             </td>
-                            <td className="py-2.5 px-3 text-right font-bold text-slate-700">
-                              S/ {fee.toFixed(2)}
-                            </td>
-                            <td className="py-2.5 px-3 text-right font-extrabold text-emerald-700">
-                              S/ {netUnit.toFixed(2)}
-                            </td>
                             <td className="py-2.5 px-3 text-right font-extrabold text-electric-indigo">
                               S/ {buyerUnit.toFixed(2)}
                             </td>
@@ -2452,53 +2617,41 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                     </tbody>
                   </table>
                 </div>
+
+                {/* Recuadro Verde Gigante de Recaudación Neta Proyectada (Sin sumatoria de comisiones QPH) */}
+                {(() => {
+                  const totalNet = zones.reduce((acc, z) => {
+                    const price = Number(z.regularPrice) || 0;
+                    const fee = calculateQphFee(price);
+                    const isInc = Boolean(z.feeIncluded);
+                    const netUnit = isInc ? Math.max(0, price - fee) : price;
+                    return acc + (Number(z.capacity) || 0) * netUnit;
+                  }, 0);
+
+                  return (
+                    <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 border border-emerald-200/90 p-5 text-center sm:text-right flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+                      <div className="text-left space-y-0.5">
+                        <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[18px] text-emerald-700">savings</span>
+                          <span>Recaudación Neta Proyectada</span>
+                        </span>
+                        <p className="text-[11px] text-emerald-800/80">
+                          Monto estimado que ingresará a la liquidación del promotor al vender el 100% del aforo configurado.
+                        </p>
+                      </div>
+                      <div className="text-center sm:text-right shrink-0">
+                        <strong className="text-2xl sm:text-3xl text-emerald-700 font-black tracking-tight block">
+                          S/ {totalNet.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </strong>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
-
-              {/* Totales consolidados */}
-              {(() => {
-                const totalCap = zones.reduce((acc, z) => acc + (Number(z.capacity) || 0), 0);
-                const totalNet = zones.reduce((acc, z) => {
-                  const price = Number(z.regularPrice) || 0;
-                  const fee = calculateQphFee(price);
-                  const isInc = Boolean(z.feeIncluded);
-                  const netUnit = isInc ? Math.max(0, price - fee) : price;
-                  return acc + (Number(z.capacity) || 0) * netUnit;
-                }, 0);
-                const totalFees = zones.reduce((acc, z) => {
-                  const price = Number(z.regularPrice) || 0;
-                  const fee = calculateQphFee(price);
-                  return acc + (Number(z.capacity) || 0) * fee;
-                }, 0);
-
-                return (
-                  <div className="rounded-2xl bg-slate-50 border border-slate-200/80 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="space-y-0.5 text-center sm:text-left">
-                      <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider block">
-                        Aforo Total a la Venta
-                      </span>
-                      <strong className="text-base text-deep-slate font-black">
-                        {totalCap.toLocaleString()} entradas
-                      </strong>
-                      <span className="text-[11px] text-slate-400 block">
-                        Comisiones QPH proyectadas: S/ {totalFees.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    <div className="text-center sm:text-right bg-emerald-50 px-4 py-2.5 rounded-xl border border-emerald-200/70">
-                      <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
-                        Recaudación Neta Proyectada Promotor
-                      </span>
-                      <strong className="text-xl sm:text-2xl text-emerald-700 font-black tracking-tight">
-                        S/ {totalNet.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </strong>
-                    </div>
-                  </div>
-                );
-              })()}
             </div>
 
             {/* Pie con Acciones */}
-            <div className="pt-4 border-t border-surface-variant/50 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+            <div className="p-6 border-t border-surface-variant/60 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 bg-white sticky bottom-0 z-10">
               <button
                 type="button"
                 onClick={() => {
@@ -2517,7 +2670,7 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                 className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white text-xs font-black shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-[18px]">send</span>
-                <span>{isPublishing ? 'Enviando...' : 'Aprobar Liquidación y Enviar a Revisión'}</span>
+                <span>{isPublishing ? 'Enviando...' : 'Confirmar y Enviar a Revisión'}</span>
               </button>
             </div>
           </div>

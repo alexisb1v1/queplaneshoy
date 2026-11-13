@@ -16,6 +16,7 @@ export function organizerEventDtoToModel(dto: OrganizerEventDto): OrganizerEvent
     name: dto.name,
     category: dto.category || 'CONCERTS',
     status: dto.status || 'draft',
+    observationReason: dto.observationReason || null,
     isSoldOut: Boolean(dto.isSoldOut),
     statusLabel: dto.statusLabel || 'Borrador',
     hasLandingPage: Boolean(dto.hasLandingPage),

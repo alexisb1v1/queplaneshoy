@@ -33,6 +33,7 @@ export interface OrganizerEventDto {
   name: string;
   category: string;
   status: string;
+  observationReason?: string | null;
   isSoldOut: boolean;
   statusLabel: string;
   hasLandingPage: boolean;
