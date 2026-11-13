@@ -101,16 +101,18 @@ export default function ProfileLayout({
             >
               Favoritos
             </Link>
-            <Link
-              href="/organizer/events"
-              className={`flex-1 py-2 text-center rounded-xl text-xs font-bold transition-all ${
-                pathname.startsWith('/organizer')
-                  ? 'bg-electric-indigo text-white shadow-xs'
-                  : 'text-on-surface-variant hover:bg-surface-gray'
-              }`}
-            >
-              Mis eventos
-            </Link>
+            {(user?.isOrganizer || pathname.startsWith('/organizer')) && (
+              <Link
+                href="/organizer/events"
+                className={`flex-1 py-2 text-center rounded-xl text-xs font-bold transition-all ${
+                  pathname.startsWith('/organizer')
+                    ? 'bg-electric-indigo text-white shadow-xs'
+                    : 'text-on-surface-variant hover:bg-surface-gray'
+                }`}
+              >
+                Mis eventos
+              </Link>
+            )}
           </div>
         )}
 
@@ -172,22 +174,24 @@ export default function ProfileLayout({
                   <span>Mis favoritos</span>
                 </Link>
 
-                <Link
-                  href="/organizer/events"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
-                    pathname.startsWith('/organizer')
-                      ? 'bg-electric-indigo text-white shadow-md shadow-electric-indigo/25'
-                      : 'text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate'
-                  }`}
-                >
-                  <span
-                    className="material-symbols-outlined text-[20px]"
-                    style={{ fontVariationSettings: pathname.startsWith('/organizer') ? "'FILL' 1" : "'FILL' 0" }}
+                {(user?.isOrganizer || pathname.startsWith('/organizer')) && (
+                  <Link
+                    href="/organizer/events"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
+                      pathname.startsWith('/organizer')
+                        ? 'bg-electric-indigo text-white shadow-md shadow-electric-indigo/25'
+                        : 'text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate'
+                    }`}
                   >
-                    storefront
-                  </span>
-                  <span>Mis eventos</span>
-                </Link>
+                    <span
+                      className="material-symbols-outlined text-[20px]"
+                      style={{ fontVariationSettings: pathname.startsWith('/organizer') ? "'FILL' 1" : "'FILL' 0" }}
+                    >
+                      storefront
+                    </span>
+                    <span>Mis eventos</span>
+                  </Link>
+                )}
 
                 <Link
                   href="/profile/settings"

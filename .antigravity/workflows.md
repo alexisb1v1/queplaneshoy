@@ -52,9 +52,14 @@ graph TD
 
 ## 3. Flujo de Creación y Publicación de Eventos (`/organizer/events/new`)
 
-Diseñado con blindaje total contra duplicados y garantía de correo verificado (**Plan B**).
+Workspace **Full-Height y Full-Width** ubicado fuera del route group `(main)` (`src/app/organizer/events/new/page.tsx`) para operar en pantalla completa sin cabecera de tienda ni footer público. Está diseñado con navegación por **6 fases progresivas** (4 pasos esenciales para vender: *Ficha y Ubicación*, *Multimedia & Portada*, *Fechas y Shows*, *Zonas y Tarifas*; y 2 opcionales: *Landing Dedicada*, *Cupones & FAQs*), modal de vista previa en vivo, blindaje contra duplicados y validación de correo verificado (**Plan B**).
 
-### 3.1 Diagrama de Secuencia de Publicación
+### 3.1 Regreso Dinámico según Origen (`?from=`)
+* **Desde Mis Eventos (`/organizer/events`, Sidebar Promotor):** enlaza a `/organizer/events/new?from=events` y habilita el botón *"Volver a Mis Eventos"* en cabecera.
+* **Desde Perfil (`/profile/settings`):** enlaza a `/organizer/events/new?from=profile` y habilita *"Volver a Mi Perfil"*.
+* **Desde Cabecera Global / Home (`/`):** enlaza a `/organizer/events/new?from=home` (o fallback vía `document.referrer`) y habilita *"Volver al Inicio"*.
+
+### 3.2 Diagrama de Secuencia de Publicación
 
 ```mermaid
 sequenceDiagram
@@ -66,8 +71,9 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant Meili as Meilisearch
 
-    Org->>Screen: Completa Ficha, Shows, Zonas y Clic en "Publicar"
-    Screen->>Screen: Activa isProcessing = true (Full-Screen Overlay + Bloqueo de 4 botones)
+    Org->>Screen: Completa Fases 1..4 (+ opcionales 5..6) y Clic en "Publicar Evento"
+    Screen->>Screen: Valida campos esenciales y redirige a la fase faltante si aplica
+    Screen->>Screen: Activa isProcessing = true (Full-Screen Overlay + Bloqueo de botones)
 
     alt Evento aún no creado
         Screen->>UseCase: createEventUseCase.execute(payload)
@@ -83,16 +89,29 @@ sequenceDiagram
         API->>DB: UPDATE events SET status='published'
         API->>Meili: Indexa el evento para búsqueda instantánea
         API-->>UseCase: 200 OK
-        UseCase-->>Screen: Toast de Éxito + Redirección a Home
+        UseCase-->>Screen: Toast de Éxito + Redirección según origen
     else Usuario NO verificado
         Screen->>Screen: Muestra Modal "Verifica tu Correo" (Plan B)
         Note over Screen: El borrador queda seguro en BD y no se duplica
     end
 ```
 
-### 3.2 Blindaje Antidoble-sumisión
-* **`isProcessing = isSaving || isPublishing`:** Deshabilita visual y funcionalmente los dos botones de "Guardar Borrador" y los dos botones de "Publicar Evento".
-* **Full-Screen Loading Overlay:** Capa opaca con *backdrop-blur* y spinner que bloquea todo clic del puntero en la pantalla mientras se procesa la solicitud.
+### 3.3 Blindaje Antidoble-sumisión, Escala de Comisión Oficial y Aprobación
+* **`isProcessing = isSaving || isPublishing`:** Deshabilita visual y funcionalmente los botones de "Guardar Borrador" y "Publicar Evento" (cabecera y barra inferior sticky).
+* **Full-Screen Loading Overlay:** Capa opaca con *backdrop-blur* y spinner que bloquea todo clic del puntero mientras se procesa la solicitud.
+* **Productora Compacta:** Si `currentUser` ya posee `organizerName` y `organizerDocumentNumber`, la Fase 1 muestra una tarjeta resumen colapsable para agilizar la carga.
+* **Multimedia, Video y Redes (Fase 2):** Además de banner, croquis y galería (máx. 4), centraliza la URL del video promocional (`promoVideoUrl` para YouTube/Vimeo/MP4) y las redes sociales del evento (`socialLinks`), sincronizándose automáticamente con la Landing Dedicada.
+* **Escala Oficial de Comisiones QuePlanesHoy (`calculateQphFee`):**
+  - **Hasta S/ 50.00:** S/ 6.00 por entrada.
+  - **De S/ 51.00 a S/ 125.00:** S/ 10.00 por entrada.
+  - **A partir de S/ 126.00:** 8% del precio por entrada.
+  - **Modal Informativo de Tarifario:** Accesible desde la barra y el drawer con explicación visual de la escala y del cálculo de la Tarifa Final.
+  - **Campo "Tarifa Final":** Muestra en tiempo real el precio final al comprador según el switch de inclusión de comisión.
+  - **Ocultamiento del Input en Creación:** El promotor no edita la comisión; solo define aforo, precio regular y si incluye comisión.
+* **Modal de Etapa de Aprobación & Liquidación:** Al hacer clic en "Publicar Evento", se abre un modal de aprobación donde se desglosan oficialmente las zonas, el precio al comprador, la comisión oficial calculada y la recaudación neta estimada que recibirá el promotor antes de dar el pase a producción.
+* **Comisión Incluida vs Sumada (`ZonesManager`):** Cada zona permite activar `feeIncluded`. Si está activo, el precio ingresado incluye la comisión QPH y esta se descuenta del neto del promotor; si está desactivado, la comisión se suma al precio final que paga el comprador.
+* **Vigencia Opcional en Cupones (`CouponsManager`):** La fecha y hora límite se oculta tras un switch opcional para mantener limpio el formulario.
+* **Menú de Gestión de Promotor (`OrganizerSidebar`):** La opción general de "Cupones y Promos" fue eliminada del sidebar principal, ya que los cupones y promociones se gestionan exclusivamente por cada evento.
 * **Idempotencia:** Si ya existe `createdEventId`, `handlePublish` no vuelve a crear el evento; procede directamente a su activación.
 
 ---
@@ -194,9 +213,25 @@ Integra la experiencia visual interactiva de Stitch con validación robusta de 6
 
 ---
 
-## 9. Pasarela de Pagos (Transición a Culqi)
+## 9. Pasarela de Pagos (Culqi Multipago)
 
-> 💡 **Estado Actual:** Se ha removido completamente la integración previa con Izipay. El flujo de compra utiliza temporalmente `simulateCheckoutUseCase` para pruebas mientras se implementa la nueva integración oficial con **Culqi** (soporte nativo para Yape, Plin, Billeteras QR y Tarjetas).
+La pasarela activa utiliza **Culqi Checkout v4 / Orders API** (soporte para tarjetas, Yape y billeteras) con confirmación idempotente vía webhook y polling seguro (`prepareCulqiCheckoutUseCase`, `confirmCulqiChargeUseCase`, `getCulqiOrderStatusUseCase`).
+
+---
+
+## 10. Panel del Organizador: Mis Eventos (`/organizer/events`)
+
+Implementado siguiendo Clean Architecture en [`OrganizerEventsScreen`](file:///d:/Personal/queplaneshoy/src/app/features/events/ui/organizer-events-screen.tsx) + [`OrganizerSidebar`](file:///d:/Personal/queplaneshoy/src/app/features/events/ui/components/organizer-sidebar.tsx) consumiendo `getOrganizerEventsUseCase` (`GET /api/events/organizer`):
+
+* **Visibilidad en Perfil:** El enlace *"Mis eventos"* en [`ProfileLayout`](file:///d:/Personal/queplaneshoy/src/app/(main)/profile/layout.tsx) y [`SettingsTab`](file:///d:/Personal/queplaneshoy/src/app/features/profile/ui/settings-tab.tsx) se muestra únicamente cuando `user.isOrganizer === true`. Si un comprador entra a `/organizer/events`, visualiza la guía de activación comercial hacia `/organizer/events/new`.
+* **Menú Gestión de Promotor:** Incluye *Crear Evento* (`/organizer/events/new`), *Mis Eventos Creados*, *Analítica y Ventas* (en preparación), *Adelanto de Liquidación*, *Liquidación del Evento* y *Configuración de Pagos* (en preparación). Se omite *"Cupones y Promos"* del menú global porque los cupones se administran por evento.
+* **Tarjetas y Estados Reales:**
+  * Código público determinístico `#EV-{8 primeros chars de publicUuid}` y montos reales en `S/.`.
+  * Filtros alineados a estados reales: `Todos`, `En Venta`, `Sold Out`, `Borradores`, `Finalizados` y `Pausados/Canc.`.
+  * **`draft`:** Oculta métricas financieras/zonas vendidas, muestra `draftChecklist` dinámico y botón **"Publicar Evento"** (`publishEventUseCase` con validación Plan B de verificación de email).
+  * **`published` / `paused`:** Muestra recaudación neta en ventas (`S/.`), desglose de aforo y tarifas vigentes por zona y acción **"Solicitar Adelanto"** (`/organizer/settlement?eventId=...&mode=adelanto`).
+  * **`completed`:** Reemplaza el botón de adelanto por **"Liquidación del Evento"** (`/organizer/settlement?eventId=...&mode=liquidacion`).
+
 
 
 

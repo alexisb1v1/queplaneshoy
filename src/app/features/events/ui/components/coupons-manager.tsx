@@ -25,6 +25,7 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
   const [discountValue, setDiscountValue] = useState<number | ''>(15);
   const [usageType, setUsageType] = useState<'reusable' | 'single_use'>('reusable');
   const [maxUses, setMaxUses] = useState<number | ''>(100);
+  const [hasExpiry, setHasExpiry] = useState(false);
   const [expiryDate, setExpiryDate] = useState('');
   const [expiryTime, setExpiryTime] = useState('23:59');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -35,6 +36,7 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
     setDiscountValue(15);
     setUsageType('reusable');
     setMaxUses(100);
+    setHasExpiry(false);
     setExpiryDate('');
     setExpiryTime('23:59');
     setErrorMsg(null);
@@ -59,7 +61,13 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
       return;
     }
 
-    const combinedExpiresAt = expiryDate ? `${expiryDate}T${expiryTime || '23:59'}:00` : undefined;
+    if (hasExpiry && !expiryDate) {
+      setErrorMsg('Selecciona una fecha límite o desactiva la vigencia programada.');
+      return;
+    }
+
+    const combinedExpiresAt =
+      hasExpiry && expiryDate ? `${expiryDate}T${expiryTime || '23:59'}:00` : undefined;
 
     const newCoupon: CouponFormItem = {
       id: 'coupon-' + Date.now(),
@@ -231,7 +239,9 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                 )}
 
                 <div className="space-y-1">
-                  <label className="font-bold text-xs text-deep-slate block">Código del Cupón *</label>
+                  <label className="font-bold text-xs text-deep-slate block">
+                    Código del Cupón<span className="text-red-500 ml-0.5">*</span>
+                  </label>
                   <input
                     type="text"
                     required
@@ -244,7 +254,9 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-xs text-deep-slate block">Beneficio de Descuento *</label>
+                  <label className="font-bold text-xs text-deep-slate block">
+                    Beneficio de Descuento<span className="text-red-500 ml-0.5">*</span>
+                  </label>
                   <div className="flex rounded-xl bg-surface-gray border border-surface-variant/70 overflow-hidden">
                     <input
                       type="number"
@@ -267,7 +279,9 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-xs text-deep-slate block">Modalidad de Uso *</label>
+                  <label className="font-bold text-xs text-deep-slate block">
+                    Modalidad de Uso<span className="text-red-500 ml-0.5">*</span>
+                  </label>
                   <select
                     value={usageType}
                     onChange={(e) => setUsageType(e.target.value as 'reusable' | 'single_use')}
@@ -291,35 +305,69 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                   <p className="text-[10px] text-slate-400">Tope máximo de órdenes que podrán canjearlo.</p>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-xs text-deep-slate block">
-                    Vigencia Límite del Cupón (Día/Mes/Año y Hora)
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
                     <div>
-                      <span className="text-[10px] text-slate-500 font-medium block mb-1">Día/Mes/Año</span>
-                      <input
-                        type="date"
-                        value={expiryDate}
-                        onChange={(e) => setExpiryDate(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-surface-gray border border-surface-variant/70 text-xs font-semibold text-deep-slate outline-none focus:border-electric-indigo"
-                      />
+                      <span className="font-bold text-xs text-deep-slate block">
+                        Definir fecha y hora límite (Opcional)
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        {hasExpiry
+                          ? 'El cupón vencerá automáticamente en la fecha indicada.'
+                          : 'Desactivado: vigente hasta que finalice el evento.'}
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 font-medium block mb-1">Hora (hh:mm)</span>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
                       <input
-                        type="time"
-                        value={expiryTime}
-                        onChange={(e) => setExpiryTime(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-surface-gray border border-surface-variant/70 text-xs font-semibold text-deep-slate outline-none focus:border-electric-indigo"
+                        type="checkbox"
+                        checked={hasExpiry}
+                        onChange={(e) => {
+                          const enabled = e.target.checked;
+                          setHasExpiry(enabled);
+                          if (!enabled) {
+                            setExpiryDate('');
+                          }
+                        }}
+                        className="sr-only peer"
                       />
-                    </div>
+                      <div className="w-10 h-5.5 bg-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-electric-indigo" />
+                    </label>
                   </div>
-                  <p className="text-[10px] text-slate-400">
-                    {expiryDate
-                      ? `Expira el ${expiryDate.split('-').reverse().join('/')} a las ${expiryTime || '23:59'} hrs.`
-                      : 'Opcional. Si lo dejas vacío, el cupón durará hasta que finalice el evento.'}
-                  </p>
+
+                  {hasExpiry && (
+                    <div className="space-y-2 pt-2 border-t border-slate-200/70 animate-in fade-in duration-150">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-medium block mb-1">
+                            Día/Mes/Año<span className="text-red-500 ml-0.5">*</span>
+                          </span>
+                          <input
+                            type="date"
+                            required={hasExpiry}
+                            value={expiryDate}
+                            onChange={(e) => setExpiryDate(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-surface-variant/70 text-xs font-semibold text-deep-slate outline-none focus:border-electric-indigo"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-medium block mb-1">
+                            Hora (hh:mm)
+                          </span>
+                          <input
+                            type="time"
+                            value={expiryTime}
+                            onChange={(e) => setExpiryTime(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-surface-variant/70 text-xs font-semibold text-deep-slate outline-none focus:border-electric-indigo"
+                          />
+                        </div>
+                      </div>
+                      {expiryDate && (
+                        <p className="text-[10px] font-semibold text-electric-indigo">
+                          Expira el {expiryDate.split('-').reverse().join('/')} a las {expiryTime || '23:59'} hrs.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer sticky */}

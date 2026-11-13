@@ -26,6 +26,7 @@ Representa la entidad de un evento en la interfaz de usuario:
 * **`price`** (`number`): Precio base de referencia en Soles.
 * **`bannerUrl`** (`string`): Imagen de portada alojada en Cloudflare R2.
 * **`hasLandingPage`** (`boolean`): Bandera de landing page exclusiva.
+* **`isFeatured`** (`boolean`): Indica si el evento está destacado para exhibición prioritaria en el Hero Carousel de portada.
 * **`landingConfig`** (`LandingConfigData`): Configuración visual del landing.
 * **`status`** (`string`): `draft`, `published`, `paused`, `cancelled`.
 

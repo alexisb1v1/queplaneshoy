@@ -1,4 +1,5 @@
 import { EventDto, CreateEventParams } from '../dto/event.dto';
+import { OrganizerEventDto } from '../dto/organizer-event.dto';
 import { SearchEventsResponse, PublishedCity, SearchEventItem } from '../models/search-event.model';
 import { HomeEventCardItem } from '../models/home-event-card.model';
 import { EventLandingModel } from '../models/event-landing.model';
@@ -8,6 +9,18 @@ import { apiClient } from '../../../common/services/api-client';
 export class EventApiService {
   async fetchEvents(): Promise<EventDto[]> {
     return apiClient.get<EventDto[]>('/events');
+  }
+
+  async getOrganizerEvents(params?: { status?: string; q?: string }): Promise<OrganizerEventDto[]> {
+    const query = new URLSearchParams();
+    if (params?.status && params.status !== 'all') {
+      query.set('status', params.status);
+    }
+    if (params?.q && params.q.trim()) {
+      query.set('q', params.q.trim());
+    }
+    const qs = query.toString();
+    return apiClient.get<OrganizerEventDto[]>(`/events/organizer${qs ? `?${qs}` : ''}`);
   }
 
   async getEventDetail(identifier: string): Promise<EventDetailModel> {
@@ -36,6 +49,14 @@ export class EventApiService {
 
   async createEvent(params: CreateEventParams): Promise<EventDto> {
     return apiClient.post<EventDto>('/events', params);
+  }
+
+  async updateEvent(eventId: string, params: CreateEventParams): Promise<EventDto> {
+    return apiClient.put<EventDto>(`/events/${eventId}`, params);
+  }
+
+  async getOrganizerEventForEdit(eventId: string): Promise<any> {
+    return apiClient.get<any>(`/events/organizer/${eventId}/edit`);
   }
 
   async publishEvent(eventId: string): Promise<EventDto> {

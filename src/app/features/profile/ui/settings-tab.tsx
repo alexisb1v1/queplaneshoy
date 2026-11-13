@@ -210,30 +210,56 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
             </span>
           </Link>
 
-          <Link
-            href="/organizer/events"
-            className="sm:col-span-2 rounded-2xl border border-surface-variant shadow-xs bg-white p-4 flex items-center justify-between group active:scale-[0.99] transition-all hover:border-electric-indigo/40"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary-fixed/40 flex items-center justify-center text-primary flex-shrink-0">
-                <span className="material-symbols-outlined text-[24px]">
-                  storefront
-                </span>
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-2">
-                  <span className="block font-bold text-base text-deep-slate leading-tight">Mis eventos</span>
-                  <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-extrabold text-[10px] uppercase">
-                    Organizador
+          {user.isOrganizer ? (
+            <Link
+              href="/organizer/events"
+              className="sm:col-span-2 rounded-2xl border border-surface-variant shadow-xs bg-white p-4 flex items-center justify-between group active:scale-[0.99] transition-all hover:border-electric-indigo/40"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-primary-fixed/40 flex items-center justify-center text-primary flex-shrink-0">
+                  <span className="material-symbols-outlined text-[24px]">
+                    storefront
                   </span>
                 </div>
-                <span className="text-xs text-on-surface-variant">Gestión de taquilla y aforo en vivo</span>
+                <div className="text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="block font-bold text-base text-deep-slate leading-tight">Mis eventos</span>
+                    <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-extrabold text-[10px] uppercase">
+                      Organizador
+                    </span>
+                  </div>
+                  <span className="text-xs text-on-surface-variant">Gestión de taquilla y aforo en vivo</span>
+                </div>
               </div>
-            </div>
-            <span className="material-symbols-outlined text-platinum-silver group-hover:text-electric-indigo transition-colors text-[20px]">
-              chevron_right
-            </span>
-          </Link>
+              <span className="material-symbols-outlined text-platinum-silver group-hover:text-electric-indigo transition-colors text-[20px]">
+                chevron_right
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/organizer/events/new?from=profile"
+              className="sm:col-span-2 rounded-2xl border border-indigo-200/70 shadow-xs bg-indigo-50/40 p-4 flex items-center justify-between group active:scale-[0.99] transition-all hover:border-electric-indigo/60"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo flex-shrink-0">
+                  <span className="material-symbols-outlined text-[24px]">
+                    add_circle
+                  </span>
+                </div>
+                <div className="text-left">
+                  <span className="block font-bold text-base text-deep-slate leading-tight">
+                    ¿Organizas eventos? Empieza aquí
+                  </span>
+                  <span className="text-xs text-on-surface-variant">
+                    Publica tu primer evento y activa tu panel de promotor
+                  </span>
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-electric-indigo transition-colors text-[20px]">
+                chevron_right
+              </span>
+            </Link>
+          )}
         </div>
       </div>
 

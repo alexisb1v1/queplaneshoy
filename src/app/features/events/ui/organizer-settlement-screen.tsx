@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { OrganizerSidebar } from './components/organizer-sidebar';
 
 interface TransferHistoryItem {
   id: string;
@@ -195,163 +196,14 @@ export default function OrganizerSettlementScreen() {
       <div className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8 py-6 md:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* =========================================================================
-              MENÚ LATERAL (SIDEBAR DE PROMOTOR) - FIEL A STITCH
-             ========================================================================= */}
-          <aside className="hidden lg:block lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-xs p-6 border border-surface-variant flex flex-col justify-between sticky top-28 min-h-[580px]">
-              
-              <div className="space-y-6">
-                {/* Header del Menú */}
-                <div className="border-b border-surface-variant/40 pb-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-extrabold uppercase tracking-widest text-on-surface-variant">
-                      Gestión de Promotor
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-extrabold text-[10px] uppercase">
-                      PRO
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant">Herramientas y taquilla en tiempo real</p>
-                </div>
-
-                {/* Items de Navegación del Menú */}
-                <nav className="flex flex-col gap-1.5">
-                  <Link
-                    href="/events/create"
-                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-white bg-electric-indigo shadow-sm hover:bg-primary transition-all text-left w-full mb-1"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">add_circle</span>
-                    <span>Crear Evento</span>
-                  </Link>
-
-                  <Link
-                    href="/organizer/events"
-                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate transition-all text-left w-full"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
-                    <span>Mis Eventos Creados</span>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => showToast('Módulo Analítica: métricas de conversión.')}
-                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate transition-all text-left w-full cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">analytics</span>
-                    <span>Analítica y Ventas</span>
-                  </button>
-
-                  <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm bg-electric-indigo text-white shadow-md shadow-electric-indigo/25 text-left w-full">
-                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      payments
-                    </span>
-                    <span>Liquidación y Adelanto</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => showToast('Cupones y promociones: 3 códigos activos.')}
-                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate transition-all text-left w-full cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">sell</span>
-                    <span>Cupones y Promos</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => showToast('Configuración bancaria IBAN: cuenta verificada.')}
-                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate transition-all text-left w-full cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-                    <span>Configuración de Pagos</span>
-                  </button>
-                </nav>
-              </div>
-
-              {/* Pie del Menú con Enlace a Perfil y Soporte */}
-              <div className="pt-6 border-t border-surface-variant/40 space-y-4">
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate transition-all"
-                >
-                  <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-                  <span>Volver a Vista Asistente</span>
-                </Link>
-
-                <div className="p-3.5 rounded-xl bg-surface-gray border border-surface-variant/50 flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      Soporte Prioritario
-                    </span>
-                    <span className="text-xs font-extrabold text-electric-indigo">promotores@qph.com</span>
-                  </div>
-                  <span className="material-symbols-outlined text-platinum-silver text-[20px]">headset_mic</span>
-                </div>
-              </div>
-
-            </div>
-          </aside>
-
-          {/* =========================================================================
-              DRAWER MÓVIL (MENÚ EN PANTALLAS PEQUEÑAS)
-             ========================================================================= */}
-          {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-50 lg:hidden">
-              <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
-              <div className="relative w-80 max-w-[85%] bg-white h-full p-6 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-300">
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-surface-variant">
-                    <span className="font-extrabold text-base text-deep-slate">Menú de Promotor</span>
-                    <button
-                      type="button"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="w-8 h-8 rounded-full hover:bg-surface-gray flex items-center justify-center text-on-surface-variant"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">close</span>
-                    </button>
-                  </div>
-
-                  <nav className="flex flex-col gap-1.5">
-                    <Link
-                      href="/events/create"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-white bg-electric-indigo shadow-sm hover:bg-primary transition-all text-left w-full mb-1"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">add_circle</span>
-                      <span>Crear Evento</span>
-                    </Link>
-
-                    <Link
-                      href="/organizer/events"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray text-left w-full"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
-                      <span>Mis Eventos Creados</span>
-                    </Link>
-
-                    <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm bg-electric-indigo text-white shadow-xs text-left w-full">
-                      <span className="material-symbols-outlined text-[20px]">payments</span>
-                      <span>Liquidación y Adelanto</span>
-                    </div>
-
-                    <Link
-                      href="/profile"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray text-left w-full"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">person</span>
-                      <span>Volver a Mi Perfil</span>
-                    </Link>
-                  </nav>
-                </div>
-              </div>
-            </div>
-          )}
+          <OrganizerSidebar
+            activeSection={operationMode === 'liquidacion' ? 'settlement' : 'advances'}
+            isMobileMenuOpen={isMobileMenuOpen}
+            onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
+            onSelectUnavailableFeature={(featureName) =>
+              showToast(`"${featureName}" se conectará en la siguiente fase del panel promotor.`)
+            }
+          />
 
           {/* =========================================================================
               CONTENIDO PRINCIPAL: LIQUIDACIÓN Y ADELANTOS (PANEL CENTRAL)

@@ -53,6 +53,8 @@ export interface LandingZone {
   benefits: string | null;
   regularPrice: number;
   currentPrice: number;
+  serviceFee?: number;
+  feeIncluded?: boolean;
   activeTierName: string;
   capacity: number;
   remainingTickets: number;

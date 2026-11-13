@@ -8,6 +8,13 @@ import { useFavorites } from "../../../common/hooks/use-favorites";
 import { getEventDetailUseCase, searchEventsUseCase, SearchEventItem } from "../index";
 import { EventDetailModel, EventZoneModel } from "../models/event-detail.model";
 import { formatAgeRestriction } from "../utils/age-restriction";
+import { VideoTeaserModal } from "./landing/components/video-teaser-modal";
+
+function getBuyerZonePrice(zone: Pick<EventZoneModel, "currentPrice" | "serviceFee" | "feeIncluded">): number {
+  const base = Number(zone.currentPrice) || 0;
+  const fee = Math.max(0, Number(zone.serviceFee) || 0);
+  return zone.feeIncluded ? base : Math.round((base + fee) * 100) / 100;
+}
 
 // Carga dinámica del mapa OpenStreetMap / Leaflet (desactivando SSR)
 const EventLocationMap = dynamic(
@@ -38,6 +45,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [similarEvents, setSimilarEvents] = useState<SearchEventItem[]>([]);
   const [isLoadingSimilar, setIsLoadingSimilar] = useState<boolean>(true);
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   const { isFavorite: checkFavorite, toggle: toggleFavApi } = useFavorites();
   const isFavorite = checkFavorite(event?.id) || (event?.publicUuid ? checkFavorite(event.publicUuid) : false);
@@ -218,11 +226,17 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
       })
     : null;
 
-  // Cálculo de precio mínimo en soles
+  // Cálculo de precio mínimo en soles (respetando si la comisión se suma o está incluida)
   const minPrice =
     (event.zones || []).length > 0
-      ? Math.min(...event.zones.map((z) => Number(z.currentPrice) || 0))
+      ? Math.min(...event.zones.map((z) => getBuyerZonePrice(z)))
       : 0;
+
+  const hasSocialLinks = Boolean(
+    event.socialLinks?.instagramUrl ||
+      event.socialLinks?.tiktokUrl ||
+      event.socialLinks?.facebookUrl
+  );
 
   const eventBanner =
     event.bannerUrl ||
@@ -230,6 +244,12 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
 
   return (
     <div className="flex-1 w-full bg-background">
+      {/* Modal de Video Promocional */}
+      <VideoTeaserModal
+        isOpen={isVideoOpen}
+        videoUrl={event.promoVideoUrl}
+        onClose={() => setIsVideoOpen(false)}
+      />
       {/* Ocultar header y bottom nav globales del layout en móvil para esta ruta */}
       <style>{`
         @media (max-width: 1023px) {
@@ -341,6 +361,19 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                   >
                     Ver mapa
                   </button>
+                  {event.promoVideoUrl && (
+                    <>
+                      <span className="text-surface-variant font-bold">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsVideoOpen(true)}
+                        className="text-electric-indigo qph-label-bold text-xs hover:underline cursor-pointer inline-flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">play_circle</span>
+                        Ver video
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -390,11 +423,16 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                       Precio Oficial
                     </span>
                     <span className="text-electric-indigo qph-price-tag text-[22px] font-extrabold block">
-                      S/. {Number(ticket.currentPrice).toFixed(2)}
+                      S/. {getBuyerZonePrice(ticket).toFixed(2)}
                     </span>
+                    {!ticket.feeIncluded && Number(ticket.serviceFee || 0) > 0 && (
+                      <span className="text-[10px] text-slate-500 block">
+                        Incluye S/. {Number(ticket.serviceFee).toFixed(2)} serv.
+                      </span>
+                    )}
                     {ticket.regularPrice > ticket.currentPrice && (
                       <span className="text-[11px] text-gray-400 line-through">
-                        S/. {Number(ticket.regularPrice).toFixed(2)}
+                        S/. {(ticket.feeIncluded ? Number(ticket.regularPrice) : Number(ticket.regularPrice) + Number(ticket.serviceFee || 0)).toFixed(2)}
                       </span>
                     )}
                   </div>
@@ -536,6 +574,16 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                       {isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
                     </span>
                   </button>
+                  {event.promoVideoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setIsVideoOpen(true)}
+                      className="flex items-center gap-2 bg-electric-indigo hover:bg-primary px-5 py-3 rounded-xl transition-all border border-white/20 cursor-pointer active:scale-95 shadow-lg"
+                    >
+                      <span className="material-symbols-outlined text-lg">play_circle</span>
+                      <span className="qph-label-bold text-sm">Ver Video</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -598,6 +646,49 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                   </div>
                 </div>
               </div>
+
+              {hasSocialLinks && (
+                <div className="pt-4 border-t border-surface-variant flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs font-bold text-deep-slate">
+                    Canales oficiales del evento:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {event.socialLinks?.instagramUrl && (
+                      <a
+                        href={event.socialLinks.instagramUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-pink-50 text-xs font-bold text-deep-slate hover:text-pink-700 border border-surface-variant transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+                        Instagram
+                      </a>
+                    )}
+                    {event.socialLinks?.tiktokUrl && (
+                      <a
+                        href={event.socialLinks.tiktokUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-slate-100 text-xs font-bold text-deep-slate border border-surface-variant transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">music_video</span>
+                        TikTok
+                      </a>
+                    )}
+                    {event.socialLinks?.facebookUrl && (
+                      <a
+                        href={event.socialLinks.facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-blue-50 text-xs font-bold text-deep-slate hover:text-blue-700 border border-surface-variant transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">thumb_up</span>
+                        Facebook
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Ticket Categories Section - Informativo + Acción */}
@@ -659,14 +750,19 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                         </span>
                         <div className="flex items-baseline gap-2 justify-start sm:justify-end">
                           <span className="font-price-tag text-price-tag text-deep-slate font-extrabold text-2xl">
-                            S/. {Number(ticket.currentPrice).toFixed(2)}
+                            S/. {getBuyerZonePrice(ticket).toFixed(2)}
                           </span>
                           {ticket.regularPrice > ticket.currentPrice && (
                             <span className="text-xs text-outline line-through font-semibold text-gray-400">
-                              S/. {Number(ticket.regularPrice).toFixed(2)}
+                              S/. {(ticket.feeIncluded ? Number(ticket.regularPrice) : Number(ticket.regularPrice) + Number(ticket.serviceFee || 0)).toFixed(2)}
                             </span>
                           )}
                         </div>
+                        {!ticket.feeIncluded && Number(ticket.serviceFee || 0) > 0 && (
+                          <span className="text-[10px] text-slate-500 block">
+                            Incluye S/. {Number(ticket.serviceFee).toFixed(2)} de servicio
+                          </span>
+                        )}
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 mt-0.5">
                           <span className="material-symbols-outlined text-[13px]">check_circle</span>
                           Disponible

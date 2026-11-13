@@ -25,20 +25,34 @@ export function VideoTeaserModal({ isOpen, videoUrl, onClose }: VideoTeaserModal
 
   if (!isOpen || !videoUrl) return null;
 
-  // Extraer ID de YouTube para URL embebida
-  const getEmbedUrl = (url: string): string => {
-    let videoId = "";
-    if (url.includes("youtu.be/")) {
-      videoId = url.split("youtu.be/")[1]?.split("?")[0] || "";
-    } else if (url.includes("watch?v=")) {
-      videoId = url.split("watch?v=")[1]?.split("&")[0] || "";
-    } else if (url.includes("embed/")) {
-      return url;
+  // Resolver fuente de reproducción: YouTube, Vimeo o archivo MP4/WebM directo
+  const resolveVideoSource = (url: string): { kind: "iframe" | "video"; src: string } => {
+    const cleanUrl = url.trim();
+
+    if (cleanUrl.includes("youtu.be/")) {
+      const videoId = cleanUrl.split("youtu.be/")[1]?.split("?")[0] || "";
+      if (videoId) return { kind: "iframe", src: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` };
+    } else if (cleanUrl.includes("youtube.com/shorts/")) {
+      const videoId = cleanUrl.split("youtube.com/shorts/")[1]?.split("?")[0] || "";
+      if (videoId) return { kind: "iframe", src: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` };
+    } else if (cleanUrl.includes("watch?v=")) {
+      const videoId = cleanUrl.split("watch?v=")[1]?.split("&")[0] || "";
+      if (videoId) return { kind: "iframe", src: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` };
+    } else if (cleanUrl.includes("youtube.com/embed/")) {
+      return { kind: "iframe", src: cleanUrl };
+    } else if (cleanUrl.includes("vimeo.com/") && !cleanUrl.includes("player.vimeo.com/")) {
+      const match = cleanUrl.match(/vimeo\.com\/(\d+)/);
+      if (match?.[1]) {
+        return { kind: "iframe", src: `https://player.vimeo.com/video/${match[1]}?autoplay=1` };
+      }
+    } else if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(cleanUrl)) {
+      return { kind: "video", src: cleanUrl };
     }
-    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` : url;
+
+    return { kind: "iframe", src: cleanUrl };
   };
 
-  const embedUrl = getEmbedUrl(videoUrl);
+  const resolvedSource = resolveVideoSource(videoUrl);
 
   return (
     <div
@@ -58,14 +72,24 @@ export function VideoTeaserModal({ isOpen, videoUrl, onClose }: VideoTeaserModal
           <span className="material-symbols-outlined text-xl">close</span>
         </button>
 
-        {/* Reproductor Embebido */}
-        <iframe
-          src={embedUrl}
-          title="Teaser Oficial del Evento"
-          className="w-full h-full border-0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+        {/* Reproductor Embebido o Video Directo */}
+        {resolvedSource.kind === "video" ? (
+          <video
+            src={resolvedSource.src}
+            controls
+            autoPlay
+            playsInline
+            className="w-full h-full object-contain bg-black"
+          />
+        ) : (
+          <iframe
+            src={resolvedSource.src}
+            title="Teaser Oficial del Evento"
+            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        )}
       </div>
     </div>
   );

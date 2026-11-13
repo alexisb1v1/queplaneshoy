@@ -163,7 +163,7 @@ function DesktopHeaderContent() {
           </Link>
 
           <Link
-            href="/organizer/events/new"
+            href="/organizer/events/new?from=home"
             className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-electric-indigo bg-indigo-50/90 hover:bg-electric-indigo hover:text-white border border-indigo-200/90 hover:border-electric-indigo shadow-xs hover:shadow-md hover:shadow-electric-indigo/20 transition-all duration-200 active:scale-95 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">add_circle</span>

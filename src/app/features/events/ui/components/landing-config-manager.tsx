@@ -42,6 +42,12 @@ interface LandingConfigManagerProps {
   slug: string;
   onChangeSlug: (slug: string) => void;
   eventTitle?: string;
+  promoVideoUrl?: string;
+  socialLinks?: {
+    instagramUrl?: string;
+    facebookUrl?: string;
+    tiktokUrl?: string;
+  };
 }
 
 export function LandingConfigManager({
@@ -52,6 +58,8 @@ export function LandingConfigManager({
   slug,
   onChangeSlug,
   eventTitle = 'Título del Evento',
+  promoVideoUrl,
+  socialLinks,
 }: LandingConfigManagerProps) {
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
 
@@ -170,7 +178,7 @@ export function LandingConfigManager({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-deep-slate block">
-                    Enlace Web Oficial (Slug del Landing) *
+                    Enlace Web Oficial (Slug del Landing)<span className="text-red-500 ml-0.5">*</span>
                   </label>
                   {eventTitle && eventTitle.trim() !== '' && eventTitle !== 'Título del Evento' && (
                     <button
@@ -239,15 +247,18 @@ export function LandingConfigManager({
                         className="w-full px-3 py-1.5 rounded-lg bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none focus:border-electric-indigo"
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Video Teaser (YouTube o enlace MP4)</label>
-                      <input
-                        type="url"
-                        value={config.header?.videoTeaserUrl || ''}
-                        onChange={(e) => updateSection('header', 'videoTeaserUrl', e.target.value)}
-                        placeholder="https://www.youtube.com/watch?v=..."
-                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none focus:border-electric-indigo"
-                      />
+                    <div className="p-2.5 rounded-lg bg-indigo-50/70 border border-indigo-100 text-[11px] text-slate-600 flex items-start gap-2">
+                      <span className="material-symbols-outlined text-electric-indigo text-[16px] shrink-0 mt-0.5">
+                        videocam
+                      </span>
+                      <div>
+                        <span className="font-bold text-deep-slate block">Video Promocional vinculado</span>
+                        <span className="text-[10px] text-slate-500">
+                          {promoVideoUrl?.trim()
+                            ? 'Se usará el video configurado en la fase Multimedia & Portada.'
+                            : 'Puedes añadir un video teaser en la fase Multimedia & Portada.'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -328,26 +339,40 @@ export function LandingConfigManager({
                     helpText="Banner o sponsors inferiores"
                   />
 
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Instagram Oficial</label>
-                      <input
-                        type="url"
-                        value={config.footer?.instagramUrl || ''}
-                        onChange={(e) => updateSection('footer', 'instagramUrl', e.target.value)}
-                        placeholder="https://instagram.com/..."
-                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none"
-                      />
+                  <div className="p-3.5 rounded-xl bg-white border border-surface-variant/70 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-deep-slate">
+                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">share</span>
+                      <span>Redes Sociales Oficiales</span>
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Facebook Oficial</label>
-                      <input
-                        type="url"
-                        value={config.footer?.facebookUrl || ''}
-                        onChange={(e) => updateSection('footer', 'facebookUrl', e.target.value)}
-                        placeholder="https://facebook.com/..."
-                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none"
-                      />
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Instagram, TikTok y Facebook ahora se configuran en la fase <strong>2. Multimedia &amp; Portada</strong> y se muestran automáticamente en el pie de página del landing.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {(socialLinks?.instagramUrl || config.footer?.instagramUrl) && (
+                        <span className="px-2 py-0.5 rounded-md bg-pink-50 text-pink-700 text-[10px] font-bold border border-pink-200">
+                          Instagram activo
+                        </span>
+                      )}
+                      {(socialLinks?.tiktokUrl || config.footer?.tiktokUrl) && (
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[10px] font-bold border border-slate-200">
+                          TikTok activo
+                        </span>
+                      )}
+                      {(socialLinks?.facebookUrl || config.footer?.facebookUrl) && (
+                        <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
+                          Facebook activo
+                        </span>
+                      )}
+                      {!(
+                        socialLinks?.instagramUrl ||
+                        socialLinks?.tiktokUrl ||
+                        socialLinks?.facebookUrl ||
+                        config.footer?.instagramUrl ||
+                        config.footer?.tiktokUrl ||
+                        config.footer?.facebookUrl
+                      ) && (
+                        <span className="text-[10px] text-slate-400">Sin enlaces de redes registrados aún</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -560,13 +585,13 @@ export function LandingConfigManager({
                   )}
 
                   <div className="flex items-center justify-center gap-3 text-slate-400">
-                    {config.footer?.instagramUrl && (
+                    {(socialLinks?.instagramUrl || config.footer?.instagramUrl) && (
                       <span className="material-symbols-outlined text-[16px] text-pink-400">photo_camera</span>
                     )}
-                    {config.footer?.facebookUrl && (
+                    {(socialLinks?.facebookUrl || config.footer?.facebookUrl) && (
                       <span className="material-symbols-outlined text-[16px] text-blue-400">public</span>
                     )}
-                    {config.footer?.tiktokUrl && (
+                    {(socialLinks?.tiktokUrl || config.footer?.tiktokUrl) && (
                       <span className="material-symbols-outlined text-[16px] text-white">videocam</span>
                     )}
                     <span className="text-[10px] font-mono text-slate-500">@queplaneshoy</span>

@@ -356,7 +356,7 @@ export function ShowsManager({ shows, onChange, totalCapacity = 0 }: ShowsManage
                 {/* Fecha de la función */}
                 <div className="space-y-1">
                   <label className="font-bold text-xs text-deep-slate block">
-                    Fecha del Evento *
+                    Fecha del Evento<span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     type="date"
@@ -371,7 +371,7 @@ export function ShowsManager({ shows, onChange, totalCapacity = 0 }: ShowsManage
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="font-bold text-xs text-deep-slate block">
-                      Hora de Inicio *
+                      Hora de Inicio<span className="text-red-500 ml-0.5">*</span>
                     </label>
                     <input
                       type="time"

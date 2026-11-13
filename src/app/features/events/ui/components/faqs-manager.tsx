@@ -32,8 +32,15 @@ export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
     setAnswer('');
   };
 
-  const handleRemoveFaq = (id: string) => {
-    onChange(faqs.filter((f) => f.id !== id));
+  const handleRemoveFaq = (identifier: string, targetIdx?: number) => {
+    onChange(
+      faqs.filter((f, idx) => {
+        if (f.id && identifier) {
+          return f.id !== identifier;
+        }
+        return idx !== targetIdx;
+      }),
+    );
   };
 
   return (
@@ -50,7 +57,9 @@ export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
       {/* Formulario para añadir FAQ */}
       <div className="p-4 bg-surface-gray rounded-2xl border border-surface-variant/60 space-y-3">
         <div className="space-y-1">
-          <label className="text-[11px] font-bold text-deep-slate block">Pregunta *</label>
+          <label className="text-[11px] font-bold text-deep-slate block">
+            Pregunta<span className="text-red-500 ml-0.5">*</span>
+          </label>
           <input
             type="text"
             value={question}
@@ -61,7 +70,9 @@ export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
         </div>
 
         <div className="space-y-1">
-          <label className="text-[11px] font-bold text-deep-slate block">Respuesta *</label>
+          <label className="text-[11px] font-bold text-deep-slate block">
+            Respuesta<span className="text-red-500 ml-0.5">*</span>
+          </label>
           <textarea
             rows={2}
             value={answer}
@@ -86,29 +97,32 @@ export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
       {/* Lista de FAQs */}
       {faqs.length > 0 && (
         <div className="space-y-2">
-          {faqs.map((f, idx) => (
-            <div
-              key={f.id}
-              className="p-3.5 bg-white rounded-xl border border-surface-variant/60 flex items-start justify-between gap-3"
-            >
-              <div className="space-y-1 flex-1">
-                <span className="font-bold text-xs text-deep-slate block">
-                  {idx + 1}. {f.question}
-                </span>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  {f.answer}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleRemoveFaq(f.id)}
-                className="text-platinum-silver hover:text-rose-600 p-1"
-                title="Eliminar pregunta"
+          {faqs.map((f, idx) => {
+            const itemKey = f.id || `faq-item-${idx}-${f.question.slice(0, 10)}`;
+            return (
+              <div
+                key={itemKey}
+                className="p-3.5 bg-white rounded-xl border border-surface-variant/60 flex items-start justify-between gap-3"
               >
-                <span className="material-symbols-outlined text-[16px]">close</span>
-              </button>
-            </div>
-          ))}
+                <div className="space-y-1 flex-1">
+                  <span className="font-bold text-xs text-deep-slate block">
+                    {idx + 1}. {f.question}
+                  </span>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    {f.answer}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFaq(f.id, idx)}
+                  className="text-platinum-silver hover:text-rose-600 p-1 cursor-pointer"
+                  title="Eliminar pregunta"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

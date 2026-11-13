@@ -2,6 +2,10 @@
 
 import React, { useRef, useState } from 'react';
 import { apiClient } from '@/app/common/services/api-client';
+import {
+  compressImage,
+  getDefaultDimensionsForFolder,
+} from '@/app/common/utils/image-compressor';
 
 interface ImageUploaderProps {
   label?: string;
@@ -16,7 +20,7 @@ interface ImageUploaderProps {
 
 export default function ImageUploader({
   label,
-  helpText = 'PNG, JPG o WebP (Máx. 5MB)',
+  helpText = 'PNG, JPG o WebP (Optimización automática)',
   value,
   onChange,
   aspectRatio = 'auto',
@@ -29,17 +33,20 @@ export default function ImageUploader({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
 
   const handleFileProcess = async (file: File) => {
     setErrorMsg(null);
+    setCompressionInfo(null);
+
     if (!file.type.startsWith('image/')) {
       setErrorMsg('El archivo seleccionado no es una imagen válida.');
       return;
     }
 
-    // Límite de 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg('La imagen supera el límite de 5MB.');
+    // Límite generoso de 15MB ya que se comprimirá en cliente antes de subir
+    if (file.size > 15 * 1024 * 1024) {
+      setErrorMsg('La imagen supera el límite máximo de 15MB.');
       return;
     }
 
@@ -56,43 +63,66 @@ export default function ImageUploader({
     setIsUploading(true);
 
     try {
-      // 1. Solicitar URL prefirmada al backend NestJS
+      // 1. Compresión y optimización WebP automática en el cliente (Browser)
+      const folderDimensions = getDefaultDimensionsForFolder(folder);
+      const compressionResult = await compressImage(file, {
+        maxWidth: folderDimensions.maxWidth,
+        maxHeight: folderDimensions.maxHeight,
+        quality: 0.82,
+        targetFormat: 'image/webp',
+      });
+
+      const fileToUpload = compressionResult.file;
+      if (compressionResult.compressionRatio > 0) {
+        setCompressionInfo(`Reducción: ${compressionResult.compressionRatio}%`);
+      }
+
+      // 2. Solicitar URL prefirmada al backend NestJS
       const presignedData = await apiClient.post<{
         uploadUrl: string;
         publicUrl: string;
         key: string;
       }>('/media/presigned-url', {
-        filename: file.name,
-        contentType: file.type || 'image/jpeg',
+        filename: fileToUpload.name,
+        contentType: fileToUpload.type || 'image/webp',
         folder,
       });
 
-      // 2. Subir directamente el archivo a Cloudflare R2 vía PUT
+      // 3. Subir directamente el archivo optimizado a Cloudflare R2 vía PUT
       const uploadResponse = await fetch(presignedData.uploadUrl, {
         method: 'PUT',
         headers: {
-          'Content-Type': file.type || 'image/jpeg',
+          'Content-Type': fileToUpload.type || 'image/webp',
         },
-        body: file,
+        body: fileToUpload,
       });
 
       if (!uploadResponse.ok) {
         throw new Error(
-          `Error al subir a Cloudflare R2 (${uploadResponse.status} ${uploadResponse.statusText})`
+          `Error al subir la imagen (${uploadResponse.status} ${uploadResponse.statusText})`
         );
       }
 
-      // 3. Notificar la URL pública definitiva de Cloudflare R2
+      // 4. Si ya existía una imagen anterior en R2 para este mismo slot, solicitar su eliminación
+      if (value && value !== presignedData.publicUrl) {
+        apiClient
+          .delete('/media', { params: { url: value } })
+          .catch((delErr) =>
+            console.warn('[ImageUploader] No se pudo purgar la imagen anterior:', delErr)
+          );
+      }
+
+      // 5. Notificar la URL pública definitiva
       onChange(presignedData.publicUrl);
       setUploadPreview(null);
     } catch (err: any) {
-      console.error('Error al subir imagen:', err);
+      console.error('Error al procesar/subir imagen:', err);
       const isConnectionError =
         err?.message?.includes('Failed to fetch') || err?.name === 'TypeError';
       setErrorMsg(
         isConnectionError
-          ? 'No se pudo conectar con el servidor backend (NestJS en http://localhost:3001). Verifica que el backend esté ejecutándose con npm run start:dev.'
-          : (err.message || 'Ocurrió un error al cargar la imagen a Cloudflare R2.')
+          ? 'No se pudo conectar con el servidor backend (NestJS en http://localhost:3001). Verifica que el backend esté ejecutándose.'
+          : (err.message || 'Ocurrió un error al cargar la imagen.')
       );
       setUploadPreview(null);
     } finally {
@@ -128,8 +158,19 @@ export default function ImageUploader({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Si había una imagen cargada previamente, purgarla de Cloudflare R2
+    if (value) {
+      apiClient
+        .delete('/media', { params: { url: value } })
+        .catch((delErr) =>
+          console.warn('[ImageUploader] Error al purgar imagen eliminada de R2:', delErr)
+        );
+    }
+
     onChange('');
     setUploadPreview(null);
+    setCompressionInfo(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -179,11 +220,19 @@ export default function ImageUploader({
             className="w-full h-full object-cover"
           />
 
-          {/* Spinner de carga si está subiendo a Cloudflare R2 */}
+          {/* Spinner de carga si está subiendo */}
           {isUploading && (
             <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white z-20">
               <span className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span className="text-xs font-bold tracking-wide">Subiendo a Cloudflare R2...</span>
+              <span className="text-xs font-bold tracking-wide">Cargando...</span>
+            </div>
+          )}
+
+          {/* Badge de optimización WebP */}
+          {compressionInfo && !isUploading && (
+            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-emerald-600/90 text-white text-[10px] font-bold shadow flex items-center gap-1 z-10 pointer-events-none">
+              <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
+              {compressionInfo}
             </div>
           )}
 
@@ -228,7 +277,7 @@ export default function ImageUploader({
           {isUploading ? (
             <div className="flex flex-col items-center justify-center gap-2 text-electric-indigo">
               <span className="w-6 h-6 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin"></span>
-              <span className="text-xs font-bold">Subiendo a Cloudflare R2...</span>
+              <span className="text-xs font-bold">Cargando...</span>
             </div>
           ) : (
             <>

@@ -35,6 +35,8 @@ interface TicketTier {
   badgeColor: string;
   description: string;
   price: number;
+  serviceFee?: number;
+  feeIncluded?: boolean;
   available: boolean;
   quantity: number;
   colorHex: string;
@@ -248,6 +250,13 @@ export default function PurchaseFlowPageComponent() {
         if (data.zones && data.zones.length > 0) {
           const mappedTiers: TicketTier[] = data.zones.map((zone) => {
             const isTarget = zoneId ? (zone.id === zoneId || zone.publicUuid === zoneId) : false;
+            const rawPrice = Number(zone.currentPrice) || 0;
+            const zoneFee = Math.max(0, Number(zone.serviceFee) || 0);
+            const isFeeIncluded = Boolean(zone.feeIncluded);
+            const buyerUnitPrice = isFeeIncluded
+              ? rawPrice
+              : Math.round((rawPrice + zoneFee) * 100) / 100;
+
             return {
               id: zone.publicUuid || zone.id,
               name: zone.name,
@@ -257,7 +266,9 @@ export default function PurchaseFlowPageComponent() {
                 : "bg-emerald-100 text-emerald-800",
               description:
                 zone.benefits || `Acceso oficial garantizado para la localidad ${zone.name}`,
-              price: Number(zone.currentPrice),
+              price: buyerUnitPrice,
+              serviceFee: zoneFee,
+              feeIncluded: isFeeIncluded,
               available: !zone.isSoldOut,
               quantity: isTarget && !zone.isSoldOut ? 1 : 0,
               colorHex: zone.color || "#4F46E5",

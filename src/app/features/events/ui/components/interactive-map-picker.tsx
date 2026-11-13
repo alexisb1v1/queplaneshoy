@@ -102,10 +102,27 @@ export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerPr
 
       mapInstanceRef.current = map;
       markerRef.current = marker;
+
+      setTimeout(() => {
+        if (isMounted) map.invalidateSize();
+      }, 150);
     });
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+      observer = new ResizeObserver(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      });
+      observer.observe(mapContainerRef.current);
+    }
 
     return () => {
       isMounted = false;
+      if (observer) {
+        observer.disconnect();
+      }
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -159,8 +176,11 @@ export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerPr
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex-1 space-y-1">
           <label className="text-xs font-bold text-deep-slate block">
-            Coordenadas GPS (Latitud, Longitud) *
+            Coordenadas GPS (Latitud, Longitud)<span className="text-red-500 ml-0.5">*</span>
           </label>
+          <p className="text-[11px] text-slate-500">
+            Se utiliza para mostrar la ubicación exacta del evento en el mapa interactivo de la ficha pública.
+          </p>
           <div className="flex items-center gap-2">
             <input
               type="text"

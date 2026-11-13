@@ -93,7 +93,7 @@ export function UbigeoSelector({ value, onChange }: UbigeoSelectorProps) {
         {/* Departamento */}
         <div className="space-y-1">
           <label className="text-xs font-bold text-deep-slate block">
-            Departamento *
+            Departamento<span className="text-red-500 ml-0.5">*</span>
           </label>
           <select
             value={selectedDep}
@@ -112,7 +112,7 @@ export function UbigeoSelector({ value, onChange }: UbigeoSelectorProps) {
         {/* Provincia */}
         <div className="space-y-1">
           <label className="text-xs font-bold text-deep-slate block">
-            Provincia *
+            Provincia<span className="text-red-500 ml-0.5">*</span>
           </label>
           <select
             value={selectedProv}
@@ -132,7 +132,7 @@ export function UbigeoSelector({ value, onChange }: UbigeoSelectorProps) {
         {/* Distrito */}
         <div className="space-y-1">
           <label className="text-xs font-bold text-deep-slate block">
-            Distrito *
+            Distrito<span className="text-red-500 ml-0.5">*</span>
           </label>
           <select
             value={selectedDist}

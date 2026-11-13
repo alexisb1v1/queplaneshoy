@@ -41,6 +41,18 @@ export interface EventDto {
   has_landing_page?: boolean;
   landingConfig?: Record<string, any>;
   landing_config?: Record<string, any>;
+  promoVideoUrl?: string | null;
+  promo_video_url?: string | null;
+  socialLinks?: {
+    instagramUrl?: string | null;
+    facebookUrl?: string | null;
+    tiktokUrl?: string | null;
+  } | null;
+  social_links?: {
+    instagramUrl?: string | null;
+    facebookUrl?: string | null;
+    tiktokUrl?: string | null;
+  } | null;
   price?: number;
   capacity?: number;
   status?: string;
@@ -78,6 +90,12 @@ export interface CreateEventParams {
   faqs?: Array<{ question: string; answer: string }>;
   hasLandingPage?: boolean;
   landingConfig?: Record<string, any>;
+  promoVideoUrl?: string;
+  socialLinks?: {
+    instagramUrl?: string;
+    facebookUrl?: string;
+    tiktokUrl?: string;
+  };
   price?: number;
   capacity?: number;
   bannerUrl?: string;
@@ -95,6 +113,7 @@ export interface CreateEventParams {
     capacity: number;
     regularPrice: number;
     serviceFee?: number;
+    feeIncluded?: boolean;
     benefits?: string;
     maxTicketsPerOrder?: number;
     salesStartAt?: string;

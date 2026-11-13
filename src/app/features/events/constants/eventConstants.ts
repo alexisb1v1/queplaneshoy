@@ -78,3 +78,11 @@ export const slugify = (text?: string): string => {
     .replace(/^-+|-+$/g, '');
 };
 
+export {
+  QPH_FEE_RULES,
+  calculatePlatformFee,
+  calculateQphFee,
+  evaluateTicketPricing,
+} from '../services/platform-fee.service';
+
+
