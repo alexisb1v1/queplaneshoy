@@ -4,6 +4,7 @@ import { LandingPageContainer } from "@/app/features/events/ui/landing/landing-p
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ previewTemp?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -19,8 +20,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function EventLandingRoute({ params }: PageProps) {
+export default async function EventLandingRoute({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  return <LandingPageContainer slug={slug} />;
+  const { previewTemp } = await searchParams;
+  return <LandingPageContainer slug={slug} previewTemp={previewTemp} />;
 }
 

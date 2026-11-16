@@ -16,6 +16,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Simular precarga suave de la experiencia (500ms)
   useEffect(() => {
@@ -55,16 +56,38 @@ export function EventLandingView({ event }: EventLandingViewProps) {
     footer.footerImageUrl && footer.footerImageUrl.trim().length > 0
   );
 
-  // Estilo de fondo personalizado del promotor
+  // Estilo de fondo personalizado del promotor (color sólido, patrón repetido o imagen fija full-width/height)
+  const isFixedBg = theme.backgroundType === "fixed" && Boolean(theme.backgroundPatternUrl);
+  const isPatternBg = theme.backgroundType === "pattern" && Boolean(theme.backgroundPatternUrl);
+
   const backgroundStyle: React.CSSProperties = {
     backgroundColor: theme.backgroundColor || "#0F172A",
-    ...(theme.backgroundType === "pattern" && theme.backgroundPatternUrl
+    ...(isFixedBg
       ? {
-          backgroundImage: `url(${theme.backgroundPatternUrl})`,
+          backgroundImage: `url("${theme.backgroundPatternUrl}")`,
+          backgroundAttachment: "fixed",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }
+      : isPatternBg
+      ? {
+          backgroundImage: `url("${theme.backgroundPatternUrl}")`,
           backgroundRepeat: "repeat",
         }
       : {}),
   };
+
+  const zoneMapImage = event.zoneMapUrl || null;
+  const bodyPromoImage =
+    body.bodyImageUrl ||
+    (event.landingConfig?.body as Record<string, any>)?.bodyImageUrl ||
+    null;
+
+  const heroImage =
+    header.headerImageUrl ||
+    event.bannerUrl ||
+    null;
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -120,6 +143,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
       <LandingHeader
         primaryColor={theme.primaryColor}
         ctaText={header.ctaText || "Comprar Entradas"}
+        hasTermsAndConditions={true}
       />
 
       {/* 3. Modal de Video Teaser (YouTube Lightbox) */}
@@ -135,128 +159,45 @@ export function EventLandingView({ event }: EventLandingViewProps) {
         className="min-h-screen text-white pt-16 flex flex-col font-sans transition-colors duration-500"
       >
         {/* ==============================================================
-            SECCIÓN 1: HERO CINEMÁTICO FULL-WIDTH (Edge-to-Edge)
+            SECCIÓN 1: HERO CINEMÁTICO FULL-WIDTH LIMPIO (Sin fondo negro forzado)
+            Permite transparencias PNG para resaltar el fondo personalizado
            ============================================================== */}
         <section
           id="landing-inicio"
-          className="relative w-full overflow-hidden bg-deep-slate text-white"
+          className="relative w-full overflow-hidden bg-transparent flex flex-col justify-end min-h-[50vh] sm:min-h-[65vh] lg:min-h-[75vh]"
         >
-          {/* Fondo panorámico con la imagen oficial o afiche */}
-          {header.headerImageUrl && (
-            <div
-              className="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-1000 scale-105 opacity-35 blur-[1px]"
-              style={{ backgroundImage: `url("${header.headerImageUrl}")` }}
-            />
-          )}
+          {heroImage ? (
+            <div className="relative w-full h-full min-h-[50vh] sm:min-h-[65vh] lg:min-h-[75vh] flex items-center justify-center">
+              {/* Imagen Oficial (Soporta transparencias PNG sobre el background) */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={heroImage}
+                alt={event.name}
+                className="w-full h-full object-contain object-center max-h-[85vh]"
+              />
 
-          {/* Gradientes multicapa cinemáticos para legibilidad superior */}
-          <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/85 to-black/60" />
-          <div className="absolute inset-0 bg-gradient-to-r from-deep-slate via-deep-slate/80 to-transparent" />
-
-          {/* Contenedor del Hero */}
-          <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 lg:pt-16 lg:pb-24">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-              
-              {/* Afiche Oficial Nítido (Columna Izquierda en Desktop) */}
-              {header.headerImageUrl && (
-                <div className="lg:col-span-4 flex justify-center">
-                  <div className="w-full max-w-[280px] sm:max-w-xs lg:max-w-none relative rounded-3xl overflow-hidden shadow-2xl shadow-black/90 border border-white/20 aspect-[3/4] bg-black/60 group">
-                    <img
-                      src={header.headerImageUrl}
-                      alt={header.title || event.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-
-                    {/* Botón flotante para ver Teaser Oficial */}
-                    {header.videoTeaserUrl && (
-                      <button
-                        onClick={() => setIsVideoOpen(true)}
-                        className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/80 hover:bg-black text-white border-2 border-white/80 flex items-center justify-center transition-all hover:scale-110 shadow-2xl cursor-pointer group/btn"
-                        title="Reproducir Teaser Oficial"
-                      >
-                        <span
-                          style={{ color: theme.primaryColor }}
-                          className="material-symbols-outlined text-4xl ml-1 transition-transform group-hover/btn:scale-110"
-                        >
-                          play_arrow
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                </div>
+              {/* Botón Flotante para Teaser / Video si existe */}
+              {header.videoTeaserUrl && (
+                <button
+                  onClick={() => setIsVideoOpen(true)}
+                  className="absolute bottom-16 right-6 sm:right-10 z-20 flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-black/75 hover:bg-black text-white font-bold text-xs uppercase tracking-wider backdrop-blur-md border border-white/20 transition-all hover:scale-105 shadow-xl cursor-pointer"
+                  title="Reproducir Video Promocional"
+                >
+                  <span className="material-symbols-outlined text-lg text-vip-gold">play_circle</span>
+                  <span>Ver Video Teaser</span>
+                </button>
               )}
-
-              {/* Título, Badges y Botón de Compra Rápida (Columna Derecha) */}
-              <div
-                className={`${
-                  header.headerImageUrl ? "lg:col-span-8" : "lg:col-span-12 text-center"
-                } flex flex-col items-center lg:items-start`}
-              >
-                {/* Badges superiores de urgencia */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 mb-4">
-                  <span
-                    style={{ backgroundColor: `${theme.primaryColor}30`, color: theme.primaryColor }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border border-white/10 shadow-sm"
-                  >
-                    <span className="material-symbols-outlined text-sm">stars</span>
-                    <span>{header.subtitle || "EXPERIENCIA EXCLUSIVA"}</span>
-                  </span>
-
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider border border-white/10">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Venta Oficial en Vivo</span>
-                  </span>
-                </div>
-
-                {/* Título Principal */}
-                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white uppercase leading-none mb-4 drop-shadow-md">
-                  {header.title || event.name}
-                </h1>
-
-                {/* Resumen conciso (máximo 2 líneas, sin párrafos pesados) */}
-                {body.aboutText && (
-                  <p className="text-sm sm:text-base text-slate-300 max-w-2xl mb-6 line-clamp-2 leading-relaxed">
-                    {body.aboutText}
-                  </p>
-                )}
-
-                {/* Botones de Acción Inmediata */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 w-full sm:w-auto">
-                  <button
-                    onClick={() => scrollToSection("zonas-entradas")}
-                    style={{ backgroundColor: theme.primaryColor }}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-white font-extrabold text-sm uppercase tracking-wider hover:opacity-95 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-black/50 cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-xl">confirmation_number</span>
-                    <span>{header.ctaText || "Comprar Entradas Ahora"}</span>
-                  </button>
-
-                  {header.videoTeaserUrl && (
-                    <button
-                      onClick={() => setIsVideoOpen(true)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md font-bold text-xs uppercase tracking-wider border border-white/10 transition-all cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-lg text-vip-gold">play_circle</span>
-                      <span>Ver Teaser</span>
-                    </button>
-                  )}
-
-                  {minPrice > 0 && (
-                    <div className="flex items-center gap-2 text-slate-300 py-2 ml-0 sm:ml-2">
-                      <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
-                        Desde
-                      </span>
-                      <span className="text-sm font-extrabold text-white bg-white/15 px-3 py-1.5 rounded-lg backdrop-blur-md border border-white/10">
-                        S/. {Number(minPrice).toFixed(2)} PEN
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-              </div>
-
             </div>
-          </div>
+          ) : (
+            <div className="w-full py-28 text-center bg-transparent flex flex-col items-center justify-center">
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+                Cartelera Oficial
+              </span>
+              <h1 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tight">
+                {event.name}
+              </h1>
+            </div>
+          )}
         </section>
 
         {/* ==============================================================
@@ -264,120 +205,246 @@ export function EventLandingView({ event }: EventLandingViewProps) {
             Resumen visual instantáneo de los 4 datos clave para escaneo rápido
            ============================================================== */}
         <section className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10">
-          <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-5 sm:p-6 lg:p-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden divide-y divide-white/10">
             
-            {/* Métrica 1: Fecha & Hora */}
-            <div className="flex items-center gap-3.5">
-              <div
-                style={{ backgroundColor: `${theme.primaryColor}20`, color: theme.primaryColor }}
-                className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-white/5"
-              >
-                <span className="material-symbols-outlined text-2xl">calendar_today</span>
-              </div>
-              <div>
-                <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
-                  Fecha & Horario
-                </span>
-                <p className="font-extrabold text-sm sm:text-base text-white mt-0.5 capitalize">
-                  {formattedShowDate}
-                </p>
-                {formattedShowTime && (
-                  <p className="text-xs text-slate-400">Apertura: {formattedShowTime} hrs</p>
-                )}
-              </div>
-            </div>
-
-            {/* Métrica 2: Lugar del Recinto */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0 border border-white/5">
-                <span className="material-symbols-outlined text-2xl">location_on</span>
-              </div>
-              <div>
-                <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
-                  Lugar del Evento
-                </span>
-                <p className="font-extrabold text-sm sm:text-base text-white mt-0.5">
-                  {event.venue || "Recinto Oficial"}
-                </p>
-                <p className="text-xs text-slate-400 truncate max-w-[180px]">
-                  {event.city}
-                </p>
-              </div>
-            </div>
-
-            {/* Métrica 3: Entradas Desde */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 border border-white/5">
-                <span className="material-symbols-outlined text-2xl">payments</span>
-              </div>
-              <div>
-                <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
-                  Entradas Desde
-                </span>
-                <p
-                  style={{ color: theme.primaryColor }}
-                  className="font-extrabold text-base sm:text-lg mt-0.5"
+            {/* Fila 1: Resumen de las 4 Métricas Clave */}
+            <div className="p-5 sm:p-6 lg:p-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              
+              {/* Métrica 1: Fecha & Hora */}
+              <div className="flex items-center gap-3.5">
+                <div
+                  style={{ backgroundColor: `${theme.primaryColor}20`, color: theme.primaryColor }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-white/5"
                 >
-                  S/. {Number(minPrice).toFixed(2)}
-                </p>
-                <p className="text-xs text-slate-400">Venta Oficial QPH</p>
+                  <span className="material-symbols-outlined text-2xl">calendar_today</span>
+                </div>
+                <div>
+                  <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
+                    Fecha & Horario
+                  </span>
+                  <p className="font-extrabold text-sm sm:text-base text-white mt-0.5 capitalize">
+                    {formattedShowDate}
+                  </p>
+                  {formattedShowTime && (
+                    <p className="text-xs text-slate-400">Apertura: {formattedShowTime} hrs</p>
+                  )}
+                </div>
               </div>
+
+              {/* Métrica 2: Lugar del Recinto */}
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0 border border-white/5">
+                  <span className="material-symbols-outlined text-2xl">location_on</span>
+                </div>
+                <div>
+                  <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
+                    Lugar del Evento
+                  </span>
+                  <p className="font-extrabold text-sm sm:text-base text-white mt-0.5">
+                    {event.venue || "Recinto Oficial"}
+                  </p>
+                  <p className="text-xs text-slate-400 truncate max-w-[180px]">
+                    {event.city}
+                  </p>
+                </div>
+              </div>
+
+              {/* Métrica 3: Restricción de Acceso / Edad */}
+              <div className="flex items-center gap-3.5">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
+                    ageBadge.variant === "green"
+                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
+                      : ageBadge.variant === "amber"
+                      ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
+                      : ageBadge.variant === "indigo"
+                      ? "bg-electric-indigo/20 text-electric-indigo border-electric-indigo/30"
+                      : "bg-white/10 text-white border-white/10"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-2xl">
+                    {ageBadge.icon || "verified_user"}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
+                    Restricción de Acceso
+                  </span>
+                  <p className="font-extrabold text-sm sm:text-base text-white mt-0.5">
+                    {ageBadge.label}
+                  </p>
+                  <p className="text-xs text-slate-400 truncate max-w-[180px]">
+                    {ageBadge.description || "Ingreso con DNI obligatorio"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Métrica 4: Entradas Desde */}
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 border border-white/5">
+                  <span className="material-symbols-outlined text-2xl">payments</span>
+                </div>
+                <div>
+                  <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
+                    Entradas Desde
+                  </span>
+                  <p
+                    style={{ color: theme.primaryColor }}
+                    className="font-extrabold text-base sm:text-lg mt-0.5"
+                  >
+                    {minPrice > 0 ? `S/. ${Number(minPrice).toFixed(2)}` : "Entrada Oficial"}
+                  </p>
+                  <p className="text-xs text-slate-400">Emisión Inmediata QPH</p>
+                </div>
+              </div>
+
             </div>
 
-            {/* Métrica 4: Control de Ingreso Digital */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 border border-white/5">
-                <span className="material-symbols-outlined text-2xl">qr_code_2</span>
-              </div>
-              <div>
-                <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
-                  Control de Ingreso
+            {/* Fila 2: Descripción / Detalles del Show (Pegado abajo de la barra, mismo ancho, mismo color) */}
+            {body.aboutText && (
+              <div className="p-6 sm:p-8 space-y-2 text-white">
+                <span
+                  style={{ color: theme.primaryColor }}
+                  className="text-xs font-black uppercase tracking-widest block"
+                >
+                  Detalles del Show
                 </span>
-                <p className="font-extrabold text-sm sm:text-base text-white mt-0.5">
-                  DNI + E-Ticket QR
-                </p>
-                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">verified_user</span>
-                  Acceso Criptográfico Ed25519
+                <p className="text-sm sm:text-base text-slate-200 leading-relaxed whitespace-pre-line">
+                  {body.aboutText}
                 </p>
               </div>
-            </div>
+            )}
 
           </div>
         </section>
 
         {/* ==============================================================
-            SECCIÓN 3: EL NÚCLEO TRANSACCIONAL (#zonas-entradas)
-            Zonas de compra directa + Croquis oficial lado a lado
+            SECCIÓN: ATRACTIVOS Y BANNER PUBLICITARIO DEL BODY
+           ============================================================== */}
+        {(highlights.length > 0 || bodyPromoImage) && (
+          <section className="w-full pt-4 pb-8 space-y-6">
+            {/* 1. Atractivos del Show en HORIZONTAL (Solo visibles si tienen valor) */}
+            {highlights.length > 0 && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div
+                  className={`grid gap-3.5 ${
+                    highlights.length === 1
+                      ? "grid-cols-1"
+                      : highlights.length === 2
+                      ? "grid-cols-1 sm:grid-cols-2"
+                      : "grid-cols-1 sm:grid-cols-3"
+                  }`}
+                >
+                  {highlights.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-2xl bg-zinc-900/90 border border-white/10 backdrop-blur-md flex items-center gap-3 shadow-lg"
+                    >
+                      <span
+                        style={{ color: theme.primaryColor }}
+                        className="material-symbols-outlined text-xl shrink-0"
+                      >
+                        check_circle
+                      </span>
+                      <span className="text-xs sm:text-sm font-bold text-white/95 truncate">
+                        {item}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 2. Banner Publicitario Full-Width */}
+            {bodyPromoImage && (
+              <div className="w-full overflow-hidden shadow-2xl flex justify-center pt-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bodyPromoImage}
+                  alt={event.name}
+                  className="w-full h-auto object-cover max-h-[85vh]"
+                />
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ==============================================================
+            SECCIÓN 3: MAPA / CROQUIS OFICIAL DEL ESCENARIO
+            Contenido dentro de tarjeta negra con letras blancas nítidas
+           ============================================================== */}
+        {zoneMapImage && (
+          <section
+            id="mapa-zonas"
+            className="w-full py-10 lg:py-14 scroll-mt-20"
+          >
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="w-full rounded-3xl bg-zinc-950/95 backdrop-blur-xl border border-white/15 shadow-2xl p-6 sm:p-10 flex flex-col items-center text-white">
+                <div className="text-center max-w-2xl mx-auto mb-8">
+                  <span
+                    style={{ color: theme.primaryColor }}
+                    className="text-xs font-black uppercase tracking-widest block mb-1"
+                  >
+                    Distribución Oficial
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white flex items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-2xl" style={{ color: theme.primaryColor }}>
+                      stadium
+                    </span>
+                    <span>Plano del Escenario y Zonas</span>
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                    Revisa la ubicación de cada sector frente al escenario antes de elegir tu entrada.
+                  </p>
+                </div>
+
+                {/* Contenedor Completo del Plano */}
+                <div className="w-full rounded-2xl overflow-hidden border border-white/10 bg-black/60 p-2 sm:p-4 flex flex-col items-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={zoneMapImage}
+                    alt="Plano oficial de zonas y escenario"
+                    className="w-full h-auto object-contain max-h-[550px] rounded-xl"
+                  />
+                  <p className="text-[11px] text-slate-400 text-center mt-3">
+                    Plano referencial sujeto a aforo oficial autorizado por las autoridades locales.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ==============================================================
+            SECCIÓN 4: TARIFAS Y LOCALIDADES OFICIALES (#zonas-entradas)
+            Contenido dentro de tarjeta negra con letras blancas nítidas
            ============================================================== */}
         <section
           id="zonas-entradas"
-          className="w-full py-14 lg:py-16 scroll-mt-20"
+          className="w-full py-10 lg:py-14 scroll-mt-20"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            {/* Encabezado Transaccional */}
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <span
-                style={{ color: theme.primaryColor }}
-                className="text-xs font-black uppercase tracking-widest block mb-1"
-              >
-                Tarifas y Localidades Oficiales
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white">
-                Selecciona tu Zona
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                Elige tu sector y asegura tu acceso directo sin intermediarios.
-              </p>
-            </div>
-
-            {/* Layout de Zonas y Croquis lado a lado */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="w-full rounded-3xl bg-zinc-950/95 backdrop-blur-xl border border-white/15 shadow-2xl p-6 sm:p-10 text-white">
               
-              {/* Columna Izquierda: Listado de Localidades con Compra Directa */}
-              <div className={body.bodyImageUrl ? "lg:col-span-7 space-y-3.5" : "lg:col-span-12 max-w-4xl mx-auto w-full space-y-3.5"}>
-                <div className="flex items-center justify-between pb-2 border-b border-white/10 text-xs font-bold uppercase tracking-wider text-slate-400">
+              {/* Encabezado Transaccional */}
+              <div className="text-center max-w-2xl mx-auto mb-10">
+                <span
+                  style={{ color: theme.primaryColor }}
+                  className="text-xs font-black uppercase tracking-widest block mb-1"
+                >
+                  Venta Oficial en Línea
+                </span>
+                <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white">
+                  Selecciona tu Entrada
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                  Elige tu sector y asegura tu acceso directo con emisión digital inmediata.
+                </p>
+              </div>
+
+              {/* Listado de Localidades */}
+              <div className="w-full space-y-3.5">
+                <div className="flex items-center justify-between pb-2 border-b border-white/15 text-xs font-bold uppercase tracking-wider text-slate-300">
                   <span>Sectores Habilitados</span>
                   <span className="text-emerald-400 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[14px]">lock</span>
@@ -388,7 +455,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                 {(event.zones || []).map((zone) => (
                   <div
                     key={zone.id}
-                    className="p-5 sm:p-6 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/80 border border-white/10 hover:border-white/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg"
+                    className="p-5 sm:p-6 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800/90 border border-white/10 hover:border-white/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg"
                   >
                     {/* Info de la Zona */}
                     <div className="flex items-center gap-4">
@@ -401,7 +468,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                           <h3 className="font-extrabold text-base sm:text-lg text-white uppercase tracking-tight">
                             {zone.name}
                           </h3>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white/90 border border-white/10">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/15">
                             {zone.activeTierName}
                           </span>
                           {zone.remainingTickets <= 30 && zone.remainingTickets > 0 && (
@@ -409,15 +476,20 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                               Últimos {zone.remainingTickets} cupos
                             </span>
                           )}
+                          {zone.isSoldOut && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-zinc-700 text-zinc-300 border border-zinc-600">
+                              Agotado
+                            </span>
+                          )}
                         </div>
                         {zone.benefits && (
-                          <p className="text-xs text-slate-400 line-clamp-1">{zone.benefits}</p>
+                          <p className="text-xs text-slate-300 line-clamp-1">{zone.benefits}</p>
                         )}
                       </div>
                     </div>
 
                     {/* Precio y Botón de Compra Directa */}
-                    <div className="flex items-center justify-between sm:justify-end gap-5 border-t sm:border-t-0 pt-3 sm:pt-0 border-white/5 shrink-0">
+                    <div className="flex items-center justify-between sm:justify-end gap-5 border-t sm:border-t-0 pt-3 sm:pt-0 border-white/10 shrink-0">
                       <div className="text-left sm:text-right">
                         <span className="text-[10px] text-slate-400 uppercase font-bold block">
                           Precio Oficial
@@ -427,146 +499,186 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                         </span>
                       </div>
 
-                      <Link
-                        href={`/checkout?eventId=${event.publicUuid || event.slug || event.id}&zoneId=${zone.publicUuid || zone.id}`}
-                        style={{ backgroundColor: theme.primaryColor }}
-                        className="px-5 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-wide hover:opacity-95 hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-1.5"
-                      >
-                        <span>Comprar</span>
-                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                      </Link>
+                      {zone.isSoldOut ? (
+                        <button
+                          disabled
+                          className="px-6 py-3 rounded-xl bg-zinc-800 text-zinc-500 font-extrabold text-xs uppercase tracking-wide cursor-not-allowed border border-white/5"
+                        >
+                          Agotado
+                        </button>
+                      ) : (
+                        <Link
+                          href={`/checkout?eventId=${event.publicUuid || event.slug || event.id}&zoneId=${zone.publicUuid || zone.id}`}
+                          style={{ backgroundColor: theme.primaryColor }}
+                          className="px-6 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-wide hover:opacity-95 hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span>Comprar</span>
+                          <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Columna Derecha: Croquis Oficial del Escenario */}
-              {body.bodyImageUrl && (
-                <div className="lg:col-span-5 bg-zinc-900/80 p-5 sm:p-6 rounded-2xl border border-white/10 flex flex-col items-center shadow-lg">
-                  <div className="w-full py-2 px-3 rounded-lg bg-black/60 text-white text-center font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 mb-4 border border-white/10">
-                    <span
-                      style={{ color: theme.primaryColor }}
-                      className="material-symbols-outlined text-[16px]"
-                    >
-                      stadium
-                    </span>
-                    <span>Distribución del Escenario</span>
-                  </div>
-
-                  {/* Imagen del Croquis (plano de zonas) */}
-                  <div className="w-full rounded-xl overflow-hidden border border-white/10 shadow-inner bg-black/50 p-2">
-                    <img
-                      src={body.bodyImageUrl}
-                      alt="Croquis oficial de zonas"
-                      className="w-full h-auto object-contain max-h-[380px] mx-auto rounded-lg"
-                    />
-                  </div>
-
-                  <p className="text-[11px] text-slate-400 text-center mt-3">
-                    Plano referencial sujeto a aforo oficial autorizado por las autoridades locales.
-                  </p>
-                </div>
-              )}
-
             </div>
           </div>
         </section>
 
         {/* ==============================================================
-            SECCIÓN 4: HIGHLIGHTS COMPACTOS & COMPARTIR ENLACE
-            Viñetas rápidas de 1 línea (cero texto basura)
-           ============================================================== */}
-        <section className="w-full py-10 bg-black/40 border-t border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            
-            {/* Highlights en 3 columnas compactas */}
-            {highlights.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {highlights.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-xl bg-zinc-900/60 border border-white/10 flex items-center gap-3"
-                  >
-                    <span
-                      style={{ color: theme.primaryColor }}
-                      className="material-symbols-outlined text-xl shrink-0"
-                    >
-                      check_circle
-                    </span>
-                    <span className="text-xs sm:text-sm font-bold text-white/95 truncate">
-                      {item}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Barra de 1 Clic para Copiar Enlace Oficial */}
-            <div className="w-full max-w-full overflow-hidden p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
-              <div className="w-full min-w-0 flex-1 text-center sm:text-left space-y-1.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Enlace Oficial del Espectáculo
-                </span>
-                <p className="font-mono text-xs text-white/90 break-all select-all leading-relaxed bg-black/40 px-3 py-2 rounded-lg border border-white/5">
-                  queplaneshoy.com/e/{event.slug}
-                </p>
-              </div>
-
-              <button
-                onClick={handleCopyLink}
-                className="w-full sm:w-auto shrink-0 justify-center px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer border border-white/10 active:scale-95 shadow-sm"
-              >
-                <span className="material-symbols-outlined text-base">
-                  {isCopied ? "done" : "content_copy"}
-                </span>
-                <span>{isCopied ? "¡Enlace Copiado!" : "Copiar Enlace"}</span>
-              </button>
-            </div>
-
-          </div>
-        </section>
-
-        {/* ==============================================================
-            SECCIÓN 5: LEGALES Y RESTRICCIONES (#landing-legales)
+            SECCIÓN 5: TÉRMINOS, POLÍTICAS Y BASES LEGALES (#landing-legales)
+            Tarjeta destacada de alto contraste y legibilidad
            ============================================================== */}
         <section
           id="landing-legales"
-          className="w-full py-8 bg-black/80 border-t border-white/10 text-xs text-slate-300"
+          className="w-full py-8 lg:py-12 bg-transparent scroll-mt-20"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Recuadro / Badge Amigable de Restricción */}
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-              <span className="text-slate-400 font-medium">Restricción de acceso:</span>
-              <div
-                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold text-xs border shadow-sm ${
-                  ageBadge.variant === "green"
-                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-                    : ageBadge.variant === "amber"
-                    ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                    : ageBadge.variant === "indigo"
-                    ? "bg-electric-indigo/20 text-indigo-200 border-electric-indigo/40"
-                    : "bg-white/10 text-white/90 border-white/20"
-                }`}
-                title={ageBadge.description}
-              >
-                <span className="material-symbols-outlined text-base">
-                  {ageBadge.icon}
-                </span>
-                <span>{ageBadge.label}</span>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="p-6 sm:p-8 rounded-3xl bg-zinc-950/95 backdrop-blur-xl border border-white/15 shadow-2xl space-y-5 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+                <div>
+                  <span
+                    style={{ color: theme.primaryColor }}
+                    className="text-[11px] font-black uppercase tracking-widest block mb-1"
+                  >
+                    Normativa y Seguridad
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-electric-indigo text-2xl">
+                      gavel
+                    </span>
+                    <span>Términos y Condiciones del Espectáculo</span>
+                  </h3>
+                </div>
+
+                {event.termsAndConditionsUrl && (
+                  <a
+                    href={event.termsAndConditionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-electric-indigo/20 hover:bg-electric-indigo/30 border border-electric-indigo/40 text-white font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shrink-0 self-start sm:self-auto"
+                  >
+                    <span className="material-symbols-outlined text-base text-electric-indigo">description</span>
+                    <span>Ver Bases Legales Oficiales (PDF)</span>
+                    <span className="material-symbols-outlined text-xs">open_in_new</span>
+                  </a>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-300">
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <span className="font-bold text-white flex items-center gap-1.5 text-xs">
+                    <span className="material-symbols-outlined text-emerald-400 text-base">verified_user</span>
+                    Entradas Digitales Nominativas
+                  </span>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Cada boleto cuenta con código QR criptográfico anti-clonación. El acceso es personal y puede requerir presentación de DNI/Pasaporte en la puerta.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <span className="font-bold text-white flex items-center gap-1.5 text-xs">
+                    <span className="material-symbols-outlined text-amber-400 text-base">info</span>
+                    Restricción de Acceso: {ageBadge.label}
+                  </span>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {ageBadge.description || "Ingreso con DNI obligatorio según disposición del recinto y normativa de eventos masivos."}
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <span className="font-bold text-white flex items-center gap-1.5 text-xs">
+                    <span className="material-symbols-outlined text-electric-indigo text-base">credit_card</span>
+                    Compras y Emisión Garantizada
+                  </span>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Procesamiento seguro mediante pasarela certificada PCI-DSS con emisión inmediata de comprobante electrónico a tu correo registrado.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
+                  <span className="font-bold text-white flex items-center gap-1.5 text-xs">
+                    <span className="material-symbols-outlined text-slate-400 text-base">policy</span>
+                    Política de Cambios y Devoluciones
+                  </span>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    No se admiten cancelaciones voluntarias. En caso de postergación o cancelación oficial del espectáculo, el promotor informará el cronograma de devolución.
+                  </p>
+                </div>
+              </div>
+
+              {/* Bloque de Preguntas Frecuentes (FAQs) */}
+              <div className="pt-6 border-t border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-electric-indigo text-xl">help</span>
+                    <h4 className="text-sm sm:text-base font-bold text-white">Preguntas Frecuentes (FAQs)</h4>
+                  </div>
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+                    Dudas Rápidas
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {((event.faqs && event.faqs.length > 0)
+                    ? event.faqs
+                    : [
+                        {
+                          question: "¿Cómo y cuándo recibo mis entradas digitales?",
+                          answer:
+                            "Inmediatamente tras confirmar tu pago, tus boletos electrónicos con código QR criptográfico se envían a tu correo y quedan disponibles en tu cuenta de queplaneshoy.",
+                        },
+                        {
+                          question: "¿Es necesario imprimir mi entrada para el ingreso?",
+                          answer:
+                            "No. Puedes presentar tu código QR directamente desde la pantalla de tu teléfono móvil. Asegúrate de tener buen nivel de brillo al momento del escaneo.",
+                        },
+                        {
+                          question: "¿Puedo ingresar con alimentos, bebidas o mochilas grandes?",
+                          answer:
+                            "Por disposición de seguridad del recinto, no se permite el ingreso con bebidas alcohólicas, envases de vidrio, alimentos externos ni objetos punzocortantes.",
+                        },
+                        {
+                          question: "¿Qué documento debo presentar en la puerta?",
+                          answer: `El ingreso es nominativo. Todo asistente debe presentar su entrada QR acompañada de su DNI, Carné de Extranjería o Pasaporte físico original (${ageBadge.label}).`,
+                        },
+                      ]
+                  ).map((faq, idx) => {
+                    const isOpen = openFaqIndex === idx;
+                    return (
+                      <div
+                        key={idx}
+                        className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden transition-all"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                          className="w-full p-4 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-bold text-white hover:text-electric-indigo transition-colors cursor-pointer"
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-electric-indigo/20 text-electric-indigo text-xs flex items-center justify-center shrink-0 font-bold">
+                              Q
+                            </span>
+                            <span>{faq.question}</span>
+                          </span>
+                          <span
+                            className={`material-symbols-outlined text-lg text-slate-400 transition-transform duration-200 shrink-0 ${
+                              isOpen ? "rotate-180 text-electric-indigo" : ""
+                            }`}
+                          >
+                            expand_more
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <div className="px-4 pb-4 pt-1 text-xs text-slate-300 leading-relaxed border-t border-white/5 pl-11">
+                            {faq.answer}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-
-            {event.termsAndConditionsUrl && (
-              <a
-                href={event.termsAndConditionsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-electric-indigo hover:text-white hover:underline flex items-center gap-1.5 font-bold transition-colors"
-              >
-                <span className="material-symbols-outlined text-base">description</span>
-                <span>Términos y Bases Legales (PDF)</span>
-              </a>
-            )}
           </div>
         </section>
 
@@ -644,6 +756,29 @@ export function EventLandingView({ event }: EventLandingViewProps) {
 
           </div>
         </footer>
+
+        {/* ==============================================================
+            STICKY MOBILE BAR (Botón Flotante en Móvil para Compra Inmediata)
+           ============================================================== */}
+        <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-zinc-950/95 backdrop-blur-xl border-t border-white/10 p-3.5 flex items-center justify-between gap-3 shadow-2xl">
+          <div className="min-w-0">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block truncate">
+              {event.name}
+            </span>
+            <span className="text-sm font-black text-white">
+              {minPrice > 0 ? `Desde S/ ${Number(minPrice).toFixed(2)}` : 'Entrada Oficial'}
+            </span>
+          </div>
+
+          <button
+            onClick={() => scrollToSection('zonas-entradas')}
+            style={{ backgroundColor: theme.primaryColor }}
+            className="px-5 py-2.5 rounded-xl text-white font-extrabold text-xs uppercase tracking-wider shrink-0 shadow-lg active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Comprar</span>
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          </button>
+        </div>
 
       </div>
     </>

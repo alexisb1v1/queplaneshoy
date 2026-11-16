@@ -75,8 +75,8 @@ export class EventRepositoryImpl implements EventRepository {
     return apiClient.requestResult<HomeEventCardItem[]>(this.api.getWeekendEvents());
   }
 
-  getEventLanding(slug: string): ResultAsync<EventLandingModel, DomainError> {
-    return apiClient.requestResult<EventLandingModel>(this.api.getEventLanding(slug));
+  getEventLanding(slug: string, previewTemp?: string): ResultAsync<EventLandingModel, DomainError> {
+    return apiClient.requestResult<EventLandingModel>(this.api.getEventLanding(slug, previewTemp));
   }
 
   getEventDetail(identifier: string): ResultAsync<EventDetailModel, DomainError> {

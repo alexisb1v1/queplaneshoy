@@ -42,7 +42,7 @@ const InteractiveMapPicker = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-56 rounded-2xl bg-surface-gray border border-surface-variant/60 flex items-center justify-center text-xs font-semibold text-on-surface-variant">
+      <div className="w-full h-80 sm:h-96 min-h-[350px] rounded-2xl bg-surface-gray border border-surface-variant/60 flex items-center justify-center text-xs font-semibold text-on-surface-variant">
         Cargando mapa interactivo...
       </div>
     ),
@@ -99,21 +99,21 @@ const WIZARD_STEPS: WizardStep[] = [
     group: 'essential',
   },
   {
-    id: 'landing',
+    id: 'cupones',
     step: 5,
+    label: 'Cupones & FAQs',
+    shortLabel: 'Cupones & FAQs',
+    description: 'Códigos promocionales y preguntas frecuentes.',
+    icon: 'sell',
+    group: 'optional',
+  },
+  {
+    id: 'landing',
+    step: 6,
     label: 'Landing Dedicada',
     shortLabel: 'Landing',
     description: 'Minisitio promocional con colores propios y redes sociales.',
     icon: 'web',
-    group: 'optional',
-  },
-  {
-    id: 'cupones',
-    step: 6,
-    label: 'Cupones & FAQs',
-    shortLabel: 'Cupones',
-    description: 'Códigos promocionales y preguntas frecuentes.',
-    icon: 'sell',
     group: 'optional',
   },
 ];
@@ -606,13 +606,28 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
         venueName.trim() &&
         venueAddress.trim()
       ),
-      multimedia: Boolean(mainBannerUrl),
+      multimedia: Boolean(mainBannerUrl && zoneMapUrl),
       funciones: shows.length > 0,
       localidades: zones.length > 0,
-      landing: true, // Paso opcional
-      cupones: true, // Paso opcional
+      landing: Boolean(hasDedicatedLanding && landingSlug.trim()),
+      cupones: coupons.length > 0 || faqs.length > 0,
     }),
-    [title, description, organizerName, organizerDocumentNumber, venueName, venueAddress, mainBannerUrl, shows.length, zones.length]
+    [
+      title,
+      description,
+      organizerName,
+      organizerDocumentNumber,
+      venueName,
+      venueAddress,
+      mainBannerUrl,
+      zoneMapUrl,
+      shows.length,
+      zones.length,
+      hasDedicatedLanding,
+      landingSlug,
+      coupons.length,
+      faqs.length,
+    ]
   );
 
   const essentialCompletedCount = useMemo(() => {
@@ -646,7 +661,10 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
 
     if (stepId === 'multimedia') {
       if (!mainBannerUrl) {
-        return { valid: false, message: 'Debes subir el Banner Principal del evento para continuar.' };
+        return { valid: false, message: 'Debes subir el Banner Principal / Hero del evento para continuar.' };
+      }
+      if (!zoneMapUrl) {
+        return { valid: false, message: 'Debes subir el Croquis de Zonas o Mapa del Recinto para continuar.' };
       }
       return { valid: true };
     }
@@ -877,7 +895,13 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
 
     if (!mainBannerUrl) {
       goToStep('multimedia');
-      showToast('Debes subir el Banner Principal del evento en la fase Multimedia & Portada.');
+      showToast('Debes subir el Banner Principal / Hero del evento en la fase Multimedia & Portada.');
+      return;
+    }
+
+    if (!zoneMapUrl) {
+      goToStep('multimedia');
+      showToast('Debes subir el Croquis de Zonas del evento en la fase Multimedia & Portada.');
       return;
     }
 
@@ -1346,16 +1370,32 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
             </div>
 
             {/* Soporte Prioritario */}
-            <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-3.5 flex items-center justify-between gap-2">
-              <div className="min-w-0">
+            <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-3.5 flex items-start justify-between gap-2 shadow-2xs">
+              <div className="min-w-0 space-y-1">
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
                   Soporte Promotores
                 </p>
-                <p className="text-xs font-bold text-electric-indigo truncate mt-0.5">
-                  promotores@qph.com
-                </p>
+                <a
+                  href="mailto:soporte@queplanhoy.com"
+                  className="text-xs font-bold text-electric-indigo truncate block hover:underline"
+                  title="Enviar correo a soporte promotores"
+                >
+                  soporte@queplanhoy.com
+                </a>
+                <a
+                  href="https://wa.me/51992884054"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-semibold text-slate-700 hover:text-emerald-600 flex items-center gap-1.5 transition-colors"
+                  title="Contactar por WhatsApp"
+                >
+                  <svg className="w-3.5 h-3.5 fill-[#25D366] shrink-0" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                  </svg>
+                  <span>992884054</span>
+                </a>
               </div>
-              <span className="material-symbols-outlined text-electric-indigo text-[20px] shrink-0">
+              <span className="material-symbols-outlined text-electric-indigo text-[22px] shrink-0 mt-0.5">
                 support_agent
               </span>
             </div>
@@ -1364,8 +1404,8 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
           {/* COLUMNA PRINCIPAL: UNA SOLA FASE ACTIVA A LA VEZ */}
           <div className="flex-1 min-w-0 w-full space-y-6">
             {/* Cabecera de la Fase Activa */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs px-5 sm:px-7 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3.5">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs px-5 sm:px-7 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
                 <div className="w-11 h-11 rounded-2xl bg-electric-indigo/10 text-electric-indigo flex items-center justify-center shrink-0">
                   <span className="material-symbols-outlined text-[24px]">
                     {currentStepObj.icon}
@@ -1392,6 +1432,36 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                   <p className="text-xs text-slate-500 mt-0.5">{currentStepObj.description}</p>
                 </div>
               </div>
+
+              {/* Lado Derecho: Switch exclusivo para la Fase 6 (Landing Dedicada) */}
+              {activeStep === 'landing' && (
+                <div className="flex items-center gap-3 bg-surface-gray/60 px-4 py-2.5 rounded-2xl border border-surface-variant/70 shrink-0 self-start sm:self-auto">
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-deep-slate block">
+                      {hasDedicatedLanding ? 'Landing Activada' : 'Activar Landing'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {hasDedicatedLanding ? 'Minisitio web exclusivo' : 'Página web dedicada'}
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={hasDedicatedLanding}
+                      onChange={(e) => {
+                        const active = e.target.checked;
+                        handleToggleLanding(active);
+                        if (active && (!landingSlug || landingSlug.trim() === '')) {
+                          const auto = slugify(title);
+                          if (auto) setLandingSlug(auto);
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-electric-indigo"></div>
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* ===============================================================
@@ -1701,82 +1771,140 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                 </section>
 
                 {/* Bloque C: Ubicación y Geolocalización */}
-                <section className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                    <span className="material-symbols-outlined text-electric-indigo text-[20px]">
-                      explore
-                    </span>
-                    <h3 className="font-bold text-sm text-deep-slate">
-                      Ubicación y Geolocalización (Perú)
-                    </h3>
-                  </div>
-
-                  <UbigeoSelector
-                    value={ubigeoCode}
-                    onChange={(code, label) => {
-                      setUbigeoCode(code);
-                      setReadableLocation(label);
-                    }}
-                  />
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="font-bold text-xs text-deep-slate">
-                        Nombre del Recinto / Local<span className="text-red-500 ml-0.5">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={venueName}
-                        onChange={(e) => setVenueName(e.target.value)}
-                        placeholder="Ej: Explanada Ferial Yarinacocha, Arena 1..."
-                        className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="font-bold text-xs text-deep-slate">
-                        Dirección Exacta<span className="text-red-500 ml-0.5">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={venueAddress}
-                        onChange={(e) => setVenueAddress(e.target.value)}
-                        placeholder="Ej: Av. Javier Prado Este 456..."
-                        className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
-                      />
+                <section className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0">
+                        <span className="material-symbols-outlined text-[20px]">
+                          explore
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-deep-slate">
+                          Ubicación y Geolocalización (Perú)
+                        </h3>
+                        <p className="text-[11px] text-slate-500">
+                          Ingresa los datos del recinto y fija las coordenadas en el mapa interactivo para tus compradores.
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="font-bold text-xs text-deep-slate">
-                        Referencia de Llegada
-                      </label>
-                      <input
-                        type="text"
-                        value={venueNotes}
-                        onChange={(e) => setVenueNotes(e.target.value)}
-                        placeholder="Ej: Frente al malecón turístico, puerta 4..."
-                        className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="font-bold text-xs text-deep-slate">
-                        URL Google Maps / Waze
-                      </label>
-                      <input
-                        type="url"
-                        value={googleMapsUrl}
-                        onChange={(e) => setGoogleMapsUrl(e.target.value)}
-                        placeholder="https://maps.google.com/?q=-12.046374,-77.042793"
-                        className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
-                      />
-                    </div>
-                  </div>
+                  {/* Grid de 2 Columnas: Datos del Local (Izq) + Mapa Amplio (Der) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    {/* COLUMNA 1: Datos del Local y Dirección (6 cols en Desktop) */}
+                    <div className="lg:col-span-6 space-y-4">
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                          1. Región y Ubigeo Oficial
+                        </span>
+                        <UbigeoSelector
+                          value={ubigeoCode}
+                          onChange={(code, label) => {
+                            setUbigeoCode(code);
+                            setReadableLocation(label);
+                          }}
+                        />
+                      </div>
 
-                  <InteractiveMapPicker
-                    value={coordinates}
-                    onChange={(coords) => setCoordinates(coords)}
-                  />
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                          2. Detalles del Recinto
+                        </span>
+                        
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <label className="font-bold text-xs text-deep-slate">
+                              Nombre del Recinto / Local<span className="text-red-500 ml-0.5">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={venueName}
+                              onChange={(e) => setVenueName(e.target.value)}
+                              placeholder="Ej: Explanada Ferial Yarinacocha, Arena 1..."
+                              className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-xs text-deep-slate">
+                              Dirección Exacta<span className="text-red-500 ml-0.5">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={venueAddress}
+                              onChange={(e) => setVenueAddress(e.target.value)}
+                              placeholder="Ej: Av. Javier Prado Este 456..."
+                              className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-xs text-deep-slate">
+                              Referencia de Llegada
+                            </label>
+                            <input
+                              type="text"
+                              value={venueNotes}
+                              onChange={(e) => setVenueNotes(e.target.value)}
+                              placeholder="Ej: Frente al malecón turístico, puerta 4..."
+                              className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-xs text-deep-slate">
+                              URL Google Maps / Waze
+                            </label>
+                            <input
+                              type="url"
+                              value={googleMapsUrl}
+                              onChange={(e) => setGoogleMapsUrl(e.target.value)}
+                              placeholder="https://maps.google.com/?q=-12.046374,-77.042793"
+                              className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* COLUMNA 2: Mapa Interactivo a Gran Escala (6 cols en Desktop) */}
+                    <div className="lg:col-span-6 bg-surface-gray/50 p-4 sm:p-5 rounded-2xl border border-surface-variant/60 space-y-3">
+                      <div className="flex items-center justify-between pb-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-electric-indigo text-[16px]">
+                            pin_drop
+                          </span>
+                          3. Mapa Interactivo &amp; Pin Satelital
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                          Arrastra el pin
+                        </span>
+                      </div>
+
+                      <InteractiveMapPicker
+                        value={coordinates}
+                        onChange={(coords) => {
+                          setCoordinates(coords);
+                          if (!googleMapsUrl.trim()) {
+                            const [lat, lng] = coords.split(',').map((p) => p.trim());
+                            if (lat && lng) {
+                              setGoogleMapsUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+                            }
+                          }
+                        }}
+                        onAddressDetected={(detected) => {
+                          const targetAddr = detected.road || detected.fullAddress;
+                          if (targetAddr) {
+                            setVenueAddress(targetAddr);
+                          }
+                        }}
+                        mapHeight="h-80 sm:h-96 lg:h-[400px] min-h-[350px]"
+                      />
+                    </div>
+
+                  </div>
                 </section>
 
                 {/* Bloque D: Normas, Salvaguardas y Legal */}
@@ -1861,19 +1989,19 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
             {activeStep === 'multimedia' && (
               <section className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in duration-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Banner Principal */}
+                  {/* Banner Principal / Hero */}
                   <div className="bg-surface-gray p-5 rounded-2xl border border-surface-variant/60 flex flex-col justify-between space-y-3">
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-bold text-sm text-deep-slate">
-                          Banner Principal<span className="text-red-500 ml-0.5">*</span>
+                          Banner Principal / Hero<span className="text-red-500 ml-0.5">*</span>
                         </span>
                         <span className="text-[11px] font-bold text-electric-indigo bg-white px-2 py-0.5 rounded-md shadow-xs">
-                          1920x800 px
+                          1920x800 px (16:9)
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant mb-2">
-                        Cabecera oficial en la cartelera y ficha de compra.
+                        Cabecera oficial en la cartelera, ficha de compra y Hero del evento.
                       </p>
                     </div>
                     <ImageUploader
@@ -1881,7 +2009,7 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                       folder="banners"
                       value={mainBannerUrl}
                       onChange={setMainBannerUrl}
-                      helpText="Arrastra o haz clic para subir el banner principal"
+                      helpText="Resolución óptima: 1920x800 px o 1920x1080 px (JPG, PNG o WebP, máx. 5 MB)"
                     />
                   </div>
 
@@ -1889,13 +2017,15 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                   <div className="bg-surface-gray p-5 rounded-2xl border border-surface-variant/60 flex flex-col justify-between space-y-3">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-sm text-deep-slate">Croquis de Zonas</span>
+                        <span className="font-bold text-sm text-deep-slate">
+                          Croquis de Zonas<span className="text-red-500 ml-0.5">*</span>
+                        </span>
                         <span className="text-[11px] font-bold text-vip-gold bg-white px-2 py-0.5 rounded-md shadow-xs">
-                          Plano Recinto
+                          1200x800 px (Plano)
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant mb-2">
-                        Plano visual que orienta al asistente para elegir ubicación.
+                        Plano visual obligatorio que orienta al asistente para elegir su ubicación.
                       </p>
                     </div>
                     <ImageUploader
@@ -1903,7 +2033,7 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                       folder="croquis"
                       value={zoneMapUrl}
                       onChange={setZoneMapUrl}
-                      helpText="Sube el plano de distribución de zonas"
+                      helpText="Resolución óptima: 1200x800 px (Plano nítido con sectores legibles, máx. 5 MB)"
                     />
                   </div>
                 </div>
@@ -2164,13 +2294,27 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
             )}
 
             {/* ===============================================================
-                FASE 5: LANDING DEDICADA
+                FASE 5: CUPONES & FAQS
+               =============================================================== */}
+            {activeStep === 'cupones' && (
+              <section className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs space-y-8 animate-in fade-in duration-200">
+                <CouponsManager coupons={coupons} onChange={(updated) => setCoupons(updated)} />
+
+                <div className="pt-6 border-t border-slate-100">
+                  <FaqsManager faqs={faqs} onChange={(updated) => setFaqs(updated)} />
+                </div>
+              </section>
+            )}
+
+            {/* ===============================================================
+                FASE 6: LANDING DEDICADA (Al final)
                =============================================================== */}
             {activeStep === 'landing' && (
               <section className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs animate-in fade-in duration-200">
                 <LandingConfigManager
                   hasLanding={hasDedicatedLanding}
                   onToggleLanding={handleToggleLanding}
+                  hideTopToggle={true}
                   config={landingConfig}
                   onChangeConfig={(newCfg) => setLandingConfig(newCfg)}
                   slug={landingSlug}
@@ -2182,20 +2326,20 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                     facebookUrl,
                     tiktokUrl,
                   }}
+                  eventPreviewData={{
+                    venue: venueName,
+                    address: venueAddress,
+                    city: readableLocation.split(',')[0]?.trim() || 'Lima',
+                    description: description || undefined,
+                    ageRestriction,
+                    termsAndConditionsUrl,
+                    bannerUrl: mainBannerUrl,
+                    zoneMapUrl,
+                    shows,
+                    zones,
+                    faqs,
+                  }}
                 />
-              </section>
-            )}
-
-            {/* ===============================================================
-                FASE 6: CUPONES & FAQS
-               =============================================================== */}
-            {activeStep === 'cupones' && (
-              <section className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs space-y-8 animate-in fade-in duration-200">
-                <CouponsManager coupons={coupons} onChange={(updated) => setCoupons(updated)} />
-
-                <div className="pt-6 border-t border-slate-100">
-                  <FaqsManager faqs={faqs} onChange={(updated) => setFaqs(updated)} />
-                </div>
               </section>
             )}
           </div>

@@ -46,8 +46,9 @@ export class EventApiService {
     return apiClient.get<HomeEventCardItem[]>('/events/weekend');
   }
 
-  async getEventLanding(slug: string): Promise<EventLandingModel> {
-    return apiClient.get<EventLandingModel>(`/events/landing/${slug}`);
+  async getEventLanding(slug: string, previewTemp?: string): Promise<EventLandingModel> {
+    const query = previewTemp ? `?previewTemp=${encodeURIComponent(previewTemp)}` : '';
+    return apiClient.get<EventLandingModel>(`/events/landing/${slug}${query}`);
   }
 
   async createEvent(params: CreateEventParams): Promise<EventDto> {

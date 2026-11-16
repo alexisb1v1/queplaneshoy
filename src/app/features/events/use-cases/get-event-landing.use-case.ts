@@ -6,8 +6,8 @@ import { DomainError } from '../../../common/errors/domain-error';
 export class GetEventLandingUseCase {
   constructor(private readonly eventRepository: EventRepository) {}
 
-  execute(slug: string): ResultAsync<EventLandingModel, DomainError> {
-    return this.eventRepository.getEventLanding(slug);
+  execute(slug: string, previewTemp?: string): ResultAsync<EventLandingModel, DomainError> {
+    return this.eventRepository.getEventLanding(slug, previewTemp);
   }
 }
 

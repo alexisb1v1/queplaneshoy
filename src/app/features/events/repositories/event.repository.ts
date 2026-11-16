@@ -39,6 +39,6 @@ export abstract class EventRepository {
   abstract getUpcomingEvents(): ResultAsync<HomeEventCardItem[], DomainError>;
   abstract getWeeklyFeaturedEvents(): ResultAsync<HomeEventCardItem[], DomainError>;
   abstract getWeekendEvents(): ResultAsync<HomeEventCardItem[], DomainError>;
-  abstract getEventLanding(slug: string): ResultAsync<EventLandingModel, DomainError>;
+  abstract getEventLanding(slug: string, previewTemp?: string): ResultAsync<EventLandingModel, DomainError>;
   abstract getEventDetail(identifier: string): ResultAsync<EventDetailModel, DomainError>;
 }

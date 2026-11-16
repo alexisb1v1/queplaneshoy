@@ -6,13 +6,16 @@ import Link from "next/link";
 interface LandingHeaderProps {
   primaryColor?: string;
   ctaText?: string;
+  hasTermsAndConditions?: boolean;
 }
 
 export function LandingHeader({
   primaryColor = "#f43f5e",
   ctaText = "Comprar Entradas",
+  hasTermsAndConditions = false,
 }: LandingHeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +29,29 @@ export function LandingHeader({
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    const url = window.location.href.split("?")[0];
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: document.title,
+          url,
+        });
+        return;
+      } catch {
+        // Fallback al portapapeles si el usuario cancela o el navegador falla
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2200);
+    } catch {
+      // noop
     }
   };
 
@@ -53,27 +79,46 @@ export function LandingHeader({
         </span>
       </Link>
 
-      {/* Lado Derecho: Navegación Estilo Teleticket (INICIO, ENTRADAS, LEGALES) */}
-      <nav className="flex items-center gap-3 sm:gap-6 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white/80">
+      {/* Lado Derecho: Navegación Estilo Teleticket + Botón de Compartir */}
+      <div className="flex items-center gap-3 sm:gap-6">
+        <nav className="flex items-center gap-3 sm:gap-6 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-white/80">
+          <button
+            onClick={() => scrollToSection("landing-inicio")}
+            className="hover:text-white transition-colors cursor-pointer py-1"
+          >
+            Inicio
+          </button>
+          <button
+            onClick={() => scrollToSection("zonas-entradas")}
+            className="hover:text-white transition-colors cursor-pointer py-1"
+          >
+            Entradas
+          </button>
+          {hasTermsAndConditions && (
+            <button
+              onClick={() => scrollToSection("landing-legales")}
+              className="hover:text-white transition-colors cursor-pointer py-1"
+            >
+              Legales
+            </button>
+          )}
+        </nav>
+
+        {/* Botón de Compartir Oficial en el Header */}
         <button
-          onClick={() => scrollToSection("landing-inicio")}
-          className="hover:text-white transition-colors cursor-pointer py-1"
+          type="button"
+          onClick={handleShare}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer text-xs font-bold border border-white/10 active:scale-95 shadow-sm"
+          title="Compartir enlace oficial del evento"
         >
-          Inicio
+          <span className="material-symbols-outlined text-[17px]">
+            {isCopied ? "check" : "share"}
+          </span>
+          <span className="hidden sm:inline">
+            {isCopied ? "¡Copiado!" : "Compartir"}
+          </span>
         </button>
-        <button
-          onClick={() => scrollToSection("zonas-entradas")}
-          className="hover:text-white transition-colors cursor-pointer py-1"
-        >
-          Entradas
-        </button>
-        <button
-          onClick={() => scrollToSection("landing-legales")}
-          className="hover:text-white transition-colors cursor-pointer py-1"
-        >
-          Legales
-        </button>
-      </nav>
+      </div>
     </header>
   );
 }

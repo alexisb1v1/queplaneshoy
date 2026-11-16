@@ -1,6 +1,6 @@
 export interface LandingTheme {
   primaryColor: string;
-  backgroundType: 'color' | 'pattern';
+  backgroundType: 'color' | 'pattern' | 'fixed';
   backgroundColor: string;
   backgroundPatternUrl?: string | null;
 }
@@ -72,10 +72,13 @@ export interface EventLandingModel {
   city: string;
   hasLandingPage: boolean;
   bannerUrl: string | null;
+  zoneMapUrl?: string | null;
   termsAndConditionsUrl: string | null;
   ageRestriction: string;
   landingConfig: LandingConfig;
   shows: LandingShow[];
   zones: LandingZone[];
+  faqs?: Array<{ question: string; answer: string }>;
+  isPreview?: boolean;
 }
 
