@@ -315,7 +315,7 @@ export function LandingConfigManager({
                 </label>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <div className="flex-1 h-11 flex items-center rounded-xl bg-surface-gray border border-surface-variant/60 px-3.5 shadow-xs focus-within:border-electric-indigo focus-within:ring-1 focus-within:ring-electric-indigo">
-                    <span className="text-xs text-slate-400 font-mono shrink-0">queplaneshoy.com/e/</span>
+                    <span className="text-xs text-slate-400 font-mono shrink-0">queplanhoy.com/e/</span>
                     <input
                       type="text"
                       value={slug}
@@ -665,7 +665,7 @@ export function LandingConfigManager({
                   <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
                   <span className="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
                   <span className="ml-2 font-mono text-[11px] text-slate-300 truncate">
-                    https://queplaneshoy.com/e/{slug || 'evento-2026'}
+                    https://queplanhoy.com/e/{slug || 'evento-2026'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -699,7 +699,7 @@ export function LandingConfigManager({
                 <div className="h-10 px-3 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between text-[10px]">
                   <div className="flex items-center gap-1.5 font-black text-white">
                     <span className="w-4 h-4 rounded bg-electric-indigo flex items-center justify-center text-[9px] font-bold">Q</span>
-                    <span>queplanes<span className="text-electric-indigo">hoy</span></span>
+                    <span>queplan<span className="text-electric-indigo">hoy</span></span>
                   </div>
                   <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-slate-300 text-[9px]">
                     <span className="text-white">Inicio</span>
@@ -889,11 +889,11 @@ export function LandingConfigManager({
                     <div className="space-y-1 text-[9px] text-slate-300">
                       <div className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-[11px] text-emerald-400">verified_user</span>
-                        <span>Entradas Nominativas con código QR</span>
+                        <span>Boletería Digital con Código QR Único</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-[11px] text-amber-400">info</span>
-                        <span>Ingreso con DNI obligatorio en puerta</span>
+                        <span>Validación criptográfica en puerta</span>
                       </div>
                     </div>
 
@@ -938,7 +938,7 @@ export function LandingConfigManager({
                     {(socialLinks?.tiktokUrl || config.footer?.tiktokUrl) && (
                       <span className="material-symbols-outlined text-[14px] text-white">music_video</span>
                     )}
-                    <span className="text-[9px] font-mono text-slate-500">@queplaneshoy</span>
+                    <span className="text-[9px] font-mono text-slate-500">@queplanhoy</span>
                   </div>
                 </div>
               </div>

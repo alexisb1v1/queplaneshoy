@@ -128,7 +128,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
     const url =
       typeof window !== "undefined"
         ? window.location.href
-        : `https://queplaneshoy.com/e/${event.slug}`;
+        : `https://queplanhoy.com/e/${event.slug}`;
     navigator.clipboard.writeText(url);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2200);
@@ -274,7 +274,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     {ageBadge.label}
                   </p>
                   <p className="text-xs text-slate-400 truncate max-w-[180px]">
-                    {ageBadge.description || "Ingreso con DNI obligatorio"}
+                    {ageBadge.description || "Ingreso con código QR oficial"}
                   </p>
                 </div>
               </div>
@@ -568,10 +568,10 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                 <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
                   <span className="font-bold text-white flex items-center gap-1.5 text-xs">
                     <span className="material-symbols-outlined text-emerald-400 text-base">verified_user</span>
-                    Entradas Digitales Nominativas
+                    Entradas Digitales con Código QR Único
                   </span>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
-                    Cada boleto cuenta con código QR criptográfico anti-clonación. El acceso es personal y puede requerir presentación de DNI/Pasaporte en la puerta.
+                    Cada boleto cuenta con código QR digital único de alta seguridad. El acceso es al portador y se valida directamente escaneando el código en puerta.
                   </p>
                 </div>
 
@@ -581,7 +581,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     Restricción de Acceso: {ageBadge.label}
                   </span>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
-                    {ageBadge.description || "Ingreso con DNI obligatorio según disposición del recinto y normativa de eventos masivos."}
+                    {ageBadge.description || "Ingreso con código QR oficial según disposición del recinto y normativa del espectáculo."}
                   </p>
                 </div>
 
@@ -625,7 +625,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                         {
                           question: "¿Cómo y cuándo recibo mis entradas digitales?",
                           answer:
-                            "Inmediatamente tras confirmar tu pago, tus boletos electrónicos con código QR criptográfico se envían a tu correo y quedan disponibles en tu cuenta de queplaneshoy.",
+                            "Inmediatamente tras confirmar tu pago, tus boletos electrónicos con código QR único de alta seguridad se envían a tu correo y quedan disponibles en tu cuenta de queplanhoy.",
                         },
                         {
                           question: "¿Es necesario imprimir mi entrada para el ingreso?",
@@ -638,8 +638,8 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                             "Por disposición de seguridad del recinto, no se permite el ingreso con bebidas alcohólicas, envases de vidrio, alimentos externos ni objetos punzocortantes.",
                         },
                         {
-                          question: "¿Qué documento debo presentar en la puerta?",
-                          answer: `El ingreso es nominativo. Todo asistente debe presentar su entrada QR acompañada de su DNI, Carné de Extranjería o Pasaporte físico original (${ageBadge.label}).`,
+                          question: "¿Cómo presento mi entrada en la puerta?",
+                          answer: `Solo debes presentar tu entrada con código QR digital desde tu teléfono móvil o impreso. El escáner de puerta validará la autenticidad del boleto en tiempo real (${ageBadge.label}).`,
                         },
                       ]
                   ).map((faq, idx) => {
@@ -744,14 +744,14 @@ export function EventLandingView({ event }: EventLandingViewProps) {
               <div className="flex items-center gap-2">
                 <img
                   src="/logo-qph.svg"
-                  alt="queplaneshoy logo"
+                  alt="queplanhoy logo"
                   className="w-4 h-4 object-contain"
                 />
                 <span className="font-extrabold text-slate-400 tracking-wider">
-                  queplanes<span className="text-electric-indigo">hoy</span>
+                  queplan<span className="text-electric-indigo">hoy</span>
                 </span>
               </div>
-              <span>Boletería digital oficial con garantía de acceso criptográfico Ed25519</span>
+              <span>Boletería digital oficial con código QR único de alta seguridad</span>
             </div>
 
           </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "queplaneshoy - Eventos Premium",
+  title: "queplanhoy - Eventos y Experiencias",
   description: "Tu puerta de acceso a las experiencias más exclusivas de entretenimiento. Siente la vida en cada evento.",
   icons: {
     icon: [

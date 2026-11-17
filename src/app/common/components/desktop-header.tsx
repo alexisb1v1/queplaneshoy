@@ -12,9 +12,9 @@ function DesktopHeaderFallback() {
     <header className="hidden md:block w-full sticky top-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border-b border-outline-variant/10">
       <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-20 gap-4">
         <Link href="/" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
-          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-            queplanes<span className="text-electric-indigo">hoy</span>
+            queplan<span className="text-electric-indigo">hoy</span>
           </span>
         </Link>
       </div>
@@ -136,9 +136,9 @@ function DesktopHeaderContent() {
         
         {/* Brand Logo (Izquierda) */}
         <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0">
-          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-            queplanes<span className="text-electric-indigo">hoy</span>
+            queplan<span className="text-electric-indigo">hoy</span>
           </span>
         </Link>
 

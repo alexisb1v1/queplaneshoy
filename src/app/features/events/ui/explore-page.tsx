@@ -117,6 +117,23 @@ export default function ExploreEventsPageComponent() {
     setSelectedCategory(cat);
     const c = searchParams.get("city") || "Todas";
     setSelectedCity(c);
+
+    // Detección automática para el filtro 'Cerca de ti'
+    if (searchParams.get("near") === "true" && typeof window !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          if (latitude >= -9.5 && latitude <= -7.0 && longitude >= -76.0 && longitude <= -73.0) {
+            setSelectedCity("Pucallpa");
+          } else if (latitude >= -13.0 && latitude <= -11.0 && longitude >= -78.0 && longitude <= -76.5) {
+            setSelectedCity("Lima");
+          } else if (latitude >= -14.0 && latitude <= -12.5 && longitude >= -73.0 && longitude <= -71.0) {
+            setSelectedCity("Cusco");
+          }
+        },
+        () => {}
+      );
+    }
   }, [searchParams]);
 
   // 4. Cerrar dropdowns al hacer clic fuera o presionar Escape

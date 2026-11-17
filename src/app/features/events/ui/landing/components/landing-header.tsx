@@ -75,7 +75,7 @@ export function LandingHeader({
           className="w-8 h-8 rounded-md object-contain"
         />
         <span className="font-extrabold text-lg tracking-tight text-white">
-          queplanes<span className="text-electric-indigo">hoy</span>
+          queplan<span className="text-electric-indigo">hoy</span>
         </span>
       </Link>
 
