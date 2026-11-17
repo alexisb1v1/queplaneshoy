@@ -6,6 +6,7 @@ import Link from "next/link";
 import PaymentSuccessScreen from "./payment-success-screen";
 import CheckoutStepper from "./components/checkout-stepper";
 import VenueZonesMap from "./components/venue-zones-map";
+import { GlobalFooter } from "@/app/common/components/global-footer";
 import { getEventDetailUseCase } from "../../events";
 import { EventDetailModel } from "../../events/models/event-detail.model";
 import { getCurrentUserUseCase } from "../../auth";
@@ -154,6 +155,7 @@ export default function PurchaseFlowPageComponent() {
   } | null>(null);
   const [isCheckingAsyncStatus, setIsCheckingAsyncStatus] = useState<boolean>(false);
   const [isMobileSummaryExpanded, setIsMobileSummaryExpanded] = useState(false);
+  const [acceptedLegalTerms, setAcceptedLegalTerms] = useState<boolean>(false);
 
   // Cupón de descuento (6 casos de uso + doble check atómico)
   const [couponCodeInput, setCouponCodeInput] = useState<string>("");
@@ -728,6 +730,10 @@ export default function PurchaseFlowPageComponent() {
     }
     if (totalTickets === 0) {
       alert("Por favor selecciona al menos una entrada para continuar.");
+      return;
+    }
+    if (!acceptedLegalTerms) {
+      alert("Por favor acepta los Términos y Condiciones y las Políticas de Privacidad para continuar con el pago.");
       return;
     }
 
@@ -1738,12 +1744,36 @@ export default function PurchaseFlowPageComponent() {
                   </div>
 
                   {/* Botón Principal de Acción en la Pasarela (Desktop / Tablet, estilo Stitch) */}
-                  <div className="hidden lg:block pt-2">
+                  <div className="hidden lg:block pt-2 space-y-3">
+                    {/* Checkbox Obligatorio Legal de Aceptación Expresa */}
+                    <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-left">
+                      <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          id="acceptTermsStep2Main"
+                          checked={acceptedLegalTerms}
+                          onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
+                          className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
+                        />
+                        <span className="text-[11px] text-slate-700 leading-tight">
+                          He leído y acepto los{" "}
+                          <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                            Términos y Condiciones
+                          </Link>{" "}
+                          y las{" "}
+                          <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                            Políticas de Privacidad
+                          </Link>{" "}
+                          de queplanhoy.
+                        </span>
+                      </label>
+                    </div>
+
                     <button
                       type="button"
                       onClick={handleSubmitPayment}
-                      disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0}
-                      className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-50 text-white rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-electric-indigo/25 active:scale-[0.99] cursor-pointer"
+                      disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
+                      className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-electric-indigo/25 active:scale-[0.99] cursor-pointer"
                     >
                       {isProcessing ? (
                         <>
@@ -2028,29 +2058,55 @@ export default function PurchaseFlowPageComponent() {
 
                     {/* Botón CTA de Pago (En Paso 2 - Lado Derecho en Web) */}
                     {currentStep === 2 && (
-                      <button
-                        type="button"
-                        onClick={handleSubmitPayment}
-                        disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0}
-                        className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-50 text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>{processingLabel}</span>
-                          </>
-                        ) : pendingAsyncOrder ? (
-                          <>
-                            <span className="material-symbols-outlined">hourglass_top</span>
-                            <span>Esperando pago Culqi...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="material-symbols-outlined">lock</span>
-                            <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="space-y-3">
+                        {/* Checkbox Obligatorio Legal de Aceptación Expresa */}
+                        <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-left">
+                          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              id="acceptTermsStep2Web"
+                              checked={acceptedLegalTerms}
+                              onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
+                              className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
+                            />
+                            <span className="text-[11px] text-slate-700 leading-tight">
+                              He leído y acepto los{" "}
+                              <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                                Términos y Condiciones
+                              </Link>{" "}
+                              y las{" "}
+                              <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                                Políticas de Privacidad
+                              </Link>{" "}
+                              de queplanhoy.
+                            </span>
+                          </label>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleSubmitPayment}
+                          disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
+                          className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>{processingLabel}</span>
+                            </>
+                          ) : pendingAsyncOrder ? (
+                            <>
+                              <span className="material-symbols-outlined">hourglass_top</span>
+                              <span>Esperando pago Culqi...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined">lock</span>
+                              <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -2083,65 +2139,11 @@ export default function PurchaseFlowPageComponent() {
     </main>
 
       {/* =========================================================================
-          FOOTER DEL PROCESO DE COMPRA
+          FOOTER GLOBAL OFICIAL (Unificado con Home y toda la plataforma)
          ========================================================================= */}
-      <footer
-        className={`bg-deep-slate text-surface-container-lowest mt-16 border-t border-white/10 ${
-          isProcessing ? "pointer-events-none select-none" : ""
-        }`}
-      >
-        <div className="w-full py-12 px-4 sm:px-8 max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <img src="/logo-qph.svg" alt="Logo QPH" className="w-8 h-8 rounded-lg shadow-sm" />
-              <span className="text-xl font-black text-surface-container-lowest tracking-tighter">
-                queplan<span className="text-electric-indigo">hoy</span>
-              </span>
-            </div>
-            <p className="text-platinum-silver text-xs">
-              Tu puerta de entrada a los mejores eventos, conciertos y experiencias en directo en todo el Perú.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-xs text-white mb-4 uppercase tracking-widest">
-              Eventos
-            </h4>
-            <ul className="space-y-2 text-xs text-platinum-silver">
-              <li><Link href="/" className="hover:text-white transition-colors">Conciertos</Link></li>
-              <li><Link href="/" className="hover:text-white transition-colors">Festivales</Link></li>
-              <li><Link href="/" className="hover:text-white transition-colors">Teatro y Shows</Link></li>
-              <li><Link href="/" className="hover:text-white transition-colors">Deportes</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-xs text-white mb-4 uppercase tracking-widest">
-              Soporte
-            </h4>
-            <ul className="space-y-2 text-xs text-platinum-silver">
-              <li><a href="#" className="hover:text-white transition-colors">Centro de Ayuda</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contacto y Dudas</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Políticas de Devolución</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-xs text-white mb-4 uppercase tracking-widest">
-              Legales
-            </h4>
-            <ul className="space-y-2 text-xs text-platinum-silver">
-              <li><a href="#" className="hover:text-white transition-colors">Términos y Condiciones</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Política de Privacidad</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Libro de Reclamaciones</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-white/10 w-full px-4 sm:px-8 py-6 text-center text-platinum-silver text-xs">
-          © 2026 queplanhoy (OmniCore S.A.C.). Todos los derechos reservados. Boletería digital oficial con código QR único.
-        </div>
-      </footer>
+      <div className={isProcessing ? "pointer-events-none select-none" : ""}>
+        <GlobalFooter />
+      </div>
 
       {/* MODAL: IDENTIFICACIÓN OBLIGATORIA PARA COMPRA Y EMISIÓN DE TICKETS */}
       {showAuthModal && (
@@ -2343,6 +2345,29 @@ export default function PurchaseFlowPageComponent() {
                   S/. {grandTotal.toFixed(2)}
                 </span>
               </div>
+
+              {currentStep === 2 && (
+                <div className="pt-2 border-t border-surface-variant/80 text-left">
+                  <label className="flex items-start gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={acceptedLegalTerms}
+                      onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
+                      className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
+                    />
+                    <span className="text-[10px] text-slate-600 leading-tight">
+                      He leído y acepto los{" "}
+                      <Link href="/terminos-y-condiciones" target="_blank" className="font-bold underline text-electric-indigo">
+                        Términos y Condiciones
+                      </Link>{" "}
+                      y las{" "}
+                      <Link href="/politicas-de-privacidad" target="_blank" className="font-bold underline text-electric-indigo">
+                        Políticas de Privacidad
+                      </Link>.
+                    </span>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -2436,11 +2461,15 @@ export default function PurchaseFlowPageComponent() {
               <button
                 type="button"
                 onClick={() => {
+                  if (!acceptedLegalTerms) {
+                    setIsMobileSummaryExpanded(true);
+                    return;
+                  }
                   setIsMobileSummaryExpanded(false);
                   handleSubmitPayment();
                 }}
-                disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0}
-                className="px-4 py-3 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
+                disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
+                className="px-4 py-3 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
               >
                 {isProcessing ? (
                   <>

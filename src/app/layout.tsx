@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CookieBanner } from "./common/components/cookie-banner";
 
 export const metadata: Metadata = {
   title: "queplanhoy - Eventos y Experiencias",
@@ -28,6 +29,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-background text-on-background">
         {children}
+        <CookieBanner />
       </body>
     </html>
   );

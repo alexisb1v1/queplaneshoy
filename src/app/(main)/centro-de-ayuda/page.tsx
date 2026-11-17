@@ -6,88 +6,96 @@ import Link from "next/link";
 interface FaqItem {
   q: string;
   a: string;
-  category: "compras" | "pagos" | "acceso" | "devoluciones" | "promotores";
+  category: "acceso" | "seguridad" | "pagos" | "promotores";
 }
 
 const FAQS_DATA: FaqItem[] = [
-  // Compras y Entradas
-  {
-    category: "compras",
-    q: "¿Cómo compro mis entradas en queplanhoy?",
-    a: "Selecciona el evento en la cartelera, elige la función y la zona deseada. En el carrito, selecciona la cantidad de entradas, ingresa tu nombre y correo de contacto (sin necesidad de registrar número de DNI) y completa el pago mediante tarjeta de crédito/débito o billetera móvil. Recibirás tus entradas digitales inmediatamente en tu correo y en tu sección 'Mis Entradas'.",
-  },
-  {
-    category: "compras",
-    q: "¿Dónde encuentro mis entradas una vez compradas?",
-    a: "Tus entradas se envían automáticamente al correo electrónico registrado con el que realizaste la compra. Además, puedes verlas y descargarlas en cualquier momento iniciando sesión y entrando a tu perfil en la pestaña 'Mis Entradas' (queplanhoy.com/profile/tickets).",
-  },
-  {
-    category: "compras",
-    q: "¿Las entradas son al portador o requieren nominación?",
-    a: "Todas las entradas en queplanhoy son asignadas al portador. No contamos con sistemas de nominación obligatoria de boletos, por lo que puedes transferir o compartir tus entradas con total libertad. El acceso al recinto se otorga al primer portador que presente el código QR oficial.",
-  },
-  {
-    category: "compras",
-    q: "¿Existe un límite máximo de entradas por persona?",
-    a: "Sí. Cada evento u organizador establece un tope máximo de compra por usuario (habitualmente entre 4 y 8 entradas por orden) para garantizar el acceso equitativo y prevenir compras masivas no autorizadas.",
-  },
-
-  // Pagos y Facturación
-  {
-    category: "pagos",
-    q: "¿Qué medios de pago puedo utilizar?",
-    a: "Aceptamos todas las tarjetas de crédito y débito Visa, Mastercard, American Express y Diners Club (nacionales e internacionales), así como pagos mediante transferencias y billeteras móviles peruanas autorizadas. Todas las transacciones se encuentran protegidas con certificación de seguridad PCI-DSS y autenticación 3DS.",
-  },
-  {
-    category: "pagos",
-    q: "¿Qué es la comisión por servicio (Service Fee)?",
-    a: "Es la tarifa correspondiente al servicio de infraestructura tecnológica, procesamiento seguro de pagos, emisión de entradas digitales con código QR único y soporte técnico de control de aforo en puerta. Dicho monto se desglosa con total transparencia antes de que confirmes tu pago.",
-  },
-  {
-    category: "pagos",
-    q: "¿Por qué fue rechazada mi tarjeta durante el pago?",
-    a: "Las causas más frecuentes son: falta de fondos disponibles, tarjeta no habilitada para compras por internet desde el app de tu banco, o no haber aprobado la verificación de seguridad por SMS/Token digital (3DS). Te recomendamos verificar con tu entidad bancaria o intentar con otro método de pago.",
-  },
-
-  // Acceso al Evento
+  // 1. Sobre la entrega y acceso (Las más urgentes)
   {
     category: "acceso",
-    q: "¿Cómo presento mi entrada el día del espectáculo?",
-    a: "Solo debes presentar el código QR oficial de tu entrada directamente en la pantalla de tu teléfono móvil o impreso en buena calidad. El escáner oficial en puerta validará la autenticidad del boleto en menos de un segundo.",
+    q: "¿Necesito imprimir mi entrada para ingresar al evento?",
+    a: "No es necesario. Puedes presentar el código QR directamente desde la pantalla de tu celular. Te recomendamos descargar el archivo PDF o tomarle una captura de pantalla antes de salir de casa, y subirle el brillo a tu pantalla al momento de llegar a la puerta para que el escáner lo lea rápidamente.",
   },
   {
     category: "acceso",
-    q: "¿Qué pasa si no tengo conexión a internet en el recinto?",
-    a: "Te recomendamos descargar tu entrada en formato PDF a tu teléfono móvil o tomar una captura clara antes de dirigirte al evento. Los lectores de puerta de queplanhoy pueden verificar el boleto de manera instantánea y segura.",
+    q: "Compré mi entrada pero no me llega el correo, ¿qué hago?",
+    a: "Primero, revisa tu bandeja de 'Correos no deseados' o 'SPAM'. Si tampoco está ahí, no te preocupes: ingresa a queplanhoy.com, inicia sesión con el correo que usaste para la compra y dirígete a la sección 'Mis Entradas' (queplanhoy.com/profile/tickets). Allí encontrarás todos tus códigos QR listos para usar.",
   },
   {
     category: "acceso",
-    q: "¿Los menores de edad pueden ingresar?",
-    a: "Depende de la restricción de edad establecida para cada evento (Mayores de 18, Mayores de 14 con apoderado, o Todo Público). Esta información se encuentra claramente especificada en la ficha y en la landing page del evento.",
-  },
-
-  // Devoluciones y Reprogramaciones
-  {
-    category: "devoluciones",
-    q: "¿Realizan devoluciones de dinero?",
-    a: "Sí, realizamos devoluciones y reembolsos. Si necesitas gestionar la devolución de tus entradas por cancelación, reprogramación o motivos particulares, comunícate directamente con nuestro equipo de atención mediante correo a soporte@queplanhoy.com o por WhatsApp al +51 992 884 054 indicando tu número de orden para procesar tu solicitud a la brevedad.",
+    q: "¿Piden DNI al momento de ingresar?",
+    a: "No. En queplanhoy usamos un sistema de entradas al portador. El acceso se otorga a la primera persona que presente un código QR válido en la puerta. Por esta razón, el control de identidad no es necesario; tu código QR es tu única llave de acceso.",
   },
   {
-    category: "devoluciones",
-    q: "¿Qué sucede si el evento se cancela o se posterga?",
-    a: "En caso de cancelación definitiva o cambio de fecha por parte de la productora, se te notificará de inmediato a tu correo registrado con las pautas y plazos fijados para tramitar el reembolso íntegro de tus entradas.",
+    category: "acceso",
+    q: "¿Qué pasa si no tengo conexión a internet en el recinto del evento?",
+    a: "Te recomendamos descargar tu entrada en formato PDF a la memoria de tu teléfono o tomarle una captura de pantalla nítida antes de salir. Los lectores de puerta de queplanhoy pueden verificar el boleto de forma instantánea incluso sin cobertura móvil en el asistente.",
   },
 
-  // Para Organizadores
+  // 2. Sobre transferencias y seguridad
+  {
+    category: "seguridad",
+    q: "Compré varias entradas con mi correo, ¿puedo dárselas a mis amigos?",
+    a: "¡Sí, por supuesto! Como las entradas son al portador, puedes enviarle el PDF o la imagen del QR a cada uno de tus amigos por WhatsApp. Cada código QR es único. Importante: Asegúrate de enviar un código diferente a cada persona.",
+  },
+  {
+    category: "seguridad",
+    q: "¿Es seguro publicar una foto de mi entrada en redes sociales?",
+    a: "NUNCA publiques tu código QR en redes sociales ni en grupos públicos. Si alguien toma una captura de pantalla de tu QR y llega al evento antes que tú, el sistema validará su ingreso y tu entrada quedará automáticamente anulada. Cuida tu QR como si fuera dinero en efectivo.",
+  },
+  {
+    category: "seguridad",
+    q: "¿Son seguras las entradas de reventa?",
+    a: "queplanhoy (OmniCore S.A.C.) no garantiza ni se hace responsable por entradas adquiridas fuera de nuestra plataforma oficial. Recuerda que al ser entradas al portador, un revendedor podría vender el mismo código QR a múltiples personas, y solo ingresará el primero que llegue a la puerta.",
+  },
+
+  // 3. Sobre Pagos y Devoluciones
+  {
+    category: "pagos",
+    q: "Me equivoqué de zona/fecha al comprar, ¿puedo pedir un reembolso o cambio?",
+    a: "Una vez confirmada la transacción, no se aceptan cambios de zona, fecha, ni devoluciones por errores del comprador o por no poder asistir al evento. Por favor, verifica bien los datos de tu compra antes de procesar el pago.",
+  },
+  {
+    category: "pagos",
+    q: "¿Qué sucede si el organizador cancela o posterga el evento?",
+    a: "Si el evento es cancelado definitivamente por el organizador, queplanhoy habilitará un proceso de devolución del valor del ticket a través del mismo medio de pago. Nota: La Comisión por Servicio de Boletería (Service Fee) no es reembolsable, ya que corresponde al servicio tecnológico y de procesamiento de pagos que ya fue brindado.",
+  },
+  {
+    category: "pagos",
+    q: "¿Qué medios de pago están disponibles para comprar?",
+    a: "Aceptamos tarjetas de crédito y débito Visa, Mastercard, American Express y Diners Club (nacionales e internacionales), además de billeteras electrónicas autorizadas en Perú. Todos los pagos están resguardados con encriptación bancaria y autenticación 3D Secure.",
+  },
+  {
+    category: "pagos",
+    q: "¿Cómo gestiono una devolución si el evento fue cancelado o reprogramado?",
+    a: "En caso de cancelación o postergación oficial, comunícate directamente con nuestro equipo de atención escribiendo a soporte@queplanhoy.com o por WhatsApp al +51 992 884 054 adjuntando tu código de orden para coordinar el reintegro según el protocolo del promotor.",
+  },
+
+  // 4. Preguntas Frecuentes exclusivas para el Organizador
+  {
+    category: "promotores",
+    q: "¿Cuándo y cómo recibo el dinero de la taquilla?",
+    a: "Las liquidaciones se realizan de forma automática. El saldo total de tus ventas (descontando las comisiones por uso de plataforma) será transferido a la cuenta bancaria de tu empresa entre 2 a 3 días hábiles después de finalizado el evento con éxito. También puedes solicitar adelantos parciales según el volumen de tus ventas y previa coordinación con tu asesor comercial de queplanhoy.",
+  },
+  {
+    category: "promotores",
+    q: "¿Cómo escaneo y valido las entradas el día del evento?",
+    a: "No necesitas alquilar equipos costosos ni descargar aplicaciones en las tiendas de apps. Desde tu panel de Organizador, tienes acceso a nuestro módulo de escáner web. Solo necesitas que tu personal de puerta inicie sesión desde cualquier smartphone (Android o iPhone) con acceso a internet, y la cámara del teléfono validará los códigos QR en tiempo real contra nuestra base de datos.",
+  },
+  {
+    category: "promotores",
+    q: "¿Qué pasa si un asistente compra una entrada falsa a un revendedor?",
+    a: "Nuestro sistema de códigos QR dinámicos e infalsificables garantiza que cada entrada sea única. Si un código QR es escaneado y validado en la puerta, quedará inhabilitado automáticamente. Si otra persona intenta ingresar con una fotocopia o captura de pantalla del mismo código, el escáner mostrará una alerta roja de 'Entrada ya utilizada'.",
+  },
+  {
+    category: "promotores",
+    q: "¿Quién se encarga de las devoluciones si me veo obligado a cancelar mi evento?",
+    a: "Como Organizador, tú eres el único responsable legal del espectáculo. En caso de cancelación o postergación, debes notificar a queplanhoy inmediatamente. El monto nominal de las entradas será devuelto a los compradores con cargo a los fondos recaudados del evento. La comisión por servicio (Service Fee) no es reembolsable al usuario, y los costos de las transacciones bancarias por devolución serán asumidos por tu productora.",
+  },
   {
     category: "promotores",
     q: "¿Cómo puedo publicar y vender entradas de mi evento en queplanhoy?",
-    a: "Puedes activar tu cuenta de promotor haciendo clic en 'Crear Evento' en la barra superior. Contarás con un asistente paso a paso para configurar recinto, fechas, mapa de zonas, preventas en cascada, cupones de descuento y landing page dedicada exclusiva.",
-  },
-  {
-    category: "promotores",
-    q: "¿Cómo funciona el control de accesos en puerta para organizadores?",
-    a: "Ponemos a disposición de los promotores la App de Puerta oficial de queplanhoy para smartphones Android e iOS, que escanea y valida códigos QR en menos de 0.3 segundos por asistente, con control estricto de aforo y prevención de boletos duplicados en tiempo real.",
+    a: "Puedes activar tu cuenta de promotor haciendo clic en 'Crear Evento' en la barra superior. Contarás con un asistente paso a paso para configurar recinto, funciones, mapa de zonas, preventas escalonadas, cupones de descuento y landing page dedicada exclusiva.",
   },
 ];
 
@@ -121,7 +129,7 @@ export default function CentroDeAyudaPage() {
             ¿Cómo podemos ayudarte hoy?
           </h1>
           <p className="text-sm sm:text-base text-slate-400">
-            Encuentra respuestas rápidas sobre compra de entradas, métodos de pago, acceso a recintos y políticas de eventos.
+            Respuestas claras y directas para compradores y organizadores de espectáculos en queplanhoy.
           </p>
 
           {/* Buscador de Preguntas Frecuentes */}
@@ -134,7 +142,7 @@ export default function CentroDeAyudaPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Busca por palabra clave (ej. QR, entradas, reembolso, tarjeta...)"
+                placeholder="Busca por palabra clave (ej. QR, entradas, reembolso, organizador, escáner...)"
                 className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-zinc-900 border border-white/10 text-sm text-white placeholder-slate-500 outline-none focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo shadow-xl"
               />
               {searchQuery && (
@@ -154,11 +162,10 @@ export default function CentroDeAyudaPage() {
         <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
           {[
             { id: "todos", label: "Todas las preguntas", icon: "help_center" },
-            { id: "compras", label: "Compras & Entradas", icon: "confirmation_number" },
-            { id: "pagos", label: "Pagos & Facturación", icon: "credit_card" },
-            { id: "acceso", label: "Día del Evento", icon: "door_front" },
-            { id: "devoluciones", label: "Cancelaciones & Reembolsos", icon: "currency_exchange" },
-            { id: "promotores", label: "Organizadores", icon: "stadium" },
+            { id: "acceso", label: "Entrega & Acceso en Puerta", icon: "qr_code_scanner" },
+            { id: "seguridad", label: "Transferencias & Seguridad", icon: "security" },
+            { id: "pagos", label: "Pagos & Devoluciones", icon: "payments" },
+            { id: "promotores", label: "Para Organizadores", icon: "stadium" },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -167,10 +174,11 @@ export default function CentroDeAyudaPage() {
                 setActiveCategory(cat.id);
                 setOpenIndex(null);
               }}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeCategory === cat.id
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeCategory === cat.id
                   ? "bg-electric-indigo text-white shadow-md shadow-electric-indigo/25"
                   : "bg-zinc-900/80 text-slate-400 hover:text-white border border-white/5 hover:border-white/15"
-                }`}
+              }`}
             >
               <span className="material-symbols-outlined text-base">{cat.icon}</span>
               <span>{cat.label}</span>
@@ -197,8 +205,9 @@ export default function CentroDeAyudaPage() {
                       {faq.q}
                     </span>
                     <span
-                      className={`material-symbols-outlined text-slate-400 transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180 text-electric-indigo" : ""
-                        }`}
+                      className={`material-symbols-outlined text-slate-400 transition-transform duration-200 shrink-0 ${
+                        isOpen ? "rotate-180 text-electric-indigo" : ""
+                      }`}
                     >
                       expand_more
                     </span>
@@ -233,9 +242,9 @@ export default function CentroDeAyudaPage() {
                 </svg>
                 <span>Atención Rápida por WhatsApp</span>
               </div>
-              <h3 className="text-base font-extrabold text-white">¿Tienes dudas con tu compra?</h3>
+              <h3 className="text-base font-extrabold text-white">¿Tienes dudas con tu compra o tu evento?</h3>
               <p className="text-xs text-slate-400">
-                Escríbenos directamente a nuestra línea oficial de atención para asistirte en tiempo real con tus entradas.
+                Escríbenos directamente a nuestra línea oficial de atención para asistirte en tiempo real con tus entradas o la producción de tu evento.
               </p>
             </div>
             <a
@@ -258,9 +267,9 @@ export default function CentroDeAyudaPage() {
                 <span className="material-symbols-outlined text-base">mail</span>
                 <span>Soporte por Correo</span>
               </div>
-              <h3 className="text-base font-extrabold text-white">Mesa de Ayuda a Clientes</h3>
+              <h3 className="text-base font-extrabold text-white">Mesa de Ayuda &amp; Promotores</h3>
               <p className="text-xs text-slate-400">
-                Para solicitudes de postventa, constancias de pago o consultas institucionales sobre espectáculos.
+                Para solicitudes de postventa, constancias de pago, liquidaciones o convenios de venta de eventos.
               </p>
             </div>
             <a

@@ -100,13 +100,16 @@ export default function TerminosYCondicionesPage() {
               <span className="w-7 h-7 rounded-lg bg-electric-indigo/20 text-electric-indigo text-xs font-black flex items-center justify-center shrink-0">
                 5
               </span>
-              Políticas de Devoluciones y Reembolsos
+              Políticas de Devoluciones y Blindaje del Cargo por Servicio
             </h2>
             <p>
-              En <strong>queplanhoy</strong> sí gestionamos y realizamos devoluciones y solicitudes de reembolso ante eventualidades, cancelaciones, postergaciones de eventos o casos particulares sujetos a revisión.
+              En <strong>queplanhoy</strong> gestionamos y canalizamos las solicitudes de devolución y reembolso ante eventualidades, cancelaciones o postergaciones de eventos conforme a las directrices del Organizador y la normativa vigente de protección al consumidor.
+            </p>
+            <p className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-amber-200 text-xs sm:text-sm leading-relaxed">
+              <strong>Blindaje de la Comisión por Servicio:</strong> En caso de cancelación o postergación del evento por causas imputables al Organizador o fuerza mayor, la <strong>Comisión por Servicio de Boletería (Service Fee) no será reembolsable</strong> por parte de queplanhoy, ya que corresponde a un servicio tecnológico y de emisión digital efectivamente prestado y consumido al momento de la adquisición de la entrada.
             </p>
             <p>
-              Para solicitar una devolución o consultar el estado de tu reembolso, el usuario debe comunicarse directamente con nuestros canales oficiales de atención al cliente:
+              Para solicitar una devolución o consultar el estado de tu expediente, el usuario debe comunicarse directamente con nuestros canales oficiales de atención al cliente:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 flex items-center gap-2.5">
@@ -141,10 +144,13 @@ export default function TerminosYCondicionesPage() {
               <span className="w-7 h-7 rounded-lg bg-electric-indigo/20 text-electric-indigo text-xs font-black flex items-center justify-center shrink-0">
                 6
               </span>
-              Derecho de Admisión y Normas de Seguridad en el Recinto
+              Contracargos y Prevención de Fraude Bancario
             </h2>
             <p>
-              El Organizador y el personal de seguridad del recinto se reservan el derecho de admisión y permanencia conforme a ley, pudiendo negar el ingreso o retirar del evento a cualquier persona que se encuentre en estado de ebriedad, bajo efectos de sustancias ilícitas, porte armas o cualquier objeto contundente, o perturbe el orden público y la seguridad de los demás asistentes.
+              Ante desconocimientos de compra (contracargos) originados malintencionadamente por el usuario con su entidad bancaria tras haber adquirido entradas o tras haber asistido al espectáculo, <strong>queplanhoy</strong> recopilará y entregará a las entidades financieras, redes de medios de pago y autoridades competentes las <strong>bitácoras digitales de auditoría, dirección IP, fecha/hora y registros de escaneo del código QR</strong> en los puntos de control de acceso para probar la tenencia y asistencia efectiva.
+            </p>
+            <p className="text-xs text-slate-400">
+              OmniCore S.A.C. se reserva el derecho de suspender definitivamente la cuenta del usuario infractor e iniciar las acciones legales y denuncias pertinentes por fraude o falsedad conforme al Código Penal del Perú.
             </p>
           </section>
 
@@ -153,6 +159,19 @@ export default function TerminosYCondicionesPage() {
             <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-electric-indigo/20 text-electric-indigo text-xs font-black flex items-center justify-center shrink-0">
                 7
+              </span>
+              Derecho de Admisión y Normas de Seguridad en el Recinto
+            </h2>
+            <p>
+              El Organizador y el personal de seguridad del recinto se reservan el derecho de admisión y permanencia conforme a ley, pudiendo negar el ingreso o retirar del evento a cualquier persona que se encuentre en estado de ebriedad, bajo efectos de sustancias ilícitas, porte armas o cualquier objeto contundente, o perturbe el orden público y la seguridad de los demás asistentes.
+            </p>
+          </section>
+
+          {/* Sección 8 */}
+          <section className="space-y-3 bg-zinc-900/60 border border-white/5 p-6 rounded-2xl">
+            <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-electric-indigo/20 text-electric-indigo text-xs font-black flex items-center justify-center shrink-0">
+                8
               </span>
               Legislación Aplicable y Jurisdicción
             </h2>
