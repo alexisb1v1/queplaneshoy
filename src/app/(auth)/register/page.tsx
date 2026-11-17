@@ -2,8 +2,8 @@ import React, { Suspense } from 'react';
 import RegisterPageComponent from '../../features/auth/ui/register-page';
 
 export const metadata = {
-  title: 'Crear una cuenta | queplaneshoy',
-  description: 'Regístrate en queplaneshoy para comprar entradas, ver tus eventos favoritos y gestionar tus reservas de forma rápida y sencilla.',
+  title: 'Crear una cuenta | queplanhoy',
+  description: 'Regístrate en queplanhoy para comprar entradas, ver tus eventos favoritos y gestionar tus reservas de forma rápida y sencilla.',
 };
 
 export default function RegisterPage() {

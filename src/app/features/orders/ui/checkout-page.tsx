@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getOrderUseCase } from '../index';
 import { OrderModel } from '../models/order.model';
@@ -24,6 +25,7 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
   const [saveCard, setSaveCard] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Cargar Orden
   useEffect(() => {
@@ -144,9 +146,9 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => router.push('/')}
           >
-            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
             <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-              queplanes<span className="text-electric-indigo">hoy</span>
+              queplan<span className="text-electric-indigo">hoy</span>
             </span>
           </div>
           <div className="flex items-center gap-2 text-on-surface-variant font-semibold text-sm">
@@ -313,20 +315,44 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                   onChange={(e) => setSaveCard(e.target.checked)}
                 />
                 <label className="text-sm text-on-surface-variant cursor-pointer select-none" htmlFor="saveCard">
-                  Guardar esta tarjeta para mis próximas compras en queplaneshoy de forma segura.
+                  Guardar esta tarjeta para mis próximas compras en queplanhoy de forma segura.
+                </label>
+              </div>
+
+              {/* Checkbox Obligatorio Legal de Aceptación Expresa */}
+              <div className="flex items-start gap-3 p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl">
+                <input
+                  className="mt-1 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
+                  id="acceptTerms"
+                  type="checkbox"
+                  required
+                  disabled={isExpired || isPaid}
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                />
+                <label className="text-xs sm:text-sm text-slate-700 cursor-pointer select-none leading-relaxed" htmlFor="acceptTerms">
+                  He leído y acepto los{" "}
+                  <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                    Términos y Condiciones
+                  </Link>{" "}
+                  y las{" "}
+                  <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                    Políticas de Privacidad
+                  </Link>{" "}
+                  de queplanhoy (OmniCore S.A.C.).
                 </label>
               </div>
 
               <button
                 className={`w-full py-4 rounded-xl text-white font-semibold text-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/20 ${
-                  isExpired 
+                  isExpired || !acceptedTerms
                     ? 'bg-gray-400 shadow-none cursor-not-allowed opacity-50' 
                     : isPaid 
                       ? 'bg-green-600 shadow-green-600/10' 
                       : 'bg-electric-indigo hover:brightness-110 active:scale-95 cursor-pointer'
                 }`}
                 type="submit"
-                disabled={isExpired || isProcessing || isPaid}
+                disabled={isExpired || isProcessing || isPaid || !acceptedTerms}
               >
                 {isProcessing && (
                   <span className="material-symbols-outlined animate-spin text-[20px]">

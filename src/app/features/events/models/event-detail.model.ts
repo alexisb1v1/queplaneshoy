@@ -15,12 +15,13 @@ export interface EventZoneModel {
   benefits: string | null;
   regularPrice: number;
   currentPrice: number;
+  serviceFee?: number;
+  feeIncluded?: boolean;
   activeTierName: string;
   capacity: number;
   remainingTickets: number;
   isSoldOut: boolean;
   maxTicketsPerOrder?: number;
-  maxTicketsPerUser?: number;
 }
 
 export interface EventDetailModel {
@@ -44,6 +45,12 @@ export interface EventDetailModel {
   googleMapsUrl: string | null;
   coordinates: string | null;
   addressReference: string | null;
+  promoVideoUrl?: string | null;
+  socialLinks?: {
+    instagramUrl?: string | null;
+    facebookUrl?: string | null;
+    tiktokUrl?: string | null;
+  } | null;
   shows: EventShowModel[];
   zones: EventZoneModel[];
 }

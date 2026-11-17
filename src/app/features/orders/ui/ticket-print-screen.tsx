@@ -277,13 +277,9 @@ export default function TicketPrintScreen({
     const ticketNum = ticket.ticketNumber || index + 1;
     const isHolder = index === 0;
     const ticketAttendee = isHolder
-      ? holderName || "TITULAR REGISTRADO"
-      : `INVITADO DE ${holderName || "COMPRADOR"}`;
-    const ticketDniDisplay = isHolder
-      ? holderDni
-        ? `Identificación: ${holderDni}`
-        : "Titular Registrado QPH"
-      : "Presentar DNI del acompañante en acceso";
+      ? holderName || "PORTADOR DE LA ENTRADA"
+      : `ACOMPAÑANTE / PORTADOR`;
+    const ticketDniDisplay = "Entrada al Portador • Código QR Oficial";
     const ticketDisplayId = ticket.ticketUuid
       ? `QPH-TCK-${ticket.ticketUuid.substring(0, 8).toUpperCase()}`
       : `QPH-TKT-${ticket.ticketId.padStart(6, "0")}`;
@@ -312,13 +308,13 @@ export default function TicketPrintScreen({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-surface-variant">
           <div className="flex items-center gap-3">
             <img
-              alt="queplaneshoy logo"
+              alt="queplanhoy logo"
               className="w-11 h-11 rounded-xl shadow-xs object-contain border border-surface-variant/40 p-1 bg-white"
               src="/logo-qph.svg"
             />
             <div className="flex flex-col">
               <span className="font-headline-md text-xl font-black tracking-tight text-deep-slate leading-tight">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
               <span className="font-label-bold text-[10px] uppercase tracking-wider text-electric-indigo font-bold">
                 Boletería Oficial · Acceso Digital Garantizado
@@ -334,7 +330,7 @@ export default function TicketPrintScreen({
               >
                 verified_user
               </span>
-              <span className="font-bold">VERIFICADO · QPH PASS ED25519</span>
+              <span className="font-bold">VERIFICADO · QPH PASS OFICIAL</span>
             </div>
             <p className="text-[11px]">
               <strong className="font-label-bold text-deep-slate">Pedido:</strong> #{orderNumber}{" "}
@@ -567,10 +563,10 @@ export default function TicketPrintScreen({
             </span>
             <div className="min-w-0">
               <span className="block text-[8px] font-bold text-on-surface-variant uppercase tracking-wider">
-                Identidad
+                Modalidad
               </span>
               <span className="text-[10px] font-bold text-deep-slate truncate block">
-                DNI requerido
+                Al Portador
               </span>
             </div>
           </div>
@@ -621,8 +617,8 @@ export default function TicketPrintScreen({
             <div className="flex items-start gap-1.5">
               <span className="font-label-bold text-deep-slate shrink-0 font-bold">1.</span>
               <p>
-                <strong className="font-label-bold text-deep-slate">Control de Identidad:</strong> Presentar
-                DNI, Carné de Extranjería o Pasaporte original en vigor coincidente con los datos del comprador.
+                <strong className="font-label-bold text-deep-slate">Entrada al Portador:</strong> El acceso se
+                concede al portador que presente el código QR digital único oficial en los tornos o puertas.
               </p>
             </div>
 
@@ -645,8 +641,8 @@ export default function TicketPrintScreen({
             <div className="flex items-start gap-1.5">
               <span className="font-label-bold text-deep-slate shrink-0 font-bold">4.</span>
               <p>
-                <strong className="font-label-bold text-deep-slate">Soporte y Reclamaciones:</strong> En
-                caso de incidencias en torno de acceso, acuda a la boletería oficial del evento con su DNI.
+                <strong className="font-label-bold text-deep-slate">Soporte Oficial:</strong> En caso
+                de incidencias de acceso, acuda a la boletería oficial del evento o escriba a soporte@queplanhoy.com.
               </p>
             </div>
           </div>

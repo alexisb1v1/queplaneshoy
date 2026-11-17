@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CookieBanner } from "./common/components/cookie-banner";
 
 export const metadata: Metadata = {
-  title: "queplaneshoy - Eventos Premium",
+  title: "queplanhoy - Eventos y Experiencias",
   description: "Tu puerta de acceso a las experiencias más exclusivas de entretenimiento. Siente la vida en cada evento.",
+  icons: {
+    icon: [
+      { url: "/logo-qph.svg", type: "image/svg+xml" },
+      { url: "/logo-qph.png", type: "image/png" },
+    ],
+    apple: "/logo-qph.png",
+  },
 };
 
 export default function RootLayout({
@@ -21,6 +29,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-background text-on-background">
         {children}
+        <CookieBanner />
       </body>
     </html>
   );

@@ -3,26 +3,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* 🎨 Colores de marca */
-  --color-primary: #4648d4;
-  --color-electric-indigo: #6366f1;
-  --color-deep-slate: #0f172a;
-  --color-platinum-silver: #94a3b8;
-  --color-vip-gold: #f59e0b;
-  --color-surface-gray: #f1f5f9;
+  /* 🎨 Colores de marca - "Electric Festival" */
+  --color-primary: #6d28d9;              /* Deep Purple / Violeta oscuro para hover */
+  --color-electric-indigo: #7c3aed;      /* Violeta Eléctrico principal de marca */
+  --color-festival-coral: #f43f5e;       /* Coral Neón / Fiesta para CTAs de compra */
+  --color-festival-coral-hover: #e11d48; /* Coral intenso para hover activo */
+  --color-deep-slate: #0f172a;           /* Pizarra noche profunda */
+  --color-platinum-silver: #94a3b8;      /* Gris plata neutro */
+  --color-vip-gold: #f59e0b;             /* Oro VIP cálido */
+  --color-surface-gray: #f8fafc;         /* Gris muy suave / fondo limpio */
   
   /* 🎨 Colores de superficie y contenido */
-  --color-background: #f7f9fb;
-  --color-on-background: #191c1e;
-  --color-surface-container-low: #f2f4f6;
-  --color-surface-container-high: #e6e8ea;
-  --color-surface-container-highest: #e0e3e5;
+  --color-background: #f8fafc;
+  --color-on-background: #0f172a;
+  --color-surface-container-low: #f1f5f9;
+  --color-surface-container-high: #e2e8f0;
+  --color-surface-container-highest: #cbd5e1;
   --color-surface-container-lowest: #ffffff;
-  --color-on-surface: #191c1e;
-  --color-on-surface-variant: #464554;
-  --color-surface-variant: #cbd5e1;
-  --color-outline: #767586;
-  --color-outline-variant: #c7c4d7;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+  --color-surface-variant: #e2e8f0;
+  --color-outline: #64748b;
+  --color-outline-variant: #cbd5e1;
   
   /* 📐 Espaciados y Márgenes del Sistema de Diseño */
   --spacing-margin-x: 32px;
@@ -137,28 +139,30 @@ body {
 
 /* Botones */
 @utility qph-btn-primary {
-  background-color: var(--color-electric-indigo);
+  background-color: var(--color-festival-coral);
   color: white;
   font-family: inherit;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.875rem; /* text-label-bold */
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   padding: 0.5rem 1.5rem; /* px-6 py-2 */
   border-radius: 0.75rem; /* rounded-xl */
-  transition-property: transform, background-color, opacity;
+  transition-property: transform, background-color, opacity, box-shadow;
   transition-duration: 200ms;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  box-shadow: 0 4px 14px 0 rgba(244, 63, 94, 0.35);
   
   &:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   
   &:hover {
-    background-color: var(--color-primary);
+    background-color: var(--color-festival-coral-hover);
+    box-shadow: 0 6px 20px 0 rgba(244, 63, 94, 0.45);
   }
 }
 

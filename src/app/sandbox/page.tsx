@@ -348,7 +348,7 @@ export default function SandboxPrototipoPage() {
             </div>
             <div>
               <span className="font-extrabold text-base tracking-tight text-white block">
-                queplanes<span className="text-indigo-400">hoy</span>
+                queplan<span className="text-indigo-400">hoy</span>
                 <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700">
                   UX Sandbox
                 </span>

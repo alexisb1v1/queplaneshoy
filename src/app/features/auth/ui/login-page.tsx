@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { loginUseCase } from '../index';
+import { GoogleAuthButton } from './components/google-auth-button';
 
 const REMEMBER_EMAIL_KEY = 'qph_remembered_email';
 
@@ -83,7 +84,7 @@ export default function LoginPageComponent() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-deep-slate">
         <div className="absolute inset-0 z-0">
           <img
-            alt="Concierto queplaneshoy"
+            alt="Concierto queplanhoy"
             className="w-full h-full object-cover scale-105 transition-transform duration-[20s] ease-out hover:scale-100"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3rZ6yKDKqCPTUTce3UT_5EUR2cYbMqYZCPtae38ukfPAhoUvEIfVv2v_cRuWSv6Jse0F8k4YH6nf2FSP_iD4TuuzSNxBd2RGnGn_nKkQMWbgGXx5R1qVLfBNDKPmsVrpS9eEqmysP05fNo_tzC0gf-I9gTI_cjTljXnk-L7RZlkrGcLOCXP1mm42HZa5d-hoVb1JuEVExX9t9yE_B3moZGWGfSX8ZKVS3H2cDzXpYxGgfhwzhWyosc4gQiwqrO9AW46PugAsG7_Pm"
           />
@@ -92,9 +93,9 @@ export default function LoginPageComponent() {
         <div className="relative z-20 flex flex-col justify-between p-16 w-full text-white">
           <div>
             <Link href="/" className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity">
-              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplaneshoy logo" />
+              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplanhoy logo" />
               <span className="font-extrabold text-2xl tracking-tight text-white">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
             <h1 className="text-4xl font-extrabold leading-tight mb-6">Tus mejores planes, a un clic.</h1>
@@ -133,9 +134,9 @@ export default function LoginPageComponent() {
           {/* Logo Móvil */}
           <div className="lg:hidden mb-8 flex justify-start">
             <Link href="/" className="flex items-center gap-2 cursor-pointer">
-              <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+              <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
               <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
           </div>
@@ -196,16 +197,12 @@ export default function LoginPageComponent() {
                 <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="password">
                   Contraseña
                 </label>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert('La recuperación de contraseña se enviará a tu correo registrado.');
-                  }}
+                <Link
+                  href="/forgot-password"
                   className="text-xs font-semibold text-electric-indigo hover:underline cursor-pointer"
                 >
                   ¿Olvidaste tu contraseña?
-                </a>
+                </Link>
               </div>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-platinum-silver transition-colors group-focus-within:text-electric-indigo">
@@ -288,30 +285,14 @@ export default function LoginPageComponent() {
             </div>
           </div>
 
-          {/* Botones Sociales */}
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => alert('Inicio de sesión con Google próximamente disponible')}
-              className="flex items-center justify-center gap-2 px-4 py-3 border border-outline-variant/40 rounded-xl hover:bg-surface-gray active:scale-95 transition-all duration-200 bg-white shadow-xs cursor-pointer text-sm font-semibold text-deep-slate"
-            >
-              <img
-                alt="Google"
-                className="w-5 h-5"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkPlXtlKfXALOwYmnR3qmXAa_bGYHgiytGc4DSwQyu0aOTmJheUSBuZc6UB-kpyx_GiLM6P22Rm8RKp0RnyW0ZF0sAJRl9wrx4lZvJOsIxo6q7BtbLxVX57aL3GGBC2WCUNax0PI2izv7cUxe-AgnVEcWkLiD28BH0ChJBCA5BurHpkrhnUM_4EfmwQ4iViG1afgNq-cGQ6hfBeUn83wzDSCpwABA4Q0s0VaguHSECIV9NtzKT-FIqD4OaCgQibDpoWQk074W_Gi8s"
-              />
-              <span>Google</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => alert('Inicio de sesión con Apple próximamente disponible')}
-              className="flex items-center justify-center gap-2 px-4 py-3 border border-outline-variant/40 rounded-xl hover:bg-surface-gray active:scale-95 transition-all duration-200 bg-white shadow-xs cursor-pointer text-sm font-semibold text-deep-slate"
-            >
-              <svg className="w-5 h-5 fill-current text-deep-slate" viewBox="0 0 384 512">
-                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 21.8-88.5 21.8-11.4 0-51.1-20.8-82.3-20.8-41.1 0-78.9 23-99.3 58.5-41.2 71.3-10.5 177.3 30.1 236 19.9 28.5 43.8 60.5 74.4 59.3 29.3-1.1 40.5-19 75.8-19 35.4 0 45.6 19 76.8 18.3 31.9-.7 52.7-28.5 72.3-56.9 22.6-32.9 32-64.8 32.4-66.5-1.4-.6-62.8-24.1-63-95.3zM289 110.4c17.5-21 28.9-50.1 25.7-79.3-25.2 1-55.9 16.9-73.9 38.1-16.2 18.7-30.3 48.6-26.5 76.9 28.3 2.2 57.2-14.7 74.7-35.7z"></path>
-              </svg>
-              <span>Apple</span>
-            </button>
+          {/* Inicio de Sesión Social (Únicamente Google) */}
+          <div>
+            <GoogleAuthButton
+              redirectTo={searchParams.get('redirect') || undefined}
+              disabled={isLoading || success}
+              label="Continuar con Google"
+              onError={(msg) => setErrorMsg(msg)}
+            />
           </div>
 
           {/* Enlace a Registro */}
@@ -329,7 +310,7 @@ export default function LoginPageComponent() {
 
           {/* Footer Legal */}
           <div className="mt-12 text-center text-[11px] text-platinum-silver font-semibold">
-            © 2026 queplaneshoy. Todos los derechos reservados.
+            © 2026 queplanhoy (OmniCore S.A.C.). Todos los derechos reservados.
           </div>
         </div>
       </div>

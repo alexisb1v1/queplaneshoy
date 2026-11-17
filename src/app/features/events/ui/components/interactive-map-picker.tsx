@@ -3,18 +3,104 @@
 import React, { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 
+export interface DetectedAddress {
+  road?: string;
+  houseNumber?: string;
+  suburb?: string;
+  district?: string;
+  city?: string;
+  fullAddress: string;
+}
+
 interface InteractiveMapPickerProps {
   value: string; // "latitud, longitud" (ej: "-12.046374, -77.042793")
   onChange: (coordinates: string) => void;
+  mapHeight?: string;
+  onAddressDetected?: (address: DetectedAddress) => void;
 }
 
-export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerProps) {
+export function InteractiveMapPicker({
+  value,
+  onChange,
+  mapHeight,
+  onAddressDetected,
+}: InteractiveMapPickerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [inputVal, setInputVal] = useState<string>(value || '-12.046374, -77.042793');
   const [isLocating, setIsLocating] = useState(false);
+  const [isResolvingAddress, setIsResolvingAddress] = useState(false);
+
+  // Función de Geocodificación Inversa con OpenStreetMap Nominatim
+  const resolveAddress = async (lat: number, lng: number) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setIsResolvingAddress(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=es`,
+        {
+          signal: controller.signal,
+          headers: {
+            Accept: 'application/json',
+          },
+        }
+      );
+      if (!res.ok) throw new Error('Nominatim error');
+      const data = await res.json();
+      const addr = data.address || {};
+
+      const road =
+        addr.road ||
+        addr.pedestrian ||
+        addr.footway ||
+        addr.cycleway ||
+        addr.path ||
+        addr.square ||
+        '';
+      const houseNumber = addr.house_number || '';
+      const suburb = addr.suburb || addr.neighbourhood || addr.residential || '';
+      const district =
+        addr.city_district || addr.district || addr.suburb || addr.town || addr.city || '';
+      const city = addr.city || addr.town || addr.state || '';
+
+      let streetLine = road;
+      if (streetLine && houseNumber) {
+        streetLine = `${streetLine} ${houseNumber}`;
+      }
+
+      const fullAddress = streetLine
+        ? `${streetLine}${suburb ? `, ${suburb}` : ''}${district ? `, ${district}` : ''}`
+        : data.display_name || '';
+
+      if (streetLine || fullAddress) {
+        const result: DetectedAddress = {
+          road: streetLine || road,
+          houseNumber,
+          suburb,
+          district,
+          city,
+          fullAddress,
+        };
+        if (onAddressDetected) {
+          onAddressDetected(result);
+        }
+      }
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        // Ignorar fallos de red puntuales
+      }
+    } finally {
+      setIsResolvingAddress(false);
+    }
+  };
 
   // Parsear lat y lng
   const parseCoords = (coordStr: string): [number, number] => {
@@ -89,6 +175,7 @@ export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerPr
         const formatted = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
         setInputVal(formatted);
         onChange(formatted);
+        resolveAddress(pos.lat, pos.lng);
       });
 
       // Evento: Al hacer clic en cualquier lugar del mapa
@@ -98,14 +185,35 @@ export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerPr
         const formatted = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         setInputVal(formatted);
         onChange(formatted);
+        resolveAddress(lat, lng);
       });
 
       mapInstanceRef.current = map;
       markerRef.current = marker;
+
+      // Geocodificación inicial al montar
+      resolveAddress(initialLat, initialLng);
+
+      setTimeout(() => {
+        if (isMounted) map.invalidateSize();
+      }, 150);
     });
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+      observer = new ResizeObserver(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      });
+      observer.observe(mapContainerRef.current);
+    }
 
     return () => {
       isMounted = false;
+      if (observer) {
+        observer.disconnect();
+      }
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -123,6 +231,7 @@ export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerPr
       mapInstanceRef.current.setView([lat, lng], 15);
     }
     onChange(val);
+    resolveAddress(lat, lng);
   };
 
   // Geolocalización GPS del Navegador
@@ -140,6 +249,7 @@ export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerPr
         const formatted = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
         setInputVal(formatted);
         onChange(formatted);
+        resolveAddress(latitude, longitude);
 
         if (mapInstanceRef.current && markerRef.current) {
           markerRef.current.setLatLng([latitude, longitude]);
@@ -159,8 +269,11 @@ export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerPr
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex-1 space-y-1">
           <label className="text-xs font-bold text-deep-slate block">
-            Coordenadas GPS (Latitud, Longitud) *
+            Coordenadas GPS (Latitud, Longitud)<span className="text-red-500 ml-0.5">*</span>
           </label>
+          <p className="text-[11px] text-slate-500">
+            Se utiliza para mostrar la ubicación exacta del evento en el mapa interactivo de la ficha pública.
+          </p>
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -183,15 +296,22 @@ export function InteractiveMapPicker({ value, onChange }: InteractiveMapPickerPr
         </div>
       </div>
 
-      <p className="text-[11px] text-on-surface-variant">
-        Haz clic en el mapa o arrastra el marcador para fijar la ubicación exacta del recinto.
-      </p>
+      <div className="flex items-center justify-between text-[11px] text-on-surface-variant">
+        <span>Haz clic en el mapa o arrastra el marcador para fijar la ubicación del recinto.</span>
+        {isResolvingAddress && (
+          <span className="text-electric-indigo font-semibold flex items-center gap-1 animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-electric-indigo animate-ping inline-block" />
+            Detectando calle...
+          </span>
+        )}
+      </div>
 
       {/* Contenedor del Mapa Leaflet */}
       <div
         ref={mapContainerRef}
-        className="w-full h-56 rounded-2xl overflow-hidden border border-surface-variant/60 shadow-xs z-10"
-        style={{ minHeight: '220px' }}
+        className={`w-full rounded-2xl overflow-hidden border border-surface-variant/60 shadow-xs z-10 ${
+          mapHeight || 'h-80 sm:h-96 min-h-[350px]'
+        }`}
       />
     </div>
   );

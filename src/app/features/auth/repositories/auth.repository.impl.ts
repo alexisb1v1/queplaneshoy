@@ -227,6 +227,50 @@ export class AuthRepositoryImpl implements AuthRepository {
   }
 
   /**
+   * Solicita el enlace de recuperación de contraseña
+   */
+  requestPasswordReset(email: string): ResultAsync<{ message: string }, DomainError> {
+    return apiClient
+      .requestResult<{ message: string }>(
+        apiClient.post('/auth/forgot-password', {
+          email: email.trim().toLowerCase(),
+        })
+      )
+      .map((res) => ({
+        message:
+          res.message ||
+          'Si el correo electrónico está registrado, recibirás un enlace para restablecer tu contraseña.',
+      }));
+  }
+
+  /**
+   * Verifica si un token efímero de recuperación sigue vigente
+   */
+  verifyResetToken(token: string): ResultAsync<{ valid: boolean; maskedEmail?: string }, DomainError> {
+    return apiClient.requestResult<{ valid: boolean; maskedEmail?: string }>(
+      apiClient.get(`/auth/verify-reset-token?token=${encodeURIComponent(token.trim())}`)
+    );
+  }
+
+  /**
+   * Restablece la contraseña definitiva con el token efímero
+   */
+  resetPassword(token: string, newPassword: string): ResultAsync<{ message: string }, DomainError> {
+    return apiClient
+      .requestResult<{ message: string }>(
+        apiClient.post('/auth/reset-password', {
+          token: token.trim(),
+          newPassword,
+        })
+      )
+      .map((res) => ({
+        message:
+          res.message ||
+          'Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión con tus nuevas credenciales.',
+      }));
+  }
+
+  /**
    * Activa el perfil de organizador para el usuario autenticado
    */
   becomeOrganizer(params: BecomeOrganizerParams): ResultAsync<{ token: string; user: UserModel }, DomainError> {
@@ -243,6 +287,55 @@ export class AuthRepositoryImpl implements AuthRepository {
         }
 
         return { token: res.token, user: userModel };
+      });
+  }
+
+  /**
+   * Obtiene la URL oficial de autorización OAuth 2.0 de Google
+   */
+  getGoogleAuthUrl(redirectTo?: string): ResultAsync<{ url: string }, DomainError> {
+    const query =
+      redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+        ? `?redirect=${encodeURIComponent(redirectTo)}`
+        : '';
+
+    return apiClient.requestResult<{ url: string }>(
+      apiClient.get(`/auth/google/url${query}`)
+    );
+  }
+
+  /**
+   * Intercambia code y state recibidos en /auth/google/callback e inicia la sesión en QPH
+   */
+  loginWithGoogleCallback(
+    code: string,
+    state: string
+  ): ResultAsync<{ token: string; user: UserModel; redirectTo: string }, DomainError> {
+    return apiClient
+      .requestResult<AuthResponseDto & { redirectTo?: string }>(
+        apiClient.post('/auth/google/callback', {
+          code: code.trim(),
+          state: state.trim(),
+        })
+      )
+      .map((res) => {
+        const userModel = mapAuthUserToModel(res.user);
+        apiClient.setToken(res.token);
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userModel));
+        }
+
+        const safeRedirect =
+          res.redirectTo && res.redirectTo.startsWith('/') && !res.redirectTo.startsWith('//')
+            ? res.redirectTo
+            : '/';
+
+        return {
+          token: res.token,
+          user: userModel,
+          redirectTo: safeRedirect,
+        };
       });
   }
 }

@@ -19,5 +19,13 @@ export abstract class AuthRepository {
   abstract changePassword(oldPassword: string, newPassword: string): ResultAsync<void, DomainError>;
   abstract verifyEmail(token: string): ResultAsync<{ message: string; user?: UserModel }, DomainError>;
   abstract resendVerification(email: string): ResultAsync<{ message: string }, DomainError>;
+  abstract requestPasswordReset(email: string): ResultAsync<{ message: string }, DomainError>;
+  abstract verifyResetToken(token: string): ResultAsync<{ valid: boolean; maskedEmail?: string }, DomainError>;
+  abstract resetPassword(token: string, newPassword: string): ResultAsync<{ message: string }, DomainError>;
   abstract becomeOrganizer(params: BecomeOrganizerParams): ResultAsync<{ token: string; user: UserModel }, DomainError>;
+  abstract getGoogleAuthUrl(redirectTo?: string): ResultAsync<{ url: string }, DomainError>;
+  abstract loginWithGoogleCallback(
+    code: string,
+    state: string
+  ): ResultAsync<{ token: string; user: UserModel; redirectTo: string }, DomainError>;
 }

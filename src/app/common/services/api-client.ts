@@ -294,8 +294,8 @@ export const apiClient = {
         fetch(buildFullUrl('/auth/logout'), {
           method: 'POST',
           credentials: 'include',
-        }).catch(() => {});
-      } catch {}
+        }).catch(() => { });
+      } catch { }
     }
   },
 

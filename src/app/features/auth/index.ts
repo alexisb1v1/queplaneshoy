@@ -8,6 +8,11 @@ import { ChangePasswordUseCase } from './use-cases/change-password.use-case';
 import { VerifyEmailUseCase } from './use-cases/verify-email.use-case';
 import { ResendVerificationUseCase } from './use-cases/resend-verification.use-case';
 import { BecomeOrganizerUseCase } from './use-cases/become-organizer.use-case';
+import { RequestPasswordResetUseCase } from './use-cases/request-password-reset.use-case';
+import { VerifyResetTokenUseCase } from './use-cases/verify-reset-token.use-case';
+import { ResetPasswordUseCase } from './use-cases/reset-password.use-case';
+import { GetGoogleAuthUrlUseCase } from './use-cases/get-google-auth-url.use-case';
+import { LoginWithGoogleCallbackUseCase } from './use-cases/login-with-google-callback.use-case';
 
 // Instanciamos la infraestructura
 const authRepository = new AuthRepositoryImpl();
@@ -22,3 +27,8 @@ export const changePasswordUseCase = new ChangePasswordUseCase(authRepository);
 export const verifyEmailUseCase = new VerifyEmailUseCase(authRepository);
 export const resendVerificationUseCase = new ResendVerificationUseCase(authRepository);
 export const becomeOrganizerUseCase = new BecomeOrganizerUseCase(authRepository);
+export const requestPasswordResetUseCase = new RequestPasswordResetUseCase(authRepository);
+export const verifyResetTokenUseCase = new VerifyResetTokenUseCase(authRepository);
+export const resetPasswordUseCase = new ResetPasswordUseCase(authRepository);
+export const getGoogleAuthUrlUseCase = new GetGoogleAuthUrlUseCase(authRepository);
+export const loginWithGoogleCallbackUseCase = new LoginWithGoogleCallbackUseCase(authRepository);

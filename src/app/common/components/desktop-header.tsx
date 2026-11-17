@@ -12,9 +12,9 @@ function DesktopHeaderFallback() {
     <header className="hidden md:block w-full sticky top-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border-b border-outline-variant/10">
       <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-20 gap-4">
         <Link href="/" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
-          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-            queplanes<span className="text-electric-indigo">hoy</span>
+            queplan<span className="text-electric-indigo">hoy</span>
           </span>
         </Link>
       </div>
@@ -136,9 +136,9 @@ function DesktopHeaderContent() {
         
         {/* Brand Logo (Izquierda) */}
         <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0">
-          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-            queplanes<span className="text-electric-indigo">hoy</span>
+            queplan<span className="text-electric-indigo">hoy</span>
           </span>
         </Link>
 
@@ -157,13 +157,13 @@ function DesktopHeaderContent() {
 
         {/* Actions (Derecha) */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <Link href="/favorites" className="qph-btn-watchlist hidden lg:flex cursor-pointer">
+          <Link href="/profile/favorites" className="qph-btn-watchlist hidden lg:flex cursor-pointer">
             <span className="material-symbols-outlined text-lg">favorite</span>
             <span>Lista de seguimiento</span>
           </Link>
 
           <Link
-            href="/organizer/events/new"
+            href="/organizer/events/new?from=home"
             className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-electric-indigo bg-indigo-50/90 hover:bg-electric-indigo hover:text-white border border-indigo-200/90 hover:border-electric-indigo shadow-xs hover:shadow-md hover:shadow-electric-indigo/20 transition-all duration-200 active:scale-95 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">add_circle</span>
@@ -216,7 +216,7 @@ function DesktopHeaderContent() {
                   </Link>
 
                   <Link
-                    href="/favorites"
+                    href="/profile/favorites"
                     onClick={() => setIsUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-deep-slate hover:bg-surface-gray rounded-xl transition-colors cursor-pointer"
                   >

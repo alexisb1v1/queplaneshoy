@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { QRCodeSVG } from "qrcode.react";
 import CheckoutStepper from "./components/checkout-stepper";
 import TicketPrintScreen from "./ticket-print-screen";
+import { GlobalFooter } from "@/app/common/components/global-footer";
 
 // Carga dinámica del mapa OpenStreetMap / Leaflet (desactivando SSR)
 const EventLocationMap = dynamic(
@@ -66,7 +67,7 @@ export interface PaymentSuccessProps {
 
 export default function PaymentSuccessScreen({
   orderCode = "#QPH-849204",
-  userEmail = "usuario@queplaneshoy.com",
+  userEmail = "usuario@queplanhoy.com",
   customerName = "Comprador Oficial QPH",
   eventTitle = "Evento Oficial",
   categoryTag = "Venta Oficial QPH",
@@ -75,7 +76,7 @@ export default function PaymentSuccessScreen({
   timeStr = "Horario Oficial",
   doorsOpenStr = "Apertura 2 hrs antes",
   venueName = "Recinto Oficial",
-  venueAccess = "Puerta Principal • Control QR Ed25519",
+  venueAccess = "Puerta Principal • Control QR de Alta Seguridad",
   venueAddress = "Recinto Oficial, Perú",
   coordinates = null,
   addressReference = null,
@@ -141,7 +142,7 @@ export default function PaymentSuccessScreen({
                 src="/logo-qph.svg"
               />
               <span className="text-xl sm:text-2xl font-black text-deep-slate tracking-tighter">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
           </div>
@@ -155,7 +156,7 @@ export default function PaymentSuccessScreen({
               <span className="hidden sm:inline">Volver a selección de entradas</span>
             </Link>
             <button
-              onClick={() => alert("Centro de Ayuda disponible las 24 horas en soporte@queplaneshoy.com")}
+              onClick={() => alert("Centro de Ayuda disponible las 24 horas en soporte@queplanhoy.com")}
               className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">help</span>
@@ -696,60 +697,9 @@ export default function PaymentSuccessScreen({
       </main>
 
       {/* =========================================================================
-          FOOTER (STITCH EXACT MATCH)
+          FOOTER GLOBAL OFICIAL (Unificado con Home y toda la plataforma)
          ========================================================================= */}
-      <footer className="bg-deep-slate text-surface-container-lowest mt-16 border-t border-white/10">
-        <div className="w-full py-12 px-4 sm:px-8 max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <img alt="Logo QPH" className="w-8 h-8 rounded-lg object-contain shadow-sm" src="/logo-qph.svg" />
-              <div className="text-xl font-black text-white tracking-tighter">
-                queplanes<span className="text-electric-indigo">hoy</span>
-              </div>
-            </div>
-            <p className="text-platinum-silver text-xs">
-              Tu puerta de entrada a los mejores eventos, conciertos y experiencias en directo.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-xs text-white mb-4 uppercase tracking-widest">
-              Eventos
-            </h4>
-            <ul className="space-y-2 text-xs text-platinum-silver">
-              <li><Link href="/events" className="hover:text-white transition-colors">Conciertos</Link></li>
-              <li><Link href="/events" className="hover:text-white transition-colors">Teatro</Link></li>
-              <li><Link href="/events" className="hover:text-white transition-colors">Deportes</Link></li>
-              <li><Link href="/events" className="hover:text-white transition-colors">Festivales</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-xs text-white mb-4 uppercase tracking-widest">
-              Soporte
-            </h4>
-            <ul className="space-y-2 text-xs text-platinum-silver">
-              <li><a href="#" className="hover:text-white transition-colors">Centro de Ayuda</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contacto</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Políticas</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-xs text-white mb-4 uppercase tracking-widest">
-              Legales
-            </h4>
-            <ul className="space-y-2 text-xs text-platinum-silver">
-              <li><a href="#" className="hover:text-white transition-colors">Términos y Condiciones</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Política de Privacidad</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-white/10 w-full px-4 sm:px-8 py-6 text-center text-platinum-silver text-xs">
-          © 2024 queplaneshoy. Todos los derechos reservados. Compra segura con tecnología certificada.
-        </div>
-      </footer>
+      <GlobalFooter />
 
       {/* =========================================================================
           MODAL DRAWER DESLIZANTE DESDE LA DERECHA (TICKET PRINT SCREEN)

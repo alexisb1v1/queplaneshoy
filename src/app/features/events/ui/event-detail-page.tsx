@@ -4,9 +4,17 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { getEventDetailUseCase } from "../index";
+import { useFavorites } from "../../../common/hooks/use-favorites";
+import { getEventDetailUseCase, searchEventsUseCase, SearchEventItem } from "../index";
 import { EventDetailModel, EventZoneModel } from "../models/event-detail.model";
 import { formatAgeRestriction } from "../utils/age-restriction";
+import { VideoTeaserModal } from "./landing/components/video-teaser-modal";
+
+function getBuyerZonePrice(zone: Pick<EventZoneModel, "currentPrice" | "serviceFee" | "feeIncluded">): number {
+  const base = Number(zone.currentPrice) || 0;
+  const fee = Math.max(0, Number(zone.serviceFee) || 0);
+  return zone.feeIncluded ? base : Math.round((base + fee) * 100) / 100;
+}
 
 // Carga dinámica del mapa OpenStreetMap / Leaflet (desactivando SSR)
 const EventLocationMap = dynamic(
@@ -25,45 +33,6 @@ const EventLocationMap = dynamic(
   }
 );
 
-const RECOMMENDATIONS = [
-  {
-    id: "rec-1",
-    category: "CUMBIA / FUSIÓN",
-    title: "Bareto en Concierto 2026",
-    date: "14 JUN",
-    location: "PUCALLPA",
-    price: 65,
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAvDbqbGnlbfqUeC8z7aI3S9qHtQrEg0HBuv40tjwOWpwyto7jUUN4aK6zHkyjFpgrQuCmYbnML65LyCOmt4qfAeTI0iyr2BVCmLgaCJy5sBpz6YzL3uZFZIH-KYQuDSVFbpbW2Y6TUpo9uKWoJ2zKmlgzeVlfID8YoiQklT8co4xHrZ6sDZeLPqiY-dRNUsdzl8wQ2M9YvHfLR7G5WFio3W-SCX1AidCHyLkxiMeElBOJP2LgUnEYlNJevy2WQSrRm2T5c0o7zVSlx",
-  },
-  {
-    id: "rec-2",
-    category: "ROCK / INDIE",
-    title: "Echoes of Lima Festival",
-    date: "05 JUL",
-    location: "LIMA",
-    price: 89,
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDLV-vFt6Z3Q-_g_RCjM9g3p9FRMdW4TnoLTb2t_DGuHe1Bsjrd7vpYb-J8_gn-FA08Ovc7Xffqg7Su3kDeeigM8E-shO5j3HQerTWdJeRIak58m1ymICAC5dbB6na0lleW1NkOwk918T18gWTshTn0Zzl3ic7SdBx2Vzhs5heY5_umnw9T63JvIIiWvk63UsQKHL2DHezWpD-wjgw01UHRyiKCzTzGizacFSLDtCZyg-82AVyyzAVzhN6jdAaTMFIz5fOyGUmrZCro",
-  },
-  {
-    id: "rec-3",
-    category: "ELECTRÓNICA",
-    title: "Midnight Sessions: Lima Underground",
-    date: "12 JUL",
-    location: "BARRANCO",
-    price: 45,
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAOSUZv2M7uclQknZJmXWjOneUBNz-ggqZyktu_-IRwTtUB21KMNz-RpU5FtXl1gcbww2VH2uzJWcFtWoYlnOs7KgVd_v_rHztJTKEqhNEAY0C_W4-ADUGz7tDfqDxACVZAs2r8MKr9XVj5by6TKAwaft2nFhUXzd-3uwtr9BCWIctRcn7n5OXbyYdWN6e_JVAuCiWVPMd2q27xOcZyLmats6ygJ4-hf71qJ97KPTEKrNVxLqC2lfCzSpIJkzYxBA7bw-k5Y_FOk5v7",
-  },
-  {
-    id: "rec-4",
-    category: "SALSA / LATIN",
-    title: "Noche de Gala Salsera",
-    date: "20 AGO",
-    location: "CALLAO",
-    price: 75,
-    imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAY0glueuyiQb7DkenK_iYrWWIrNbX1YaUqQ4s_r0nei9PpsCiVxMkvXskGW6sbk_CcpEyhlG1g5x3z8rxRXx-ZcRNo-h6-2mcrd_WVCxV4EcebWwiDmp0K9RVpVG-gcz_eUgfl5BbI_tv2oAGMf3jiixuB808BKzoDWX4MtKSnX4Bsoy1FPPEACjEO3OA_Rgr6Qnr3qORQGSWNXrK8OHutDXb9QZoM3cINg4AR8jEshAMiiXHUsuNK4g9xpaB5VJ9UaAB3X-qSYct4",
-  },
-];
-
 interface EventDetailPageProps {
   id: string;
 }
@@ -74,8 +43,12 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [event, setEvent] = useState<EventDetailModel | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [favoritesState, setFavoritesState] = useState<Record<string, boolean>>({});
+  const [similarEvents, setSimilarEvents] = useState<SearchEventItem[]>([]);
+  const [isLoadingSimilar, setIsLoadingSimilar] = useState<boolean>(true);
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
+  const { isFavorite: checkFavorite, toggle: toggleFavApi } = useFavorites();
+  const isFavorite = checkFavorite(event?.id) || (event?.publicUuid ? checkFavorite(event.publicUuid) : false);
 
   useEffect(() => {
     let isMounted = true;
@@ -83,10 +56,57 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
     setErrorMessage(null);
 
     getEventDetailUseCase.execute(id).match(
-      (data) => {
+      async (data) => {
         if (!isMounted) return;
         setEvent(data);
         setIsLoading(false);
+
+        // Cargar eventos similares reales basados en la categoría del evento actual
+        try {
+          setIsLoadingSimilar(true);
+          const searchRes = await searchEventsUseCase.execute({
+            category: data.category,
+            limit: 8,
+          });
+
+          let items: SearchEventItem[] = [];
+          searchRes.match(
+            (resp) => {
+              items = resp.hits.filter(
+                (item) =>
+                  item.id !== data.id &&
+                  item.publicUuid !== data.publicUuid &&
+                  item.slug !== data.slug
+              );
+            },
+            () => {}
+          );
+
+          // Si hay menos de 4 de la misma categoría, complementamos con próximos eventos generales
+          if (items.length < 4) {
+            const fallbackRes = await searchEventsUseCase.execute({ limit: 8 });
+            fallbackRes.match(
+              (resp) => {
+                const complementary = resp.hits.filter(
+                  (item) =>
+                    item.id !== data.id &&
+                    item.publicUuid !== data.publicUuid &&
+                    item.slug !== data.slug &&
+                    !items.some((existing) => existing.id === item.id)
+                );
+                items = [...items, ...complementary];
+              },
+              () => {}
+            );
+          }
+
+          if (isMounted) {
+            setSimilarEvents(items.slice(0, 4));
+            setIsLoadingSimilar(false);
+          }
+        } catch {
+          if (isMounted) setIsLoadingSimilar(false);
+        }
       },
       (error) => {
         if (!isMounted) return;
@@ -100,15 +120,38 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
     };
   }, [id]);
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+  const toggleFavorite = async () => {
+    if (!event) return;
+    const res = await toggleFavApi(event.id, event.publicUuid);
+    if (res.requiresAuth && typeof window !== "undefined") {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+    }
   };
 
-  const toggleRecommendationFavorite = (recId: string) => {
-    setFavoritesState((prev) => ({
-      ...prev,
-      [recId]: !prev[recId],
-    }));
+  const toggleRecommendationFavorite = async (recId: string, publicUuid?: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const res = await toggleFavApi(recId, publicUuid);
+    if (res.requiresAuth && typeof window !== "undefined") {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+    }
+  };
+
+  const formatSimilarDate = (dateStr?: string | null) => {
+    if (!dateStr) return "Por confirmar";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const formatted = new Intl.DateTimeFormat("es-PE", {
+        day: "numeric",
+        month: "short",
+      }).format(d);
+      return formatted.toUpperCase();
+    } catch {
+      return dateStr;
+    }
   };
 
   const handleBuyTickets = (zoneId?: string) => {
@@ -127,7 +170,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-surface-variant flex items-center justify-center mb-4 animate-pulse">
           <img
             src="/logo-qph.svg"
-            alt="queplaneshoy logo"
+            alt="queplanhoy logo"
             className="w-10 h-10 object-contain"
           />
         </div>
@@ -183,11 +226,17 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
       })
     : null;
 
-  // Cálculo de precio mínimo en soles
+  // Cálculo de precio mínimo en soles (respetando si la comisión se suma o está incluida)
   const minPrice =
     (event.zones || []).length > 0
-      ? Math.min(...event.zones.map((z) => Number(z.currentPrice) || 0))
+      ? Math.min(...event.zones.map((z) => getBuyerZonePrice(z)))
       : 0;
+
+  const hasSocialLinks = Boolean(
+    event.socialLinks?.instagramUrl ||
+      event.socialLinks?.tiktokUrl ||
+      event.socialLinks?.facebookUrl
+  );
 
   const eventBanner =
     event.bannerUrl ||
@@ -195,6 +244,12 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
 
   return (
     <div className="flex-1 w-full bg-background">
+      {/* Modal de Video Promocional */}
+      <VideoTeaserModal
+        isOpen={isVideoOpen}
+        videoUrl={event.promoVideoUrl}
+        onClose={() => setIsVideoOpen(false)}
+      />
       {/* Ocultar header y bottom nav globales del layout en móvil para esta ruta */}
       <style>{`
         @media (max-width: 1023px) {
@@ -219,12 +274,12 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
           </button>
           <Link href="/" className="flex items-center gap-2">
             <img
-              alt="queplaneshoy logo"
+              alt="queplanhoy logo"
               className="h-8 w-auto rounded-md object-contain"
               src="/logo-qph.svg"
             />
             <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-              queplanes<span className="text-electric-indigo">hoy</span>
+              queplan<span className="text-electric-indigo">hoy</span>
             </span>
           </Link>
           <button
@@ -306,6 +361,19 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                   >
                     Ver mapa
                   </button>
+                  {event.promoVideoUrl && (
+                    <>
+                      <span className="text-surface-variant font-bold">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsVideoOpen(true)}
+                        className="text-electric-indigo qph-label-bold text-xs hover:underline cursor-pointer inline-flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">play_circle</span>
+                        Ver video
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -313,7 +381,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             <div>
               <h3 className="qph-headline-md text-[18px] mb-2 font-semibold text-on-surface">Sobre el evento</h3>
               <p className="text-on-surface-variant qph-body-md text-xs leading-relaxed">
-                {event.description || "Evento oficial disponible en la plataforma queplaneshoy."}
+                {event.description || "Evento oficial disponible en la plataforma queplanhoy."}
               </p>
             </div>
           </div>
@@ -355,11 +423,16 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                       Precio Oficial
                     </span>
                     <span className="text-electric-indigo qph-price-tag text-[22px] font-extrabold block">
-                      S/. {Number(ticket.currentPrice).toFixed(2)}
+                      S/. {getBuyerZonePrice(ticket).toFixed(2)}
                     </span>
+                    {!ticket.feeIncluded && Number(ticket.serviceFee || 0) > 0 && (
+                      <span className="text-[10px] text-slate-500 block">
+                        Incluye S/. {Number(ticket.serviceFee).toFixed(2)} serv.
+                      </span>
+                    )}
                     {ticket.regularPrice > ticket.currentPrice && (
                       <span className="text-[11px] text-gray-400 line-through">
-                        S/. {Number(ticket.regularPrice).toFixed(2)}
+                        S/. {(ticket.feeIncluded ? Number(ticket.regularPrice) : Number(ticket.regularPrice) + Number(ticket.serviceFee || 0)).toFixed(2)}
                       </span>
                     )}
                   </div>
@@ -422,7 +495,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             ) : (
               <span className="text-xs">Sujeto a los Términos y Condiciones Generales de QPH</span>
             )}
-            <span className="mt-1">QuePlanesHoy © 2026</span>
+            <span className="mt-1">queplanhoy © 2026</span>
           </div>
         </div>
 
@@ -501,6 +574,16 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                       {isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
                     </span>
                   </button>
+                  {event.promoVideoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setIsVideoOpen(true)}
+                      className="flex items-center gap-2 bg-electric-indigo hover:bg-primary px-5 py-3 rounded-xl transition-all border border-white/20 cursor-pointer active:scale-95 shadow-lg"
+                    >
+                      <span className="material-symbols-outlined text-lg">play_circle</span>
+                      <span className="qph-label-bold text-sm">Ver Video</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -528,7 +611,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
               </div>
 
               <p className="qph-body-lg text-on-surface-variant leading-relaxed text-sm sm:text-base">
-                {event.description || "Evento oficial en vivo disponible a través de queplaneshoy."}
+                {event.description || "Evento oficial en vivo disponible a través de queplanhoy."}
               </p>
 
               {/* Sub-cards de Requisitos y Horarios */}
@@ -563,6 +646,49 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                   </div>
                 </div>
               </div>
+
+              {hasSocialLinks && (
+                <div className="pt-4 border-t border-surface-variant flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs font-bold text-deep-slate">
+                    Canales oficiales del evento:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {event.socialLinks?.instagramUrl && (
+                      <a
+                        href={event.socialLinks.instagramUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-pink-50 text-xs font-bold text-deep-slate hover:text-pink-700 border border-surface-variant transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+                        Instagram
+                      </a>
+                    )}
+                    {event.socialLinks?.tiktokUrl && (
+                      <a
+                        href={event.socialLinks.tiktokUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-slate-100 text-xs font-bold text-deep-slate border border-surface-variant transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">music_video</span>
+                        TikTok
+                      </a>
+                    )}
+                    {event.socialLinks?.facebookUrl && (
+                      <a
+                        href={event.socialLinks.facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-blue-50 text-xs font-bold text-deep-slate hover:text-blue-700 border border-surface-variant transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">thumb_up</span>
+                        Facebook
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Ticket Categories Section - Informativo + Acción */}
@@ -624,14 +750,19 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                         </span>
                         <div className="flex items-baseline gap-2 justify-start sm:justify-end">
                           <span className="font-price-tag text-price-tag text-deep-slate font-extrabold text-2xl">
-                            S/. {Number(ticket.currentPrice).toFixed(2)}
+                            S/. {getBuyerZonePrice(ticket).toFixed(2)}
                           </span>
                           {ticket.regularPrice > ticket.currentPrice && (
                             <span className="text-xs text-outline line-through font-semibold text-gray-400">
-                              S/. {Number(ticket.regularPrice).toFixed(2)}
+                              S/. {(ticket.feeIncluded ? Number(ticket.regularPrice) : Number(ticket.regularPrice) + Number(ticket.serviceFee || 0)).toFixed(2)}
                             </span>
                           )}
                         </div>
+                        {!ticket.feeIncluded && Number(ticket.serviceFee || 0) > 0 && (
+                          <span className="text-[10px] text-slate-500 block">
+                            Incluye S/. {Number(ticket.serviceFee).toFixed(2)} de servicio
+                          </span>
+                        )}
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 mt-0.5">
                           <span className="material-symbols-outlined text-[13px]">check_circle</span>
                           Disponible
@@ -799,88 +930,121 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         </div>
 
         {/* Similar Events Section */}
-        <section className="bg-surface-container-low py-16 mt-16 border-t border-surface-variant">
-          <div className="max-w-container-max mx-auto px-8">
-            <div className="flex justify-between items-end mb-8">
-              <h2 className="qph-headline-lg text-deep-slate font-bold">Eventos Similares</h2>
-              <Link href="/" className="text-electric-indigo qph-label-bold hover:underline">
-                Ver todos los eventos
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {RECOMMENDATIONS.map((rec) => {
-                const recIsFavorite = favoritesState[rec.id] || false;
-                return (
-                  <div
-                    key={rec.id}
-                    className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer flex flex-col justify-between border border-surface-variant"
-                  >
-                    <div className="relative aspect-video overflow-hidden">
-                      <img
-                        className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-                        src={rec.imageUrl}
-                        alt={rec.title}
-                      />
-                      <div className="absolute top-3 left-3 flex gap-2">
-                        <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
-                          {rec.category}
-                        </span>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleRecommendationFavorite(rec.id);
-                        }}
-                        aria-label="Guardar en favoritos"
-                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer"
+        {(!isLoadingSimilar && similarEvents.length === 0) ? null : (
+          <section className="bg-surface-container-low py-16 mt-16 border-t border-surface-variant">
+            <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-end mb-8">
+                <div>
+                  <span className="text-[11px] font-bold text-electric-indigo uppercase tracking-wider block mb-1">
+                    Recomendaciones
+                  </span>
+                  <h2 className="qph-headline-lg text-deep-slate font-extrabold text-2xl sm:text-3xl tracking-tight">
+                    Eventos Similares
+                  </h2>
+                </div>
+                <Link href="/events" className="text-electric-indigo qph-label-bold hover:underline text-sm">
+                  Ver todos los eventos &rarr;
+                </Link>
+              </div>
+
+              {isLoadingSimilar ? (
+                /* Skeletons de Eventos Similares */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
+                  {Array.from({ length: 4 }).map((_, idx) => (
+                    <div
+                      key={`sim-skel-${idx}`}
+                      className="bg-white rounded-2xl overflow-hidden border border-surface-variant p-4 space-y-3"
+                    >
+                      <div className="aspect-video rounded-xl bg-slate-200" />
+                      <div className="h-3 w-1/3 bg-slate-200 rounded" />
+                      <div className="h-4 w-4/5 bg-slate-200 rounded" />
+                      <div className="h-3 w-1/2 bg-slate-100 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {similarEvents.map((sim) => {
+                    const isFav = checkFavorite(sim.id) || (sim.publicUuid ? checkFavorite(sim.publicUuid) : false);
+                    const targetId = sim.slug || sim.publicUuid || sim.id;
+                    const ctaHref = sim.hasLandingPage && sim.slug ? `/e/${sim.slug}` : `/events/${targetId}`;
+                    const fallbackImg =
+                      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80";
+
+                    return (
+                      <div
+                        key={sim.id}
+                        className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer flex flex-col justify-between border border-surface-variant"
                       >
-                        <span
-                          className="material-symbols-outlined text-lg"
-                          style={{
-                            fontVariationSettings: recIsFavorite ? "'FILL' 1" : "'FILL' 0",
-                            color: recIsFavorite ? "#e11d48" : "inherit",
-                          }}
-                        >
-                          favorite
-                        </span>
-                      </button>
-                    </div>
-
-                    <div className="p-5 flex flex-col flex-1 justify-between">
-                      <div>
-                        <p className="font-label-bold text-[12px] text-electric-indigo mb-1 uppercase">
-                          {rec.date} • {rec.location}
-                        </p>
-                        <h3 className="font-headline-md text-headline-md text-deep-slate group-hover:text-electric-indigo transition-colors font-bold line-clamp-1 mb-2">
-                          {rec.title}
-                        </h3>
-                        <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3">
-                          Acceso oficial garantizado para esta función en directo.
-                        </p>
-                      </div>
-
-                      <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-outline uppercase font-label-bold">Precio</span>
-                          <span className="font-price-tag text-price-tag text-deep-slate font-extrabold text-base">
-                            Desde S/. {rec.price}.00
-                          </span>
+                        <div className="relative aspect-video overflow-hidden bg-surface-gray">
+                          <img
+                            className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+                            src={sim.bannerUrl || fallbackImg}
+                            alt={sim.title}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = fallbackImg;
+                            }}
+                          />
+                          <div className="absolute top-3 left-3 flex gap-2">
+                            <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
+                              {sim.category || "EVENTO"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => toggleRecommendationFavorite(sim.id, sim.publicUuid, e)}
+                            aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-deep-slate/60 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95 z-10"
+                          >
+                            <span
+                              className="material-symbols-outlined text-[18px]"
+                              style={{
+                                fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
+                                color: isFav ? "#e11d48" : "white",
+                              }}
+                            >
+                              favorite
+                            </span>
+                          </button>
                         </div>
-                        <Link
-                          href={`/events/${rec.id}`}
-                          className="px-3.5 py-2 bg-electric-indigo text-white rounded-xl font-label-bold text-[12px] hover:bg-primary transition-all shadow-sm"
-                        >
-                          Comprar Entradas
-                        </Link>
+
+                        <div className="p-5 flex flex-col flex-1 justify-between gap-4">
+                          <div>
+                            <p className="font-label-bold text-[11px] text-electric-indigo mb-1 uppercase tracking-wider">
+                              {formatSimilarDate(sim.date)} • {sim.venue || sim.city || "PERÚ"}
+                            </p>
+                            <Link href={ctaHref}>
+                              <h3 className="font-headline-md text-base text-deep-slate group-hover:text-electric-indigo transition-colors font-bold line-clamp-2 leading-snug">
+                                {sim.title}
+                              </h3>
+                            </Link>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-3 border-t border-surface-variant/60">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-on-surface-variant uppercase font-label-bold">
+                                Precio
+                              </span>
+                              <span className="font-price-tag text-deep-slate font-extrabold text-sm sm:text-base">
+                                {sim.minPrice > 0 ? `Desde S/ ${sim.minPrice.toFixed(2)}` : "Entrada Libre"}
+                              </span>
+                            </div>
+                            <Link
+                              href={ctaHref}
+                              className="px-3.5 py-2 bg-electric-indigo text-white rounded-xl font-label-bold text-[12px] hover:bg-primary active:scale-95 transition-all shadow-xs"
+                            >
+                              {sim.hasLandingPage && sim.slug ? "Ver Experiencia" : "Comprar"}
+                            </Link>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </div>
     </div>
   );

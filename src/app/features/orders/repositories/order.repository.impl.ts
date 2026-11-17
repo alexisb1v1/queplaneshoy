@@ -1,14 +1,18 @@
 import { ResultAsync } from 'neverthrow';
 import { OrderRepository } from './order.repository';
 import {
+  CancelPendingCulqiOrderModel,
+  ConfirmCulqiChargeModel,
+  ConfirmCulqiChargeParams,
+  CulqiOrderStatusModel,
   OrderModel,
+  PrepareCulqiCheckoutModel,
+  PrepareCulqiCheckoutParams,
   SimulateCheckoutParams,
   SimulateCheckoutResponseModel,
   UserOrderModel,
   ValidateCouponParams,
   ValidateCouponResponseModel,
-  CreateIzipayPaymentParams,
-  CreateIzipayPaymentResponse,
 } from '../models/order.model';
 import { DomainError } from '../../../common/errors/domain-error';
 import { apiClient } from '../../../common/services/api-client';
@@ -69,6 +73,40 @@ export class OrderRepositoryImpl implements OrderRepository {
     );
   }
 
+  prepareCulqiCheckout(
+    params: PrepareCulqiCheckoutParams,
+  ): ResultAsync<PrepareCulqiCheckoutModel, DomainError> {
+    return apiClient.requestResult<PrepareCulqiCheckoutModel>(
+      apiClient.post<PrepareCulqiCheckoutModel>('/orders/culqi/prepare', params),
+    );
+  }
+
+  confirmCulqiCharge(
+    params: ConfirmCulqiChargeParams,
+  ): ResultAsync<ConfirmCulqiChargeModel, DomainError> {
+    return apiClient.requestResult<ConfirmCulqiChargeModel>(
+      apiClient.post<ConfirmCulqiChargeModel>('/orders/culqi/confirm-charge', params, {
+        timeoutMs: 25000,
+      }),
+    );
+  }
+
+  getCulqiOrderStatus(
+    orderPublicUuid: string,
+  ): ResultAsync<CulqiOrderStatusModel, DomainError> {
+    return apiClient.requestResult<CulqiOrderStatusModel>(
+      apiClient.get<CulqiOrderStatusModel>(`/orders/culqi/status/${orderPublicUuid}`),
+    );
+  }
+
+  cancelPendingCulqiOrder(
+    orderPublicUuid: string,
+  ): ResultAsync<CancelPendingCulqiOrderModel, DomainError> {
+    return apiClient.requestResult<CancelPendingCulqiOrderModel>(
+      apiClient.post<CancelPendingCulqiOrderModel>(`/orders/culqi/cancel/${orderPublicUuid}`, {}),
+    );
+  }
+
   getMyOrders(): ResultAsync<UserOrderModel[], DomainError> {
     return apiClient.requestResult<UserOrderModel[]>(
       apiClient.get<UserOrderModel[]>('/orders/my-orders'),
@@ -80,14 +118,6 @@ export class OrderRepositoryImpl implements OrderRepository {
   ): ResultAsync<ValidateCouponResponseModel, DomainError> {
     return apiClient.requestResult<ValidateCouponResponseModel>(
       apiClient.post<ValidateCouponResponseModel>('/orders/validate-coupon', params),
-    );
-  }
-
-  createIzipayPayment(
-    params: CreateIzipayPaymentParams,
-  ): ResultAsync<CreateIzipayPaymentResponse, DomainError> {
-    return apiClient.requestResult<CreateIzipayPaymentResponse>(
-      apiClient.post<CreateIzipayPaymentResponse>('/orders/izipay/create-payment', params),
     );
   }
 }

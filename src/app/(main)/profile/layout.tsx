@@ -69,7 +69,7 @@ export default function ProfileLayout({
     'https://lh3.googleusercontent.com/aida-public/AB6AXuD0WX7wdAbDny3NqD0b2ZPWtXnPzWCKC6yV8xZuW3kp4ubObYTPkigGWMYVnDEKgXoGmcZsSr_Lk2io_rmui84FLSFtatmRg5xpaHjyWjOXqnuuDHbt7pwlj119-eo50UMR7FyWBataGridEHgcqrhJtjw4H5NajgVfWS_7Y7clWQZqGdr2b0zDUW01MY-122_qcWml18oAzXHBm4ULRShkh9CSGyiZhff8VIWuNbVaZW_EoH5Y_93_DqG0X1r6Y9AnhgD15hG9wAxs';
 
   return (
-    <div className="bg-surface min-h-screen py-6 md:py-10">
+    <div className="bg-surface min-h-screen pt-5 pb-28 md:py-10">
       <div className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8">
         
         {/* Barra de pestañas móvil cuando se está en /profile/tickets, /profile/favorites, etc. */}
@@ -77,7 +77,11 @@ export default function ProfileLayout({
           <div className="lg:hidden mb-6 flex items-center justify-between bg-white rounded-2xl border border-surface-variant p-1.5 shadow-xs gap-1">
             <Link
               href="/profile/settings"
-              className="flex-1 py-2 text-center rounded-xl text-xs font-bold text-on-surface-variant hover:bg-surface-gray transition-all"
+              className={`flex-1 py-2 text-center rounded-xl text-xs font-bold transition-all ${
+                isSettingsActive
+                  ? 'bg-electric-indigo text-white shadow-xs'
+                  : 'text-on-surface-variant hover:bg-surface-gray'
+              }`}
             >
               Mis datos
             </Link>
@@ -89,7 +93,7 @@ export default function ProfileLayout({
                   : 'text-on-surface-variant hover:bg-surface-gray'
               }`}
             >
-              Entradas
+              Mis entradas
             </Link>
             <Link
               href="/profile/favorites"
@@ -99,18 +103,20 @@ export default function ProfileLayout({
                   : 'text-on-surface-variant hover:bg-surface-gray'
               }`}
             >
-              Favoritos
+              Mis favoritos
             </Link>
-            <Link
-              href="/organizer/events"
-              className={`flex-1 py-2 text-center rounded-xl text-xs font-bold transition-all ${
-                pathname.startsWith('/organizer')
-                  ? 'bg-electric-indigo text-white shadow-xs'
-                  : 'text-on-surface-variant hover:bg-surface-gray'
-              }`}
-            >
-              Mis eventos
-            </Link>
+            {user?.isOrganizer && (
+              <Link
+                href="/organizer/events"
+                className={`flex-1 py-2 text-center rounded-xl text-xs font-bold transition-all ${
+                  pathname.startsWith('/organizer')
+                    ? 'bg-electric-indigo text-white shadow-xs'
+                    : 'text-on-surface-variant hover:bg-surface-gray'
+                }`}
+              >
+                Mis eventos
+              </Link>
+            )}
           </div>
         )}
 
@@ -136,8 +142,27 @@ export default function ProfileLayout({
                 </p>
               </div>
 
-              {/* Navigation Items */}
+              {/* Navigation Items: 1- Mis datos y ajustes | 2- Mis entradas | 3- Mis favoritos | 4- Mis eventos (solo si es organizador) */}
               <nav className="flex flex-col gap-1.5">
+                {/* 1. Mis datos y ajustes */}
+                <Link
+                  href="/profile/settings"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
+                    isTabActive('/profile/settings')
+                      ? 'bg-electric-indigo text-white shadow-md shadow-electric-indigo/25'
+                      : 'text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate'
+                  }`}
+                >
+                  <span
+                    className="material-symbols-outlined text-[20px]"
+                    style={{ fontVariationSettings: isTabActive('/profile/settings') ? "'FILL' 1" : "'FILL' 0" }}
+                  >
+                    manage_accounts
+                  </span>
+                  <span>Mis datos y ajustes</span>
+                </Link>
+
+                {/* 2. Mis entradas */}
                 <Link
                   href="/profile/tickets"
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
@@ -155,6 +180,7 @@ export default function ProfileLayout({
                   <span>Mis entradas</span>
                 </Link>
 
+                {/* 3. Mis favoritos */}
                 <Link
                   href="/profile/favorites"
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
@@ -172,39 +198,25 @@ export default function ProfileLayout({
                   <span>Mis favoritos</span>
                 </Link>
 
-                <Link
-                  href="/organizer/events"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
-                    pathname.startsWith('/organizer')
-                      ? 'bg-electric-indigo text-white shadow-md shadow-electric-indigo/25'
-                      : 'text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate'
-                  }`}
-                >
-                  <span
-                    className="material-symbols-outlined text-[20px]"
-                    style={{ fontVariationSettings: pathname.startsWith('/organizer') ? "'FILL' 1" : "'FILL' 0" }}
+                {/* 4. Mis eventos (Solo si el usuario es organizador) */}
+                {user?.isOrganizer && (
+                  <Link
+                    href="/organizer/events"
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
+                      pathname.startsWith('/organizer')
+                        ? 'bg-electric-indigo text-white shadow-md shadow-electric-indigo/25'
+                        : 'text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate'
+                    }`}
                   >
-                    storefront
-                  </span>
-                  <span>Mis eventos</span>
-                </Link>
-
-                <Link
-                  href="/profile/settings"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
-                    isTabActive('/profile/settings')
-                      ? 'bg-electric-indigo text-white shadow-md shadow-electric-indigo/25'
-                      : 'text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate'
-                  }`}
-                >
-                  <span
-                    className="material-symbols-outlined text-[20px]"
-                    style={{ fontVariationSettings: isTabActive('/profile/settings') ? "'FILL' 1" : "'FILL' 0" }}
-                  >
-                    manage_accounts
-                  </span>
-                  <span>Mis datos y ajustes</span>
-                </Link>
+                    <span
+                      className="material-symbols-outlined text-[20px]"
+                      style={{ fontVariationSettings: pathname.startsWith('/organizer') ? "'FILL' 1" : "'FILL' 0" }}
+                    >
+                      storefront
+                    </span>
+                    <span>Mis eventos</span>
+                  </Link>
+                )}
 
                 <button
                   type="button"

@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import LoginPageComponent from '../../features/auth/ui/login-page';
 
 export const metadata = {
-  title: 'Iniciar Sesión | queplaneshoy',
+  title: 'Iniciar Sesión | queplanhoy',
   description: 'Inicia sesión en tu cuenta para comprar entradas, ver tus favoritos y gestionar tu perfil.',
 };
 

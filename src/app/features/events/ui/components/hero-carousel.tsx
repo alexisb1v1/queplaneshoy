@@ -198,7 +198,7 @@ export function HeroCarousel() {
               </p>
               <Link
                 href={slide.targetUrl}
-                className="bg-electric-indigo text-white px-8 py-4 rounded-xl qph-headline-md hover:scale-105 transition-transform duration-200 inline-block cursor-pointer shadow-lg shadow-electric-indigo/25 active:scale-95"
+                className="bg-rose-500 hover:bg-rose-600 text-white px-8 py-4 rounded-xl qph-headline-md hover:scale-105 transition-all duration-200 inline-block cursor-pointer shadow-xl shadow-rose-500/35 active:scale-95"
               >
                 {slide.ctaText}
               </Link>

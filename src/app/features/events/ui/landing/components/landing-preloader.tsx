@@ -38,7 +38,7 @@ export function LandingPreloader({ isLoading }: LandingPreloaderProps) {
         <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-tr from-white/10 to-white/5 border border-white/15 p-3 flex items-center justify-center shadow-2xl backdrop-blur-xl animate-pulse">
           <img
             src="/logo-qph.svg"
-            alt="queplaneshoy logo"
+            alt="queplanhoy logo"
             className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(99,102,241,0.6)]"
           />
         </div>
@@ -46,7 +46,7 @@ export function LandingPreloader({ isLoading }: LandingPreloaderProps) {
         {/* Marca Tipográfica */}
         <div className="text-center">
           <span className="font-extrabold text-2xl tracking-tight text-white block">
-            queplanes<span className="text-electric-indigo">hoy</span>
+            queplan<span className="text-electric-indigo">hoy</span>
           </span>
           <p className="text-xs text-white/50 uppercase tracking-widest mt-1 font-semibold">
             Cargando experiencia...
