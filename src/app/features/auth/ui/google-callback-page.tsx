@@ -62,7 +62,7 @@ export default function GoogleCallbackPageComponent() {
         <div className="flex items-center justify-center gap-2">
           <img src="/logo-qph.svg" className="w-9 h-9 rounded-lg object-contain" alt="Logo QPH" />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-            queplanes<span className="text-electric-indigo">hoy</span>
+            queplan<span className="text-electric-indigo">hoy</span>
           </span>
         </div>
 
@@ -89,7 +89,7 @@ export default function GoogleCallbackPageComponent() {
             </div>
             <div>
               <h1 className="text-xl font-black text-deep-slate">
-                ¡Bienvenido a queplaneshoy!
+                ¡Bienvenido a queplanhoy!
               </h1>
               <p className="text-xs text-on-surface-variant mt-1.5">
                 Tu sesión está lista. Redirigiendo...

@@ -77,7 +77,7 @@ export function LandingPageContainer({ slug, previewTemp }: LandingPageContainer
         <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 shadow-xl border border-white/10">
           <img
             src="/logo-qph.svg"
-            alt="queplaneshoy logo"
+            alt="queplanhoy logo"
             className="w-10 h-10 object-contain"
           />
         </div>

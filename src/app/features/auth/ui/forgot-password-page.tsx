@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-deep-slate select-none">
         <div className="absolute inset-0 z-0">
           <img
-            alt="Concierto queplaneshoy"
+            alt="Concierto queplanhoy"
             className="w-full h-full object-cover scale-105 transition-transform duration-[20s] ease-out hover:scale-100"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3rZ6yKDKqCPTUTce3UT_5EUR2cYbMqYZCPtae38ukfPAhoUvEIfVv2v_cRuWSv6Jse0F8k4YH6nf2FSP_iD4TuuzSNxBd2RGnGn_nKkQMWbgGXx5R1qVLfBNDKPmsVrpS9eEqmysP05fNo_tzC0gf-I9gTI_cjTljXnk-L7RZlkrGcLOCXP1mm42HZa5d-hoVb1JuEVExX9t9yE_B3moZGWGfSX8ZKVS3H2cDzXpYxGgfhwzhWyosc4gQiwqrO9AW46PugAsG7_Pm"
           />
@@ -61,9 +61,9 @@ export default function ForgotPasswordPage() {
         <div className="relative z-20 flex flex-col justify-between p-16 w-full text-white">
           <div>
             <Link href="/" className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity">
-              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplaneshoy logo" />
+              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplanhoy logo" />
               <span className="font-extrabold text-2xl tracking-tight text-white">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
             <h1 className="text-4xl font-extrabold leading-tight mb-6">Tus mejores planes, a un clic.</h1>
@@ -105,9 +105,9 @@ export default function ForgotPasswordPage() {
           {/* Logo Móvil */}
           <div className="lg:hidden mb-8 flex justify-start">
             <Link href="/" className="flex items-center gap-2 cursor-pointer">
-              <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+              <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
               <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
           </div>
@@ -145,7 +145,7 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
               <p className="text-xs text-deep-slate leading-relaxed pt-1">
-                Si <strong>{email}</strong> está registrado en queplaneshoy, recibirás un correo con el botón seguro para crear tu nueva contraseña. El enlace es válido durante 15 minutos.
+                Si <strong>{email}</strong> está registrado en queplanhoy, recibirás un correo con el botón seguro para crear tu nueva contraseña. El enlace es válido durante 15 minutos.
               </p>
               <div className="pt-3 flex flex-col sm:flex-row gap-3">
                 <button
@@ -239,8 +239,8 @@ export default function ForgotPasswordPage() {
             <div className="text-xs leading-relaxed text-on-surface-variant">
               <span className="font-semibold text-deep-slate block mb-0.5">¿Necesitas ayuda adicional?</span>
               ¿No recuerdas con qué correo te registraste? Escríbenos a{' '}
-              <a href="mailto:soporte@queplaneshoy.com" className="text-electric-indigo font-semibold hover:underline">
-                soporte@queplaneshoy.com
+              <a href="mailto:soporte@queplanhoy.com" className="text-electric-indigo font-semibold hover:underline">
+                soporte@queplanhoy.com
               </a>
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function ForgotPasswordPage() {
 
           {/* Footer Legal */}
           <div className="mt-12 text-center text-[11px] text-platinum-silver font-semibold">
-            © 2026 queplaneshoy. Todos los derechos reservados.
+            © 2026 queplanhoy (OmniCore S.A.C.). Todos los derechos reservados.
           </div>
         </div>
       </div>

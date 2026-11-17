@@ -66,7 +66,7 @@ export interface PaymentSuccessProps {
 
 export default function PaymentSuccessScreen({
   orderCode = "#QPH-849204",
-  userEmail = "usuario@queplaneshoy.com",
+  userEmail = "usuario@queplanhoy.com",
   customerName = "Comprador Oficial QPH",
   eventTitle = "Evento Oficial",
   categoryTag = "Venta Oficial QPH",
@@ -75,7 +75,7 @@ export default function PaymentSuccessScreen({
   timeStr = "Horario Oficial",
   doorsOpenStr = "Apertura 2 hrs antes",
   venueName = "Recinto Oficial",
-  venueAccess = "Puerta Principal • Control QR Ed25519",
+  venueAccess = "Puerta Principal • Control QR de Alta Seguridad",
   venueAddress = "Recinto Oficial, Perú",
   coordinates = null,
   addressReference = null,
@@ -141,7 +141,7 @@ export default function PaymentSuccessScreen({
                 src="/logo-qph.svg"
               />
               <span className="text-xl sm:text-2xl font-black text-deep-slate tracking-tighter">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
           </div>
@@ -155,7 +155,7 @@ export default function PaymentSuccessScreen({
               <span className="hidden sm:inline">Volver a selección de entradas</span>
             </Link>
             <button
-              onClick={() => alert("Centro de Ayuda disponible las 24 horas en soporte@queplaneshoy.com")}
+              onClick={() => alert("Centro de Ayuda disponible las 24 horas en soporte@queplanhoy.com")}
               className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">help</span>
@@ -704,7 +704,7 @@ export default function PaymentSuccessScreen({
             <div className="flex items-center gap-2">
               <img alt="Logo QPH" className="w-8 h-8 rounded-lg object-contain shadow-sm" src="/logo-qph.svg" />
               <div className="text-xl font-black text-white tracking-tighter">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </div>
             </div>
             <p className="text-platinum-silver text-xs">
@@ -747,7 +747,7 @@ export default function PaymentSuccessScreen({
         </div>
 
         <div className="border-t border-white/10 w-full px-4 sm:px-8 py-6 text-center text-platinum-silver text-xs">
-          © 2024 queplaneshoy. Todos los derechos reservados. Compra segura con tecnología certificada.
+          © 2026 queplanhoy (OmniCore S.A.C.). Todos los derechos reservados. Compra segura con validación digital oficial.
         </div>
       </footer>
 

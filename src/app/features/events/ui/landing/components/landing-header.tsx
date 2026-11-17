@@ -71,7 +71,7 @@ export function LandingHeader({
       >
         <img
           src="/logo-qph.svg"
-          alt="queplaneshoy logo"
+          alt="queplanhoy logo"
           className="w-8 h-8 rounded-md object-contain"
         />
         <span className="font-extrabold text-lg tracking-tight text-white">

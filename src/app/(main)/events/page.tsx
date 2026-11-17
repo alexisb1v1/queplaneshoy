@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import ExploreEventsPageComponent from "../../features/events/ui/explore-page";
 
 export const metadata = {
-  title: "Cartelera Oficial de Eventos | queplaneshoy",
+  title: "Cartelera Oficial de Eventos | queplanhoy",
   description: "Descubre los mejores conciertos, obras de teatro, festivales y eventos deportivos en todo el Perú con acceso oficial garantizado.",
 };
 
@@ -14,7 +14,7 @@ export default function EventsExplorePage() {
           <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-surface-variant flex items-center justify-center mb-4 animate-pulse">
             <img
               src="/logo-qph.svg"
-              alt="queplaneshoy logo"
+              alt="queplanhoy logo"
               className="w-10 h-10 object-contain"
             />
           </div>

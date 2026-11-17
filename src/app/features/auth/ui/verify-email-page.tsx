@@ -77,9 +77,9 @@ export default function VerifyEmailPageComponent() {
     <main className="min-h-screen bg-background flex flex-col justify-center items-center px-4 py-12">
       {/* Brand Logo Header */}
       <div className="mb-8 flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-        <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplaneshoy logo" />
+        <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplanhoy logo" />
         <span className="font-extrabold text-2xl tracking-tight text-deep-slate">
-          queplanes<span className="text-electric-indigo">hoy</span>
+          queplan<span className="text-electric-indigo">hoy</span>
         </span>
       </div>
 

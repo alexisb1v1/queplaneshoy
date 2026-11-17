@@ -129,9 +129,9 @@ export default function RegisterPageComponent() {
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div>
             <Link href="/" className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity">
-              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplaneshoy logo" />
+              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplanhoy logo" />
               <span className="font-extrabold text-2xl tracking-tight text-white">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
             <h1 className="text-white font-black text-5xl mb-4 leading-tight">
@@ -170,9 +170,9 @@ export default function RegisterPageComponent() {
         {/* Logo Móvil */}
         <div className="w-full max-w-md flex justify-start mb-6 lg:hidden">
           <Link href="/" className="flex items-center gap-2 cursor-pointer">
-            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
             <span className="font-black text-xl text-deep-slate tracking-tight">
-              queplanes<span className="text-electric-indigo">hoy</span>
+              queplan<span className="text-electric-indigo">hoy</span>
             </span>
           </Link>
         </div>
@@ -445,7 +445,7 @@ export default function RegisterPageComponent() {
 
         {/* Footer pequeño */}
         <div className="mt-8 text-platinum-silver text-[11px] font-semibold text-center">
-          © 2026 queplaneshoy. Todos los derechos reservados.
+          © 2026 queplanhoy (OmniCore S.A.C.). Todos los derechos reservados.
         </div>
       </div>
     </main>

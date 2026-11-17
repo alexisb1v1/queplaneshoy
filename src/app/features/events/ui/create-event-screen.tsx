@@ -1946,7 +1946,7 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                         type="url"
                         value={termsAndConditionsUrl}
                         onChange={(e) => setTermsAndConditionsUrl(e.target.value)}
-                        placeholder="https://cdn.queplaneshoy.com/legal/terminos.pdf"
+                        placeholder="https://cdn.queplanhoy.com/legal/terminos.pdf"
                         className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
                       />
                     </div>

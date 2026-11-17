@@ -2,8 +2,8 @@ import React, { Suspense } from 'react';
 import VerifyEmailPageComponent from '../../features/auth/ui/verify-email-page';
 
 export const metadata = {
-  title: 'Verificar Correo Electrónico | queplaneshoy',
-  description: 'Confirma tu dirección de correo electrónico para activar tu cuenta en queplaneshoy y empezar a disfrutar de los mejores eventos.',
+  title: 'Verificar Correo Electrónico | queplanhoy',
+  description: 'Confirma tu dirección de correo electrónico para activar tu cuenta en queplanhoy y empezar a disfrutar de los mejores eventos.',
 };
 
 export default function VerifyEmailPage() {

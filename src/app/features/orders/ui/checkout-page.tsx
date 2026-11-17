@@ -144,9 +144,9 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => router.push('/')}
           >
-            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplaneshoy logo" />
+            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
             <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-              queplanes<span className="text-electric-indigo">hoy</span>
+              queplan<span className="text-electric-indigo">hoy</span>
             </span>
           </div>
           <div className="flex items-center gap-2 text-on-surface-variant font-semibold text-sm">
@@ -313,7 +313,7 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                   onChange={(e) => setSaveCard(e.target.checked)}
                 />
                 <label className="text-sm text-on-surface-variant cursor-pointer select-none" htmlFor="saveCard">
-                  Guardar esta tarjeta para mis próximas compras en queplaneshoy de forma segura.
+                  Guardar esta tarjeta para mis próximas compras en queplanhoy de forma segura.
                 </label>
               </div>
 

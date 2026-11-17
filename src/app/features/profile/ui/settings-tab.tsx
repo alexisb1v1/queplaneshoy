@@ -535,7 +535,7 @@ export default function SettingsTab({ user, onUserUpdate }: SettingsTabProps) {
                     className="w-full px-4 py-3 rounded-xl border border-surface-variant focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo bg-white text-deep-slate outline-none transition-all text-sm"
                     value={organizerLogoUrl}
                     onChange={(e) => setOrganizerLogoUrl(e.target.value)}
-                    placeholder="https://cdn.queplaneshoy.com/organizers/logo.png"
+                    placeholder="https://cdn.queplanhoy.com/organizers/logo.png"
                   />
                 </div>
               </div>

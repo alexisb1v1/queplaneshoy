@@ -3,8 +3,8 @@ import { Metadata } from 'next';
 import ResetPasswordPage from '@/app/features/auth/ui/reset-password-page';
 
 export const metadata: Metadata = {
-  title: 'Restablecer Contraseña | queplaneshoy',
-  description: 'Configura una nueva contraseña segura para tu cuenta en queplaneshoy.',
+  title: 'Restablecer Contraseña | queplanhoy',
+  description: 'Configura una nueva contraseña segura para tu cuenta en queplanhoy.',
 };
 
 export default function ResetPasswordRoute() {

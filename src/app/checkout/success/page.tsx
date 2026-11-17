@@ -2,7 +2,7 @@ import React from "react";
 import PaymentSuccessScreen from "../../features/orders/ui/payment-success-screen";
 
 export const metadata = {
-  title: "¡Pago Realizado con Éxito! | queplaneshoy",
+  title: "¡Pago Realizado con Éxito! | queplanhoy",
   description: "Confirmación de compra oficial y pase digital con código QR para Afterlife Madrid.",
 };
 

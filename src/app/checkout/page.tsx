@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import PurchaseFlowPageComponent from "../features/orders/ui/purchase-flow-page";
 
 export const metadata = {
-  title: "Selección de Entradas y Pasarela de Pagos | queplaneshoy",
+  title: "Selección de Entradas y Pasarela de Pagos | queplanhoy",
   description: "Selecciona tus entradas, zona en el mapa y completa tu pago seguro con tecnología certificada.",
 };
 
@@ -14,7 +14,7 @@ export default function CheckoutPage() {
           <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-surface-variant flex items-center justify-center mb-4 animate-pulse">
             <img
               src="/logo-qph.svg"
-              alt="queplaneshoy logo"
+              alt="queplanhoy logo"
               className="w-10 h-10 object-contain"
             />
           </div>

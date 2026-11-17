@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import GoogleCallbackPageComponent from '../../../../features/auth/ui/google-callback-page';
 
 export const metadata = {
-  title: 'Autenticación con Google | queplaneshoy',
+  title: 'Autenticación con Google | queplanhoy',
   description: 'Completando el inicio de sesión seguro con tu cuenta de Google.',
 };
 

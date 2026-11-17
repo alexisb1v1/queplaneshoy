@@ -908,7 +908,7 @@ export default function PurchaseFlowPageComponent() {
         <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-surface-variant flex items-center justify-center mb-4 animate-pulse">
           <img
             src="/logo-qph.svg"
-            alt="queplaneshoy logo"
+            alt="queplanhoy logo"
             className="w-10 h-10 object-contain"
           />
         </div>
@@ -924,7 +924,7 @@ export default function PurchaseFlowPageComponent() {
     return (
       <PaymentSuccessScreen
         orderCode={checkoutResult ? checkoutResult.orderCode : `#QPH-${Math.floor(100000 + Math.random() * 900000)}`}
-        userEmail={currentUser?.email || "comprador@queplaneshoy.com"}
+        userEmail={currentUser?.email || "comprador@queplanhoy.com"}
         customerName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : "Comprador Oficial QPH"}
         eventTitle={event ? event.name : "Evento Oficial"}
         categoryTag={event ? `${event.category} • Venta Oficial` : "Música en Vivo • Oficial"}
@@ -984,7 +984,7 @@ export default function PurchaseFlowPageComponent() {
                 className="w-9 h-9 rounded-lg shadow-sm group-hover:scale-105 transition-all"
               />
               <span className="text-xl sm:text-2xl font-black text-deep-slate tracking-tighter">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
 
@@ -1005,7 +1005,7 @@ export default function PurchaseFlowPageComponent() {
               Cartelera
             </Link>
             <button
-              onClick={() => alert("Soporte disponible en soporte@queplaneshoy.com")}
+              onClick={() => alert("Soporte disponible en soporte@queplanhoy.com")}
               className="flex items-center gap-2 text-on-surface-variant hover:text-electric-indigo transition-colors font-semibold text-xs cursor-pointer"
             >
               <span className="material-symbols-outlined text-[20px]">help</span>
@@ -2095,7 +2095,7 @@ export default function PurchaseFlowPageComponent() {
             <div className="flex items-center gap-3">
               <img src="/logo-qph.svg" alt="Logo QPH" className="w-8 h-8 rounded-lg shadow-sm" />
               <span className="text-xl font-black text-surface-container-lowest tracking-tighter">
-                queplanes<span className="text-electric-indigo">hoy</span>
+                queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </div>
             <p className="text-platinum-silver text-xs">
@@ -2139,7 +2139,7 @@ export default function PurchaseFlowPageComponent() {
         </div>
 
         <div className="border-t border-white/10 w-full px-4 sm:px-8 py-6 text-center text-platinum-silver text-xs">
-          © 2026 queplaneshoy. Todos los derechos reservados. Boletería oficial con tecnología criptográfica.
+          © 2026 queplanhoy (OmniCore S.A.C.). Todos los derechos reservados. Boletería digital oficial con código QR único.
         </div>
       </footer>
 

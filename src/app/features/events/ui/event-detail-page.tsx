@@ -170,7 +170,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         <div className="w-16 h-16 rounded-2xl bg-white shadow-md border border-surface-variant flex items-center justify-center mb-4 animate-pulse">
           <img
             src="/logo-qph.svg"
-            alt="queplaneshoy logo"
+            alt="queplanhoy logo"
             className="w-10 h-10 object-contain"
           />
         </div>
@@ -274,12 +274,12 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
           </button>
           <Link href="/" className="flex items-center gap-2">
             <img
-              alt="queplaneshoy logo"
+              alt="queplanhoy logo"
               className="h-8 w-auto rounded-md object-contain"
               src="/logo-qph.svg"
             />
             <span className="font-extrabold text-xl tracking-tight text-deep-slate">
-              queplanes<span className="text-electric-indigo">hoy</span>
+              queplan<span className="text-electric-indigo">hoy</span>
             </span>
           </Link>
           <button
@@ -381,7 +381,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             <div>
               <h3 className="qph-headline-md text-[18px] mb-2 font-semibold text-on-surface">Sobre el evento</h3>
               <p className="text-on-surface-variant qph-body-md text-xs leading-relaxed">
-                {event.description || "Evento oficial disponible en la plataforma queplaneshoy."}
+                {event.description || "Evento oficial disponible en la plataforma queplanhoy."}
               </p>
             </div>
           </div>
@@ -495,7 +495,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             ) : (
               <span className="text-xs">Sujeto a los Términos y Condiciones Generales de QPH</span>
             )}
-            <span className="mt-1">QuePlanesHoy © 2026</span>
+            <span className="mt-1">queplanhoy © 2026</span>
           </div>
         </div>
 
@@ -611,7 +611,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
               </div>
 
               <p className="qph-body-lg text-on-surface-variant leading-relaxed text-sm sm:text-base">
-                {event.description || "Evento oficial en vivo disponible a través de queplaneshoy."}
+                {event.description || "Evento oficial en vivo disponible a través de queplanhoy."}
               </p>
 
               {/* Sub-cards de Requisitos y Horarios */}

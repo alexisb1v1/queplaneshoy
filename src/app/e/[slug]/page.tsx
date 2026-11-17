@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .join(" ");
 
   return {
-    title: `${formattedTitle} | Entradas Oficiales | queplaneshoy`,
-    description: `Consigue tus entradas oficiales para ${formattedTitle} en queplaneshoy. Acceso digital exclusivo y garantizado.`,
+    title: `${formattedTitle} | Entradas Oficiales | queplanhoy`,
+    description: `Consigue tus entradas oficiales para ${formattedTitle} en queplanhoy. Acceso digital exclusivo y garantizado.`,
   };
 }
 

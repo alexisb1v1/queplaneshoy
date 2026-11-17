@@ -467,7 +467,7 @@ export default function TicketsTab() {
           unitPrice={printOrder.totalAmount / (printOrder.ticketCount || 1)}
           totalAmount={printOrder.totalAmount}
           holderName={userProfile?.name || "Titular Registrado QPH"}
-          holderDni={userProfile?.email || "usuario@queplaneshoy.com"}
+          holderDni={userProfile?.email || "usuario@queplanhoy.com"}
           tickets={printOrder.tickets.map((t) => ({
             ticketId: t.ticketId,
             ticketUuid: t.ticketUuid,

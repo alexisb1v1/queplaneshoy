@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import CreateEventScreen from '@/app/features/events/ui/create-event-screen';
 
 export const metadata: Metadata = {
-  title: 'Editar Borrador - Organizador | queplaneshoy',
+  title: 'Editar Borrador - Organizador | queplanhoy',
   description: 'Modifica y actualiza los detalles de tu evento en borrador.',
 };
 

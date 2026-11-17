@@ -8,7 +8,7 @@ export interface FeeTierRule {
 }
 
 /**
- * Escala oficial de comisiones de QuePlanesHoy centralizada en variables:
+ * Escala oficial de comisiones de QuePlanHoy centralizada en variables:
  * - Tramo 1: Hasta S/ 50.00 -> Comisión fija de S/ 6.00 por entrada.
  * - Tramo 2: De S/ 51.00 a S/ 125.00 -> Comisión fija de S/ 10.00 por entrada.
  * - Tramo 3: A partir de S/ 126.00 -> Comisión porcentual de 8% del precio por entrada.
@@ -41,7 +41,7 @@ export const QPH_FEE_RULES = {
 } as const;
 
 /**
- * Calcula la comisión oficial de QuePlanesHoy aplicable a boletos tanto de precio regular como de preventa.
+ * Calcula la comisión oficial de QuePlanHoy aplicable a boletos tanto de precio regular como de preventa.
  */
 export function calculatePlatformFee(price: number): number {
   const p = Math.max(0, Number(price) || 0);

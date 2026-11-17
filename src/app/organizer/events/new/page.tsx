@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import CreateEventScreen from '@/app/features/events/ui/create-event-screen';
 
 export const metadata: Metadata = {
-  title: 'Nuevo Evento - Organizador | queplaneshoy',
+  title: 'Nuevo Evento - Organizador | queplanhoy',
   description:
     'Asistente paso a paso para crear un nuevo evento con control de aforos, fechas, preventa, landing page y cupones.',
 };

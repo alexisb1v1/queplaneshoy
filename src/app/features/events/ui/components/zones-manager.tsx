@@ -199,7 +199,7 @@ export function ZonesManager({ zones, onChange, eventTicketLimit = 6 }: ZonesMan
     }
 
     const regPriceNum = Number(regularPrice) || 0;
-    // Cálculo automático con la escala oficial de comisiones de QuePlanesHoy
+    // Cálculo automático con la escala oficial de comisiones de QuePlanHoy
     const officialFee = calculateQphFee(regPriceNum);
     if (feeIncluded && officialFee > regPriceNum) {
       setFormError('La comisión oficial supera el precio regular ingresado cuando está incluida.');
@@ -858,7 +858,7 @@ export function ZonesManager({ zones, onChange, eventTicketLimit = 6 }: ZonesMan
                   <span className="material-symbols-outlined text-[24px]">receipt_long</span>
                 </div>
                 <div>
-                  <h3 className="font-black text-base text-deep-slate">Tarifario Oficial QuePlanesHoy</h3>
+                  <h3 className="font-black text-base text-deep-slate">Tarifario Oficial QuePlanHoy</h3>
                   <p className="text-xs text-slate-500">Escala oficial de comisiones y Tarifa Final</p>
                 </div>
               </div>
@@ -911,7 +911,7 @@ export function ZonesManager({ zones, onChange, eventTicketLimit = 6 }: ZonesMan
                   <div>
                     <strong className="text-emerald-800 block">Switch ACTIVADO (Comisión Incluida):</strong>
                     <span className="text-slate-600">
-                      La <strong>Tarifa Final</strong> (tanto regular como en cada preventa) es igual al precio fijado. La comisión de QuePlanesHoy se descuenta de tu liquidación.
+                      La <strong>Tarifa Final</strong> (tanto regular como en cada preventa) es igual al precio fijado. La comisión de QuePlanHoy se descuenta de tu liquidación.
                     </span>
                     <span className="block text-[10px] text-slate-400 mt-0.5">
                       Ej. Preventa a S/ 80.00 → Tarifa Final S/ 80.00 (Comisión S/ 10.00, recibes neto S/ 70.00).

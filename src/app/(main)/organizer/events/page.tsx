@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import OrganizerEventsScreen from '@/app/features/events/ui/organizer-events-screen';
 
 export const metadata: Metadata = {
-  title: 'Mis Eventos - Panel Promotor | queplaneshoy',
+  title: 'Mis Eventos - Panel Promotor | queplanhoy',
   description:
     'Administra tus eventos creados, monitorea la venta de entradas por zona en tiempo real y gestiona publicaciones y liquidaciones.',
 };
