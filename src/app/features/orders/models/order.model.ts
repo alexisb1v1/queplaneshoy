@@ -63,6 +63,8 @@ export interface PrepareCulqiCheckoutParams {
   paymentMethod: CheckoutPaymentMethod;
   couponCode?: string;
   customerPhone?: string;
+  acceptedTerms: boolean;
+  termsVersion?: string;
 }
 
 export interface PrepareCulqiCheckoutModel {
