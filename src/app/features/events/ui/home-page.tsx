@@ -719,8 +719,8 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* 7. Newsletter Móvil (Stitch Style) */}
-        <section className="px-5 py-8 bg-deep-slate rounded-2xl mx-4 mb-16 text-center text-white overflow-hidden relative">
+        {/* 7. Newsletter Móvil (Oculto temporalmente) */}
+        {/* <section className="px-5 py-8 bg-deep-slate rounded-2xl mx-4 mb-16 text-center text-white overflow-hidden relative">
           <div className="relative z-10">
             <span className="inline-block px-2.5 py-0.5 bg-electric-indigo/30 text-electric-indigo text-[10px] qph-label-bold rounded-full uppercase tracking-wider mb-2">
               Newsletter QPH
@@ -741,7 +741,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute -top-10 -right-10 w-28 h-28 bg-electric-indigo/20 rounded-full blur-3xl pointer-events-none" />
-        </section>
+        </section> */}
       </div>
 
       {/* =========================================================================

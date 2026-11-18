@@ -113,6 +113,8 @@ export default function OrganizerEventsScreen() {
   const [isResending, setIsResending] = useState(false);
   const [resendFeedback, setResendFeedback] = useState<string | null>(null);
 
+
+
   const showNotice = (msg: string) => {
     setActionNotice(msg);
     setTimeout(() => {
@@ -769,6 +771,34 @@ export default function OrganizerEventsScreen() {
                                 )}
                                 {event.statusLabel}
                               </span>
+
+                              {/* Flag de Cobro de Comisión */}
+                              {event.feeChargedTo === 'promoter' ? (
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1"
+                                  title="La comisión está incluida en el precio de la entrada y es asumida por el promotor"
+                                >
+                                  <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                                  <span>Comisión: Asumida por Promotor</span>
+                                </span>
+                              ) : event.feeChargedTo === 'mixed' ? (
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1"
+                                  title="Algunas zonas incluyen la comisión y en otras se le suma al comprador"
+                                >
+                                  <span className="material-symbols-outlined text-[13px]">swap_horiz</span>
+                                  <span>Comisión: Mixta por Zona</span>
+                                </span>
+                              ) : (
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-indigo-50 text-electric-indigo border border-indigo-200 inline-flex items-center gap-1"
+                                  title="La comisión se cobra y suma directamente al comprador al pasar por caja"
+                                >
+                                  <span className="material-symbols-outlined text-[13px]">account_balance_wallet</span>
+                                  <span>Comisión: Al Comprador</span>
+                                </span>
+                              )}
+
                               <span className="px-2 py-0.5 rounded-md bg-surface-gray text-on-surface-variant font-bold text-[11px]">
                                 ID: {event.eventCode}
                               </span>
@@ -935,10 +965,10 @@ export default function OrganizerEventsScreen() {
                             </div>
                           </div>
 
-                          {/* Desglose por Zonas */}
+                          {/* Desglose por Zonas en Acordeón Nativo (Despliegue instantáneo sin re-renders en React) */}
                           {event.zones.length > 0 && (
-                            <div className="rounded-xl bg-surface-gray/60 p-4 border border-surface-variant/60 space-y-3">
-                              <div className="flex items-center justify-between pb-1">
+                            <details className="group rounded-xl bg-surface-gray/60 border border-surface-variant/60 overflow-hidden">
+                              <summary className="w-full p-3.5 flex items-center justify-between hover:bg-surface-gray transition-colors cursor-pointer text-left select-none list-none [&::-webkit-details-marker]:hidden">
                                 <div className="flex items-center gap-2">
                                   <span className="material-symbols-outlined text-[18px] text-electric-indigo">
                                     analytics
@@ -946,69 +976,88 @@ export default function OrganizerEventsScreen() {
                                   <span className="font-bold text-xs text-deep-slate uppercase tracking-wider">
                                     Desglose de Aforo y Taquilla por Zonas
                                   </span>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-on-surface-variant border border-surface-variant/60">
+                                    {event.zones.length} {event.zones.length === 1 ? 'zona' : 'zonas'}
+                                  </span>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    showNotice(
-                                      'El ajuste de cupos por zona estará disponible en la fase de edición del evento.',
-                                    )
-                                  }
-                                  className="text-xs font-bold text-on-surface-variant hover:text-electric-indigo flex items-center gap-1 cursor-pointer"
-                                >
-                                  <span>Ajustar Cupos</span>
-                                  <span className="material-symbols-outlined text-[16px]">tune</span>
-                                </button>
-                              </div>
+                                <div className="flex items-center gap-2 text-on-surface-variant font-bold text-xs">
+                                  <span className="hidden sm:inline group-open:hidden">
+                                    Ver desglose
+                                  </span>
+                                  <span className="hidden sm:group-open:inline">
+                                    Ocultar desglose
+                                  </span>
+                                  <span className="material-symbols-outlined text-[20px] transition-transform duration-150 group-open:rotate-180">
+                                    expand_more
+                                  </span>
+                                </div>
+                              </summary>
 
-                              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                                {event.zones.map((zone) => (
-                                  <div
-                                    key={zone.publicUuid}
-                                    className="bg-white p-3.5 rounded-xl border border-surface-variant/60 shadow-xs flex flex-col justify-between gap-2"
-                                  >
-                                    <div className="flex items-center justify-between gap-1.5">
-                                      <span className="text-xs font-bold text-deep-slate truncate">
-                                        {zone.name}
-                                      </span>
-                                      <span className="px-1.5 py-0.5 rounded bg-surface-gray text-on-surface-variant font-extrabold text-[9px] uppercase shrink-0">
-                                        {zone.statusBadge}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-baseline justify-between gap-1">
-                                      <span className="text-base font-extrabold text-deep-slate">
-                                        {zone.soldCount.toLocaleString('es-PE')}{' '}
-                                        <span className="text-xs font-normal text-on-surface-variant">
-                                          / {zone.capacity.toLocaleString('es-PE')}
+                              {/* Contenido de Zonas */}
+                              <div className="p-4 pt-1 border-t border-surface-variant/40 space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                                  {event.zones.map((zone) => (
+                                    <div
+                                      key={zone.publicUuid}
+                                      className="bg-white p-3.5 rounded-xl border border-surface-variant/60 shadow-xs flex flex-col justify-between gap-2"
+                                    >
+                                      <div className="flex items-center justify-between gap-1.5">
+                                        <span className="text-xs font-bold text-deep-slate truncate">
+                                          {zone.name}
                                         </span>
-                                      </span>
-                                      <div className="text-right">
-                                        <span className="font-bold text-xs text-electric-indigo block">
-                                          S/. {formatSoles(zone.activePrice)}
-                                        </span>
-                                        {zone.isPresaleActive && (
-                                          <span className="text-[9px] font-semibold text-on-surface-variant block">
-                                            {zone.activeTierName}
+                                        <div className="flex items-center gap-1 shrink-0">
+                                          {zone.feeIncluded !== undefined && (
+                                            <span
+                                              className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase ${
+                                                zone.feeIncluded
+                                                  ? 'bg-emerald-50 text-emerald-700'
+                                                  : 'bg-indigo-50 text-electric-indigo'
+                                              }`}
+                                              title={zone.feeIncluded ? 'Comisión incluida (asumida por promotor)' : 'Comisión al comprador'}
+                                            >
+                                              {zone.feeIncluded ? 'Fee Inc.' : '+Fee'}
+                                            </span>
+                                          )}
+                                          <span className="px-1.5 py-0.5 rounded bg-surface-gray text-on-surface-variant font-extrabold text-[9px] uppercase">
+                                            {zone.statusBadge}
                                           </span>
-                                        )}
+                                        </div>
                                       </div>
+                                      <div className="flex items-baseline justify-between gap-1">
+                                        <span className="text-base font-extrabold text-deep-slate">
+                                          {zone.soldCount.toLocaleString('es-PE')}{' '}
+                                          <span className="text-xs font-normal text-on-surface-variant">
+                                            / {zone.capacity.toLocaleString('es-PE')}
+                                          </span>
+                                        </span>
+                                        <div className="text-right">
+                                          <span className="font-bold text-xs text-electric-indigo block">
+                                            S/. {formatSoles(zone.activePrice)}
+                                          </span>
+                                          {zone.isPresaleActive && (
+                                            <span className="text-[9px] font-semibold text-on-surface-variant block">
+                                              {zone.activeTierName}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="w-full h-1.5 rounded-full bg-surface-gray overflow-hidden">
+                                        <div
+                                          className="h-full transition-all"
+                                          style={{
+                                            width: `${Math.min(100, zone.occupancyPercentage)}%`,
+                                            backgroundColor: zone.color || '#6366F1',
+                                          }}
+                                        />
+                                      </div>
+                                      <span className="text-[10px] text-on-surface-variant font-semibold text-right">
+                                        Recaudado: S/. {formatSoles(zone.revenue)}
+                                      </span>
                                     </div>
-                                    <div className="w-full h-1.5 rounded-full bg-surface-gray overflow-hidden">
-                                      <div
-                                        className="h-full transition-all"
-                                        style={{
-                                          width: `${Math.min(100, zone.occupancyPercentage)}%`,
-                                          backgroundColor: zone.color || '#6366F1',
-                                        }}
-                                      />
-                                    </div>
-                                    <span className="text-[10px] text-on-surface-variant font-semibold text-right">
-                                      Recaudado: S/. {formatSoles(zone.revenue)}
-                                    </span>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
-                            </div>
+                            </details>
                           )}
                         </>
                       )}
@@ -1124,29 +1173,17 @@ export default function OrganizerEventsScreen() {
                                 </Link>
                               )}
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  showNotice(
-                                    'La edición de eventos publicados estará disponible en la siguiente fase.',
-                                  )
-                                }
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl hover:bg-surface-gray text-on-surface-variant font-bold text-xs transition-all cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-[18px]">edit</span>
-                                <span>Editar Evento</span>
-                              </button>
-
-                              {!isCancelled && event.hasLandingPage && event.slug && (
-                                <Link
-                                  href={`/e/${event.slug}`}
-                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-surface-gray text-on-surface-variant font-bold text-xs transition-all"
+                              {/* Si el evento está publicado: La edición está bloqueada para proteger las entradas emitidas */}
+                              {event.status === 'published' && (
+                                <button
+                                  type="button"
+                                  disabled
+                                  title="Un evento publicado no puede editarse para proteger las entradas y tarifas ya emitidas"
+                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-400 font-bold text-xs cursor-not-allowed border border-slate-200"
                                 >
-                                  <span className="material-symbols-outlined text-[18px]">
-                                    open_in_new
-                                  </span>
-                                  <span>Landing Pública</span>
-                                </Link>
+                                  <span className="material-symbols-outlined text-[17px]">lock</span>
+                                  <span>Edición Bloqueada (Publicado)</span>
+                                </button>
                               )}
                             </>
                           )}

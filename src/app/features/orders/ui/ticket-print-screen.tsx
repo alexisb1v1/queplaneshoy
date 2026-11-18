@@ -743,7 +743,7 @@ export default function TicketPrintScreen({
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-electric-indigo hover:bg-primary text-white font-label-bold text-xs shadow-md shadow-electric-indigo/25 transition-all cursor-pointer active:scale-95"
           >
             <span className="material-symbols-outlined text-[18px]">download</span>
-            <span>Descargar PDF / Imprimir</span>
+            <span>Descargar / Imprimir</span>
           </button>
         </div>
       </div>

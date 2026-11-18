@@ -7,6 +7,7 @@ import { QRCodeSVG } from "qrcode.react";
 import CheckoutStepper from "./components/checkout-stepper";
 import TicketPrintScreen from "./ticket-print-screen";
 import { GlobalFooter } from "@/app/common/components/global-footer";
+import { trackUmamiEvent } from "@/app/common/utils/analytics";
 
 // Carga dinámica del mapa OpenStreetMap / Leaflet (desactivando SSR)
 const EventLocationMap = dynamic(
@@ -110,6 +111,15 @@ export default function PaymentSuccessScreen({
       return () => cancelAnimationFrame(rafId);
     }
   }, []);
+
+  useEffect(() => {
+    trackUmamiEvent("purchase_success", {
+      orderCode,
+      eventTitle,
+      totalAmount,
+      ticketCount,
+    });
+  }, [orderCode, eventTitle, totalAmount, ticketCount]);
 
   const handleDownloadPdf = () => {
     setShowPrintView(true);

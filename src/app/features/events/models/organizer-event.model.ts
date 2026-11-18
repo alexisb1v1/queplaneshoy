@@ -25,6 +25,8 @@ export interface OrganizerEventZoneModel {
   isPresaleActive: boolean;
   statusBadge: string;
   revenue: number;
+  feeIncluded?: boolean;
+  serviceFee?: number;
 }
 
 export interface OrganizerDraftChecklistModel {
@@ -47,6 +49,8 @@ export interface OrganizerEventModel {
   isSoldOut: boolean;
   statusLabel: string;
   hasLandingPage: boolean;
+  feeIncluded?: boolean;
+  feeChargedTo?: 'buyer' | 'promoter' | 'mixed';
   imageUrl: string | null;
   venue: string | null;
   city: string;

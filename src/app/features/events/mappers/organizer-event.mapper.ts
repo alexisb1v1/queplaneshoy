@@ -20,6 +20,8 @@ export function organizerEventDtoToModel(dto: OrganizerEventDto): OrganizerEvent
     isSoldOut: Boolean(dto.isSoldOut),
     statusLabel: dto.statusLabel || 'Borrador',
     hasLandingPage: Boolean(dto.hasLandingPage),
+    feeIncluded: Boolean(dto.feeIncluded),
+    feeChargedTo: dto.feeChargedTo || (dto.feeIncluded ? 'promoter' : 'buyer'),
     imageUrl: dto.imageUrl || null,
     venue: dto.venue || null,
     city: dto.city || 'Perú',
@@ -64,6 +66,8 @@ export function organizerEventDtoToModel(dto: OrganizerEventDto): OrganizerEvent
           isPresaleActive: Boolean(zone.isPresaleActive),
           statusBadge: zone.statusBadge || 'Disponible',
           revenue: Number(zone.revenue) || 0,
+          feeIncluded: Boolean(zone.feeIncluded),
+          serviceFee: Number(zone.serviceFee) || 0,
         }))
       : [],
   };

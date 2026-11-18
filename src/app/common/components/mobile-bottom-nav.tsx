@@ -138,39 +138,39 @@ export function MobileBottomNav() {
   return (
     <>
       {/* =========================================================================
-          BOTTOM NAVIGATION BAR - MOBILE
+          BOTTOM NAVIGATION BAR - MOBILE (Compacto, borde visible y seguro)
          ========================================================================= */}
-      <nav className="qph-mobile-nav fixed bottom-0 left-0 right-0 md:hidden bg-white/95 backdrop-blur-xl h-20 flex items-center justify-around px-2 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-outline-variant/10">
+      <nav className="qph-mobile-nav fixed bottom-0 left-0 right-0 md:hidden bg-white/95 backdrop-blur-xl h-14 flex items-center justify-around px-2 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] border-t border-slate-200">
         {/* 1. Inicio */}
         <Link
           href="/"
-          className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 transition-colors cursor-pointer ${
             isHome ? "text-primary" : "text-on-surface-variant hover:text-primary"
           }`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: isHome ? "'FILL' 1" : "'FILL' 0" }}
           >
             home
           </span>
-          <span className="font-bold text-[10px] uppercase">Inicio</span>
+          <span className="font-bold text-[9px] uppercase tracking-tight">Inicio</span>
         </Link>
 
         {/* 2. Explorar */}
         <Link
           href="/events"
-          className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 transition-colors cursor-pointer ${
             isExplore ? "text-primary" : "text-on-surface-variant hover:text-primary"
           }`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: isExplore ? "'FILL' 1" : "'FILL' 0" }}
           >
             explore
           </span>
-          <span className="font-semibold text-[10px] uppercase">Explorar</span>
+          <span className="font-semibold text-[9px] uppercase tracking-tight">Explorar</span>
         </Link>
 
         {/* 3. BOTÓN CENTRAL AZUL: BÚSQUEDA A PANTALLA COMPLETA */}
@@ -178,41 +178,41 @@ export function MobileBottomNav() {
           type="button"
           onClick={() => setIsSearchOpen(true)}
           aria-label="Abrir buscador"
-          className="-mt-10 w-14 h-14 bg-electric-indigo text-white rounded-full shadow-lg shadow-electric-indigo/35 active:scale-95 transition-transform flex items-center justify-center cursor-pointer hover:bg-primary"
+          className="-mt-5 w-11 h-11 bg-electric-indigo text-white rounded-full shadow-md shadow-electric-indigo/35 active:scale-95 transition-transform flex items-center justify-center cursor-pointer hover:bg-primary border-2 border-white"
         >
-          <span className="material-symbols-outlined text-[30px]">search</span>
+          <span className="material-symbols-outlined text-[22px]">search</span>
         </button>
 
         {/* 4. Tickets */}
         <Link
           href="/profile/tickets"
-          className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 transition-colors cursor-pointer ${
             isTickets ? "text-primary" : "text-on-surface-variant hover:text-primary"
           }`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: isTickets ? "'FILL' 1" : "'FILL' 0" }}
           >
             confirmation_number
           </span>
-          <span className="font-semibold text-[10px] uppercase">Tickets</span>
+          <span className="font-semibold text-[9px] uppercase tracking-tight">Tickets</span>
         </Link>
 
         {/* 5. Perfil */}
         <Link
           href="/profile"
-          className={`flex flex-col items-center gap-1 transition-colors cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 transition-colors cursor-pointer ${
             isProfile ? "text-primary" : "text-on-surface-variant hover:text-primary"
           }`}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[20px]"
             style={{ fontVariationSettings: isProfile ? "'FILL' 1" : "'FILL' 0" }}
           >
             person
           </span>
-          <span className="font-semibold text-[10px] uppercase">Perfil</span>
+          <span className="font-semibold text-[9px] uppercase tracking-tight">Perfil</span>
         </Link>
       </nav>
 

@@ -7,6 +7,7 @@ import PaymentSuccessScreen from "./payment-success-screen";
 import CheckoutStepper from "./components/checkout-stepper";
 import VenueZonesMap from "./components/venue-zones-map";
 import { GlobalFooter } from "@/app/common/components/global-footer";
+import { trackUmamiEvent } from "@/app/common/utils/analytics";
 import { getEventDetailUseCase } from "../../events";
 import { EventDetailModel } from "../../events/models/event-detail.model";
 import { getCurrentUserUseCase } from "../../auth";
@@ -593,6 +594,12 @@ export default function PurchaseFlowPageComponent() {
       setShowAuthModal(true);
       return;
     }
+    trackUmamiEvent("checkout_proceed_step2", {
+      eventId: event ? event.publicUuid || event.id : eventId,
+      eventName: event?.name,
+      totalTickets,
+      grandTotal,
+    });
     setCurrentStep(2);
     setTimeout(() => {
       const paymentSection = document.getElementById("payment-methods-section");
@@ -748,6 +755,14 @@ export default function PurchaseFlowPageComponent() {
     setProcessingLabel("Preparando orden en Culqi...");
     setPaymentError(null);
     setPendingAsyncOrder(null);
+
+    trackUmamiEvent("checkout_submit_payment", {
+      eventId: event ? event.publicUuid || event.id : eventId,
+      eventName: event?.name,
+      totalTickets,
+      paymentMethod,
+      grandTotal,
+    });
 
     const selectedItems = ticketTiers
       .filter((t) => t.quantity > 0)

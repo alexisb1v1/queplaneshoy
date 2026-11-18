@@ -7,6 +7,7 @@ import { formatAgeRestriction } from "../../utils/age-restriction";
 import { LandingPreloader } from "./components/landing-preloader";
 import { LandingHeader } from "./components/landing-header";
 import { VideoTeaserModal } from "./components/video-teaser-modal";
+import { trackUmamiEvent } from "@/app/common/utils/analytics";
 
 interface EventLandingViewProps {
   event: EventLandingModel;
@@ -17,6 +18,18 @@ export function EventLandingView({ event }: EventLandingViewProps) {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  // Registro de vista de Landing en Umami Analytics con el UID universal
+  useEffect(() => {
+    trackUmamiEvent("event_landing_view", {
+      event_uuid: event.publicUuid || event.id,
+      event_slug: event.slug,
+      eventName: event.name,
+      category: event.category,
+      venue: event.venue || "",
+      city: event.city,
+    });
+  }, [event.publicUuid, event.id, event.slug, event.name, event.category, event.venue, event.city]);
 
   // Simular precarga suave de la experiencia (500ms)
   useEffect(() => {
@@ -144,6 +157,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
         primaryColor={theme.primaryColor}
         ctaText={header.ctaText || "Comprar Entradas"}
         hasTermsAndConditions={true}
+        eventTitle={event.name}
+        slug={event.slug}
+        publicUuid={event.publicUuid}
       />
 
       {/* 3. Modal de Video Teaser (YouTube Lightbox) */}
@@ -509,6 +525,15 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                       ) : (
                         <Link
                           href={`/checkout?eventId=${event.publicUuid || event.slug || event.id}&zoneId=${zone.publicUuid || zone.id}`}
+                          onClick={() => {
+                            trackUmamiEvent("landing_buy_click", {
+                              event_uuid: event.publicUuid || event.id,
+                              eventSlug: event.slug,
+                              eventName: event.name,
+                              zoneName: zone.name,
+                              price: zone.currentPrice || zone.regularPrice,
+                            });
+                          }}
                           style={{ backgroundColor: theme.primaryColor }}
                           className="px-6 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-wide hover:opacity-95 hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
                         >

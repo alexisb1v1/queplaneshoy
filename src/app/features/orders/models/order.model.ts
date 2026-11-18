@@ -172,6 +172,7 @@ export interface UserOrderModel {
   category: string;
   venueName: string;
   venueAddress: string;
+  googleMapsUrl?: string | null;
   city: string;
   bannerImageUrl: string | null;
   eventDateFormatted: string;
