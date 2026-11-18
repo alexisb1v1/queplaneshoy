@@ -759,6 +759,8 @@ export default function PurchaseFlowPageComponent() {
       items: selectedItems,
       paymentMethod,
       couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+      acceptedTerms: acceptedLegalTerms,
+      termsVersion: "v1.0-2026",
     });
 
     if (prepareRes.isErr()) {
