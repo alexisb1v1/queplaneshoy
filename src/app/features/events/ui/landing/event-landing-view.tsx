@@ -104,7 +104,8 @@ export function EventLandingView({ event }: EventLandingViewProps) {
   const zoneMapImage = event.zoneMapUrl || null;
   const bodyPromoImage =
     body.bodyImageUrl ||
-    (event.landingConfig?.body as Record<string, unknown>)?.bodyImageUrl as string ||
+    ((event.landingConfig?.body as Record<string, unknown>)
+      ?.bodyImageUrl as string) ||
     null;
 
   const heroImage = header.headerImageUrl || event.bannerUrl || null;

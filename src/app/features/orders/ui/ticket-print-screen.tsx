@@ -128,14 +128,14 @@ export default function TicketPrintScreen({
     tickets && tickets.length > 0
       ? tickets
       : Array.from({ length: Math.max(ticketCount, 1) }).map((_, idx) => ({
-        ticketId: String(idx + 1),
-        ticketUuid: `tck-${orderNumber}-${idx + 1}`,
-        ticketNumber: idx + 1,
-        zoneName: tierZone,
-        tierName: tierName,
-        unitPrice: unitPrice,
-        qrPayload: `QPH|ORD:${orderNumber}|TKT:${idx + 1}`,
-      }));
+          ticketId: String(idx + 1),
+          ticketUuid: `tck-${orderNumber}-${idx + 1}`,
+          ticketNumber: idx + 1,
+          zoneName: tierZone,
+          tierName: tierName,
+          unitPrice: unitPrice,
+          qrPayload: `QPH|ORD:${orderNumber}|TKT:${idx + 1}`,
+        }));
 
   const totalSheets = resolvedTickets.length;
 
@@ -497,7 +497,7 @@ export default function TicketPrintScreen({
               <QRCodeSVG
                 value={
                   ticket.qrPayload ||
-                    `QPH|ORD:${orderNumber}|TKT:${ticketDisplayId}`
+                  `QPH|ORD:${orderNumber}|TKT:${ticketDisplayId}`
                 }
                 size={128}
                 level="H"
@@ -682,16 +682,18 @@ export default function TicketPrintScreen({
   // Cabecera compartida (Barra de herramientas con Zoom, Cerrar e Imprimir)
   const renderHeader = (drawerMode: boolean) => (
     <header
-      className={`${drawerMode
+      className={`${
+        drawerMode
           ? "h-16 w-full shrink-0 bg-white/95 backdrop-blur-xl border-b border-surface-variant px-4 sm:px-6 flex items-center justify-between gap-3 shadow-2xs print:hidden z-20"
           : "sticky top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-surface-variant shadow-xs print:hidden"
-        }`}
+      }`}
     >
       <div
-        className={`${drawerMode
+        className={`${
+          drawerMode
             ? "w-full flex items-center justify-between gap-3"
             : "h-16 max-w-container-max mx-auto px-4 sm:px-6 flex items-center justify-between gap-4"
-          }`}
+        }`}
       >
         {/* Lado Izquierdo: Volver / Cerrar + Metadatos de la Orden */}
         <div className="flex items-center gap-3 min-w-0">

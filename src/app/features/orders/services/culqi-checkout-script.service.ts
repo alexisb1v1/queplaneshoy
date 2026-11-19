@@ -31,7 +31,7 @@ interface CulqiCheckoutInstance {
 }
 
 interface CulqiCheckoutConstructor {
-  new(
+  new (
     publicKey: string,
     config: Record<string, unknown>,
   ): CulqiCheckoutInstance;
@@ -464,8 +464,8 @@ export async function authenticateWithCulqi3DS(
           ok: false,
           message: String(
             payload.user_message ||
-            payload.error ||
-            "Autenticación 3D Secure rechazada.",
+              payload.error ||
+              "Autenticación 3D Secure rechazada.",
           ),
         });
       }
@@ -519,7 +519,8 @@ export async function openCulqiCheckoutModal(
   } catch (err: unknown) {
     return {
       type: "ERROR",
-      message: (err as Error)?.message || "No se pudo cargar Culqi Checkout Custom.",
+      message:
+        (err as Error)?.message || "No se pudo cargar Culqi Checkout Custom.",
     };
   }
 
@@ -530,9 +531,9 @@ export async function openCulqiCheckoutModal(
     order: params.culqiOrderId,
     ...(params.rsaId && params.rsaPublicKey
       ? {
-        xculqirsaid: params.rsaId,
-        rsapublickey: params.rsaPublicKey,
-      }
+          xculqirsaid: params.rsaId,
+          rsapublickey: params.rsaPublicKey,
+        }
       : {}),
   };
 
