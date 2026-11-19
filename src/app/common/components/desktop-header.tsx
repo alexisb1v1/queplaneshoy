@@ -10,9 +10,16 @@ import { SearchInstantDropdown } from "../../features/events/ui/components/searc
 function DesktopHeaderFallback() {
   return (
     <header className="hidden md:block w-full sticky top-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border-b border-outline-variant/10">
-      <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-20 gap-4">
-        <Link href="/" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
-          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
+      <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-16 gap-4">
+        <Link
+          href="/"
+          className="flex items-center gap-2 cursor-pointer flex-shrink-0"
+        >
+          <img
+            src="/logo-qph.svg"
+            className="w-7 h-7 rounded-md object-contain"
+            alt="queplanhoy logo"
+          />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
             queplan<span className="text-electric-indigo">hoy</span>
           </span>
@@ -27,15 +34,21 @@ function DesktopHeaderContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userData, setUserData] = useState<{ name?: string; email?: string } | null>(null);
+  const [userData, setUserData] = useState<{
+    name?: string;
+    email?: string;
+  } | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const [isSearchSticky, setIsSearchSticky] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(searchParams?.get("search") || "");
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams?.get("search") || "",
+  );
   const [selectedCategory, setSelectedCategory] = useState(
     searchParams?.get("category")
-      ? searchParams.get("category")!.charAt(0).toUpperCase() + searchParams.get("category")!.slice(1)
-      : "Todas"
+      ? searchParams.get("category")!.charAt(0).toUpperCase() +
+          searchParams.get("category")!.slice(1)
+      : "Todas",
   );
 
   const isHome = pathname === "/";
@@ -52,7 +65,9 @@ function DesktopHeaderContent() {
         if (stored) {
           const parsed = JSON.parse(stored);
           setUserData({
-            name: `${parsed.firstName || ""} ${parsed.lastName || ""}`.trim() || parsed.email,
+            name:
+              `${parsed.firstName || ""} ${parsed.lastName || ""}`.trim() ||
+              parsed.email,
             email: parsed.email,
           });
         }
@@ -67,7 +82,10 @@ function DesktopHeaderContent() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
         setIsUserMenuOpen(false);
       }
     };
@@ -88,7 +106,7 @@ function DesktopHeaderContent() {
         apiClient.clearToken();
         setIsAuthenticated(false);
         router.push("/");
-      }
+      },
     );
   };
 
@@ -102,8 +120,8 @@ function DesktopHeaderContent() {
       const searchSection = document.getElementById("hero-search-container");
       if (searchSection) {
         const rect = searchSection.getBoundingClientRect();
-        // Se activa cuando la parte superior de la sección de búsqueda topa el header (80px)
-        setIsSearchSticky(rect.top <= 80);
+        // Se activa cuando la parte superior de la sección de búsqueda topa el header (64px)
+        setIsSearchSticky(rect.top <= 64);
       } else {
         setIsSearchSticky(window.scrollY > 360);
       }
@@ -132,11 +150,17 @@ function DesktopHeaderContent() {
 
   return (
     <header className="hidden md:block w-full sticky top-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border-b border-outline-variant/10 transition-colors duration-300">
-      <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-20 gap-4">
-        
+      <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-16 gap-4">
         {/* Brand Logo (Izquierda) */}
-        <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0">
-          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
+        <Link
+          href="/"
+          className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
+        >
+          <img
+            src="/logo-qph.svg"
+            className="w-7 h-7 rounded-md object-contain"
+            alt="queplanhoy logo"
+          />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
             queplan<span className="text-electric-indigo">hoy</span>
           </span>
@@ -157,7 +181,10 @@ function DesktopHeaderContent() {
 
         {/* Actions (Derecha) */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <Link href="/profile/favorites" className="qph-btn-watchlist hidden lg:flex cursor-pointer">
+          <Link
+            href="/profile/favorites"
+            className="qph-btn-watchlist hidden lg:flex cursor-pointer"
+          >
             <span className="material-symbols-outlined text-lg">favorite</span>
             <span>Lista de seguimiento</span>
           </Link>
@@ -166,7 +193,9 @@ function DesktopHeaderContent() {
             href="/organizer/events/new?from=home"
             className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-electric-indigo bg-indigo-50/90 hover:bg-electric-indigo hover:text-white border border-indigo-200/90 hover:border-electric-indigo shadow-xs hover:shadow-md hover:shadow-electric-indigo/20 transition-all duration-200 active:scale-95 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            <span className="material-symbols-outlined text-[18px]">
+              add_circle
+            </span>
             <span>Crear Evento</span>
           </Link>
 
@@ -190,9 +219,13 @@ function DesktopHeaderContent() {
                 <div className="absolute right-0 mt-2.5 w-60 bg-white rounded-2xl shadow-xl border border-surface-variant p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                   {userData && (
                     <div className="px-3 py-2.5 border-b border-surface-variant/40 mb-1">
-                      <p className="text-xs font-bold text-deep-slate truncate">{userData.name || "Mi Cuenta"}</p>
+                      <p className="text-xs font-bold text-deep-slate truncate">
+                        {userData.name || "Mi Cuenta"}
+                      </p>
                       {userData.email && (
-                        <p className="text-[11px] text-on-surface-variant truncate">{userData.email}</p>
+                        <p className="text-[11px] text-on-surface-variant truncate">
+                          {userData.email}
+                        </p>
                       )}
                     </div>
                   )}
@@ -202,7 +235,9 @@ function DesktopHeaderContent() {
                     onClick={() => setIsUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-deep-slate hover:bg-surface-gray rounded-xl transition-colors cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-lg text-platinum-silver">person</span>
+                    <span className="material-symbols-outlined text-lg text-platinum-silver">
+                      person
+                    </span>
                     <span>Mi Perfil</span>
                   </Link>
 
@@ -211,7 +246,9 @@ function DesktopHeaderContent() {
                     onClick={() => setIsUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-deep-slate hover:bg-surface-gray rounded-xl transition-colors cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-lg text-platinum-silver">confirmation_number</span>
+                    <span className="material-symbols-outlined text-lg text-platinum-silver">
+                      confirmation_number
+                    </span>
                     <span>Mis Entradas</span>
                   </Link>
 
@@ -220,7 +257,9 @@ function DesktopHeaderContent() {
                     onClick={() => setIsUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-deep-slate hover:bg-surface-gray rounded-xl transition-colors cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-lg text-platinum-silver">favorite</span>
+                    <span className="material-symbols-outlined text-lg text-platinum-silver">
+                      favorite
+                    </span>
                     <span>Mis Favoritos</span>
                   </Link>
 
@@ -231,7 +270,9 @@ function DesktopHeaderContent() {
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer text-left"
                   >
-                    <span className="material-symbols-outlined text-lg">logout</span>
+                    <span className="material-symbols-outlined text-lg">
+                      logout
+                    </span>
                     <span>Cerrar sesión</span>
                   </button>
                 </div>
@@ -266,5 +307,3 @@ export function DesktopHeader() {
     </Suspense>
   );
 }
-
-

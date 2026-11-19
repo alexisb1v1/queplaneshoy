@@ -78,7 +78,10 @@ function formatEventDate(dateStr?: string | null): string {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
   const day = d.toLocaleDateString("es-PE", { day: "2-digit" });
-  const month = d.toLocaleDateString("es-PE", { month: "short" }).toUpperCase().replace(".", "");
+  const month = d
+    .toLocaleDateString("es-PE", { month: "short" })
+    .toUpperCase()
+    .replace(".", "");
   const year = d.getFullYear();
   return `${day} ${month}, ${year}`;
 }
@@ -101,7 +104,9 @@ function homeCardToEventCardProps(item: HomeEventCardItem): EventCardProps {
     price: item.minPrice,
     ticketType: item.ticketType || "General",
     ticketBadgeStyle: item.ticketBadgeStyle || "general",
-    description: item.description || "Acceso oficial garantizado para esta función en directo.",
+    description:
+      item.description ||
+      "Acceso oficial garantizado para esta función en directo.",
     urgencyText: item.urgencyBadge?.text || "Aforo limitado",
     urgencyIcon: item.urgencyBadge?.icon || "bolt",
     urgencyType: item.urgencyBadge?.type || "info",
@@ -169,13 +174,16 @@ function MobileGridSkeleton() {
 function EmptySectionMessage({ message }: { message: string }) {
   return (
     <div className="col-span-full py-12 px-6 rounded-2xl bg-surface-container-lowest border border-dashed border-surface-variant text-center flex flex-col items-center justify-center">
-      <span className="material-symbols-outlined text-4xl text-outline mb-2">calendar_today</span>
+      <span className="material-symbols-outlined text-4xl text-outline mb-2">
+        calendar_today
+      </span>
       <p className="font-body-md text-sm text-on-surface-variant">{message}</p>
       <Link
         href="/events"
         className="mt-3 text-electric-indigo font-label-bold text-xs hover:underline inline-flex items-center gap-1"
       >
-        Explorar toda la cartelera <span className="material-symbols-outlined text-xs">arrow_forward</span>
+        Explorar toda la cartelera{" "}
+        <span className="material-symbols-outlined text-xs">arrow_forward</span>
       </Link>
     </div>
   );
@@ -189,7 +197,9 @@ export default function HomePage() {
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");
   const [activeMobileFilter, setActiveMobileFilter] = useState("Todo");
   const [upcomingEvents, setUpcomingEvents] = useState<EventCardProps[]>([]);
-  const [weeklyFeaturedEvents, setWeeklyFeaturedEvents] = useState<EventCardProps[]>([]);
+  const [weeklyFeaturedEvents, setWeeklyFeaturedEvents] = useState<
+    EventCardProps[]
+  >([]);
   const [weekendPlans, setWeekendPlans] = useState<EventCardProps[]>([]);
 
   const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(true);
@@ -210,7 +220,7 @@ export default function HomePage() {
         },
         () => {
           setUpcomingEvents([]);
-        }
+        },
       );
       setIsLoadingUpcoming(false);
     });
@@ -220,11 +230,13 @@ export default function HomePage() {
       if (!isMounted) return;
       res.match(
         (items) => {
-          setWeeklyFeaturedEvents(items ? items.map(homeCardToEventCardProps) : []);
+          setWeeklyFeaturedEvents(
+            items ? items.map(homeCardToEventCardProps) : [],
+          );
         },
         () => {
           setWeeklyFeaturedEvents([]);
-        }
+        },
       );
       setIsLoadingWeekly(false);
     });
@@ -238,7 +250,7 @@ export default function HomePage() {
         },
         () => {
           setWeekendPlans([]);
-        }
+        },
       );
       setIsLoadingWeekend(false);
     });
@@ -276,8 +288,13 @@ export default function HomePage() {
       COMEDY: "comedia",
       GASTRONOMY: "gastronomia",
     };
-    const target = (catMap[activeMobileFilter] || activeMobileFilter).toLowerCase();
-    return event.category.toLowerCase().includes(target) || target.includes(event.category.toLowerCase());
+    const target = (
+      catMap[activeMobileFilter] || activeMobileFilter
+    ).toLowerCase();
+    return (
+      event.category.toLowerCase().includes(target) ||
+      target.includes(event.category.toLowerCase())
+    );
   });
 
   // Eventos para carrusel móvil (destacados o fallback a próximos)
@@ -324,7 +341,6 @@ export default function HomePage() {
           VISTA MÓVIL (STITCH STYLE - OPTIMIZADA)
          ========================================================================= */}
       <div className="block md:hidden bg-background min-h-screen pb-32 text-on-background">
-        
         {/* 1. Hero Banner Cinematográfico Móvil (Full-Width 380px Stitch Style) */}
         {isLoadingWeekly && isLoadingUpcoming ? (
           <section className="relative w-full h-[380px] bg-slate-900 animate-pulse mb-6">
@@ -343,8 +359,14 @@ export default function HomePage() {
               ref={mobileHeroRef}
               onScroll={(e) => {
                 const target = e.currentTarget;
-                const index = Math.round(target.scrollLeft / target.offsetWidth);
-                if (index !== currentMobileSlide && index >= 0 && index < mobileFeaturedList.length) {
+                const index = Math.round(
+                  target.scrollLeft / target.offsetWidth,
+                );
+                if (
+                  index !== currentMobileSlide &&
+                  index >= 0 &&
+                  index < mobileFeaturedList.length
+                ) {
                   setCurrentMobileSlide(index);
                 }
               }}
@@ -352,9 +374,15 @@ export default function HomePage() {
             >
               {mobileFeaturedList.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
-                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
+                const ctaHref =
+                  event.hasLandingPage && event.slug
+                    ? `/e/${event.slug}`
+                    : `/events/${secureId}`;
                 return (
-                  <div key={event.id} className="relative w-full h-full flex-none snap-center">
+                  <div
+                    key={event.id}
+                    className="relative w-full h-full flex-none snap-center"
+                  >
                     {/* Imagen de fondo de ancho completo */}
                     <img
                       src={event.imageUrl}
@@ -376,7 +404,9 @@ export default function HomePage() {
                     <div className="absolute bottom-0 inset-x-0 p-5 z-20 flex flex-col justify-end">
                       {event.date && (
                         <div className="flex items-center gap-2 mb-1.5 text-platinum-silver text-xs qph-label-bold uppercase tracking-wider">
-                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">calendar_today</span>
+                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">
+                            calendar_today
+                          </span>
                           <span>{event.date}</span>
                         </div>
                       )}
@@ -384,7 +414,9 @@ export default function HomePage() {
                         {event.title}
                       </h2>
                       <p className="text-platinum-silver text-xs flex items-center gap-1 mb-4">
-                        <span className="material-symbols-outlined text-[15px] text-platinum-silver">location_on</span>
+                        <span className="material-symbols-outlined text-[15px] text-platinum-silver">
+                          location_on
+                        </span>
                         <span>{event.location}</span>
                       </p>
                       <div className="flex items-center gap-2.5">
@@ -392,14 +424,20 @@ export default function HomePage() {
                           href={ctaHref}
                           className="flex-1 h-11 bg-electric-indigo hover:bg-primary text-white text-sm qph-label-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/30 active:scale-[0.98] transition-all cursor-pointer"
                         >
-                          <span>{event.hasLandingPage ? "Ver Experiencia" : `Comprar Entradas • Desde S/ ${event.price}`}</span>
+                          <span>
+                            {event.hasLandingPage
+                              ? "Ver Experiencia"
+                              : `Comprar Entradas • Desde S/ ${event.price}`}
+                          </span>
                         </Link>
                         <button
                           type="button"
                           aria-label="Guardar en favoritos"
                           className="h-11 w-11 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-xl flex items-center justify-center transition-colors cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-[20px]">favorite_border</span>
+                          <span className="material-symbols-outlined text-[20px]">
+                            favorite_border
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -435,7 +473,9 @@ export default function HomePage() {
             onSubmit={(e) => {
               e.preventDefault();
               if (mobileSearchQuery.trim()) {
-                router.push(`/events?q=${encodeURIComponent(mobileSearchQuery.trim())}`);
+                router.push(
+                  `/events?q=${encodeURIComponent(mobileSearchQuery.trim())}`,
+                );
               } else {
                 window.dispatchEvent(new Event("open-mobile-search"));
               }
@@ -447,7 +487,9 @@ export default function HomePage() {
               aria-label="Buscar planes"
               className="pl-3 pr-2 flex items-center text-platinum-silver hover:text-electric-indigo transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[22px]">search</span>
+              <span className="material-symbols-outlined text-[22px]">
+                search
+              </span>
             </button>
             <input
               type="text"
@@ -464,7 +506,9 @@ export default function HomePage() {
               aria-label="Filtrar eventos"
               className="w-10 h-10 flex-shrink-0 bg-surface-gray hover:bg-electric-indigo hover:text-white text-on-surface rounded-xl flex items-center justify-center transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[20px]">tune</span>
+              <span className="material-symbols-outlined text-[20px]">
+                tune
+              </span>
             </button>
           </form>
         </section>
@@ -472,10 +516,14 @@ export default function HomePage() {
         {/* 3. Chips de Categorías Móvil (Horizontal Chips) */}
         <section className="mb-6 px-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">Explora por Categoría</h3>
+            <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">
+              Explora por Categoría
+            </h3>
             <button
               type="button"
-              onClick={() => window.dispatchEvent(new Event("open-mobile-search"))}
+              onClick={() =>
+                window.dispatchEvent(new Event("open-mobile-search"))
+              }
               className="text-xs text-electric-indigo qph-label-bold hover:underline flex items-center gap-0.5 cursor-pointer"
             >
               Ver filtros
@@ -497,14 +545,18 @@ export default function HomePage() {
               return (
                 <button
                   key={cat.id}
-                  onClick={() => setActiveMobileFilter(isSelected ? "Todo" : cat.id)}
+                  onClick={() =>
+                    setActiveMobileFilter(isSelected ? "Todo" : cat.id)
+                  }
                   className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full qph-label-bold text-xs shadow-xs transition-colors flex-none cursor-pointer ${
                     isSelected
                       ? "bg-electric-indigo text-white border border-electric-indigo"
                       : "bg-surface-container-lowest text-on-surface-variant border border-surface-variant hover:bg-surface-gray"
                   }`}
                 >
-                  <span className={`material-symbols-outlined text-[15px] ${isSelected ? "text-white" : cat.textClass}`}>
+                  <span
+                    className={`material-symbols-outlined text-[15px] ${isSelected ? "text-white" : cat.textClass}`}
+                  >
                     {cat.icon}
                   </span>
                   <span>{cat.name}</span>
@@ -519,13 +571,20 @@ export default function HomePage() {
           <div className="flex items-center justify-between mb-3.5">
             <div>
               <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-vip-gold text-[20px]">star</span>
+                <span className="material-symbols-outlined text-vip-gold text-[20px]">
+                  star
+                </span>
                 Destacados de la Semana
               </h3>
-              <p className="text-xs text-on-surface-variant">Seleccionados especialmente para ti</p>
+              <p className="text-xs text-on-surface-variant">
+                Seleccionados especialmente para ti
+              </p>
             </div>
             <span className="text-xs text-electric-indigo qph-label-bold flex items-center gap-0.5">
-              Deslizar <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+              Deslizar{" "}
+              <span className="material-symbols-outlined text-[14px]">
+                arrow_forward
+              </span>
             </span>
           </div>
 
@@ -535,7 +594,10 @@ export default function HomePage() {
             <div className="flex overflow-x-auto qph-hide-scrollbar gap-3.5 pb-2 -mx-4 px-4 snap-x snap-mandatory">
               {weeklyFeaturedEvents.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
-                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
+                const ctaHref =
+                  event.hasLandingPage && event.slug
+                    ? `/e/${event.slug}`
+                    : `/events/${secureId}`;
                 return (
                   <article
                     key={`carousel-${event.id}`}
@@ -567,7 +629,9 @@ export default function HomePage() {
                         {event.title}
                       </h4>
                       <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                        <span className="material-symbols-outlined text-[14px] text-platinum-silver">location_on</span>
+                        <span className="material-symbols-outlined text-[14px] text-platinum-silver">
+                          location_on
+                        </span>
                         <span className="truncate">{event.location}</span>
                       </p>
                     </Link>
@@ -587,9 +651,13 @@ export default function HomePage() {
               <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">
                 Eventos Próximos
               </h3>
-              <p className="text-xs text-on-surface-variant">Los mejores planes cerca de ti</p>
+              <p className="text-xs text-on-surface-variant">
+                Los mejores planes cerca de ti
+              </p>
             </div>
-            <span className="text-xs text-platinum-silver qph-label-bold">Lima &amp; Más</span>
+            <span className="text-xs text-platinum-silver qph-label-bold">
+              Lima &amp; Más
+            </span>
           </div>
 
           {isLoadingUpcoming ? (
@@ -599,7 +667,10 @@ export default function HomePage() {
               <div className="grid grid-cols-2 gap-3.5">
                 {filteredMobileEvents.slice(0, 6).map((event) => {
                   const secureId = event.publicUuid || event.slug || event.id;
-                  const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
+                  const ctaHref =
+                    event.hasLandingPage && event.slug
+                      ? `/e/${event.slug}`
+                      : `/events/${secureId}`;
                   return (
                     <article
                       key={`grid-${event.id}`}
@@ -630,7 +701,9 @@ export default function HomePage() {
                           {event.title}
                         </h4>
                         <p className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                          <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
+                          <span className="material-symbols-outlined text-[13px] text-platinum-silver">
+                            location_on
+                          </span>
                           <span className="truncate">{event.location}</span>
                         </p>
                       </Link>
@@ -646,7 +719,9 @@ export default function HomePage() {
                   className="w-full h-12 bg-surface-container-lowest hover:bg-surface-gray border border-surface-variant text-on-surface qph-label-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99] cursor-pointer"
                 >
                   <span>Ver toda la cartelera</span>
-                  <span className="material-symbols-outlined text-[18px] text-electric-indigo">arrow_forward</span>
+                  <span className="material-symbols-outlined text-[18px] text-electric-indigo">
+                    arrow_forward
+                  </span>
                 </Link>
               </div>
             </>
@@ -663,12 +738,19 @@ export default function HomePage() {
             <div className="flex items-center justify-between mb-3.5">
               <div>
                 <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-emerald-500 text-[20px]">weekend</span>
+                  <span className="material-symbols-outlined text-emerald-500 text-[20px]">
+                    weekend
+                  </span>
                   Planes de Fin de Semana
                 </h3>
-                <p className="text-xs text-on-surface-variant">Disfruta este sábado y domingo</p>
+                <p className="text-xs text-on-surface-variant">
+                  Disfruta este sábado y domingo
+                </p>
               </div>
-              <Link href="/events?date=weekend" className="text-xs text-electric-indigo qph-label-bold hover:underline">
+              <Link
+                href="/events?date=weekend"
+                className="text-xs text-electric-indigo qph-label-bold hover:underline"
+              >
                 Ver todos
               </Link>
             </div>
@@ -676,7 +758,10 @@ export default function HomePage() {
             <div className="flex overflow-x-auto qph-hide-scrollbar gap-3.5 pb-2 -mx-4 px-4 snap-x snap-mandatory">
               {weekendPlans.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
-                const ctaHref = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
+                const ctaHref =
+                  event.hasLandingPage && event.slug
+                    ? `/e/${event.slug}`
+                    : `/events/${secureId}`;
                 return (
                   <article
                     key={`weekend-${event.id}`}
@@ -708,7 +793,9 @@ export default function HomePage() {
                         {event.title}
                       </h4>
                       <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                        <span className="material-symbols-outlined text-[14px] text-platinum-silver">location_on</span>
+                        <span className="material-symbols-outlined text-[14px] text-platinum-silver">
+                          location_on
+                        </span>
                         <span className="truncate">{event.location}</span>
                       </p>
                     </Link>
@@ -719,8 +806,8 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* 7. Newsletter Móvil (Stitch Style) */}
-        <section className="px-5 py-8 bg-deep-slate rounded-2xl mx-4 mb-16 text-center text-white overflow-hidden relative">
+        {/* 7. Newsletter Móvil (Oculto temporalmente) */}
+        {/* <section className="px-5 py-8 bg-deep-slate rounded-2xl mx-4 mb-16 text-center text-white overflow-hidden relative">
           <div className="relative z-10">
             <span className="inline-block px-2.5 py-0.5 bg-electric-indigo/30 text-electric-indigo text-[10px] qph-label-bold rounded-full uppercase tracking-wider mb-2">
               Newsletter QPH
@@ -741,14 +828,13 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute -top-10 -right-10 w-28 h-28 bg-electric-indigo/20 rounded-full blur-3xl pointer-events-none" />
-        </section>
+        </section> */}
       </div>
 
       {/* =========================================================================
           VISTA ESCRITORIO (JERARQUÍA OPTIMIZADA DE STITCH)
          ========================================================================= */}
       <div className="hidden md:block flex-1 w-full bg-background">
-        
         {/* 1. Hero Section con Carrusel & Search Overlay */}
         <div className="relative w-full">
           <HeroCarousel />
@@ -759,7 +845,9 @@ export default function HomePage() {
         <section className="max-w-container-max mx-auto px-margin-x pt-6 pb-2">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="qph-headline-lg text-deep-slate">Explora por Categoría</h2>
+              <h2 className="qph-headline-lg text-deep-slate">
+                Explora por Categoría
+              </h2>
               <p className="qph-body-md text-on-surface-variant">
                 Encuentra planes según tus gustos e intereses.
               </p>
@@ -773,7 +861,9 @@ export default function HomePage() {
                 aria-label="Desplazar categorías hacia la izquierda"
                 className="w-10 h-10 rounded-full border border-surface-variant bg-white hover:bg-surface-gray text-deep-slate shadow-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 hover:border-electric-indigo"
               >
-                <span className="material-symbols-outlined text-xl">chevron_left</span>
+                <span className="material-symbols-outlined text-xl">
+                  chevron_left
+                </span>
               </button>
               <button
                 type="button"
@@ -781,7 +871,9 @@ export default function HomePage() {
                 aria-label="Desplazar categorías hacia la derecha"
                 className="w-10 h-10 rounded-full border border-surface-variant bg-white hover:bg-surface-gray text-deep-slate shadow-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 hover:border-electric-indigo"
               >
-                <span className="material-symbols-outlined text-xl">chevron_right</span>
+                <span className="material-symbols-outlined text-xl">
+                  chevron_right
+                </span>
               </button>
             </div>
           </div>
@@ -800,7 +892,9 @@ export default function HomePage() {
                 <span
                   className={`w-9 h-9 rounded-xl ${chip.bgClass} ${chip.textClass} flex items-center justify-center group-hover:bg-electric-indigo group-hover:text-white transition-colors`}
                 >
-                  <span className="material-symbols-outlined text-lg">{chip.icon}</span>
+                  <span className="material-symbols-outlined text-lg">
+                    {chip.icon}
+                  </span>
                 </span>
                 <span className="font-label-bold text-label-bold text-on-surface group-hover:text-electric-indigo transition-colors whitespace-nowrap">
                   {chip.name}
@@ -814,7 +908,9 @@ export default function HomePage() {
         <section className="max-w-container-max mx-auto px-margin-x pt-4 pb-6">
           <div className="flex justify-between items-end mb-4">
             <div>
-              <h2 className="qph-headline-lg text-deep-slate mb-1">Eventos Próximos</h2>
+              <h2 className="qph-headline-lg text-deep-slate mb-1">
+                Eventos Próximos
+              </h2>
               <p className="qph-body-md text-on-surface-variant">
                 Los espectáculos más esperados que están a punto de comenzar.
               </p>
@@ -823,7 +919,10 @@ export default function HomePage() {
               href="/events"
               className="text-electric-indigo qph-label-bold flex items-center gap-1 hover:underline transition-all cursor-pointer"
             >
-              Ver todos <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              Ver todos{" "}
+              <span className="material-symbols-outlined text-sm">
+                arrow_forward
+              </span>
             </Link>
           </div>
 
@@ -836,7 +935,9 @@ export default function HomePage() {
                 <EventCardSkeleton />
               </>
             ) : upcomingEvents.length > 0 ? (
-              upcomingEvents.map((event) => <EventCard key={event.id} {...event} />)
+              upcomingEvents.map((event) => (
+                <EventCard key={event.id} {...event} />
+              ))
             ) : (
               <EmptySectionMessage message="No hay eventos próximos registrados en este momento." />
             )}
@@ -848,21 +949,29 @@ export default function HomePage() {
           <div className="flex justify-between items-end mb-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-electric-indigo text-lg">bolt</span>
+                <span className="material-symbols-outlined text-electric-indigo text-lg">
+                  bolt
+                </span>
                 <span className="font-label-bold text-[12px] text-electric-indigo uppercase tracking-wider">
                   Selección Editorial
                 </span>
               </div>
-              <h2 className="qph-headline-lg text-deep-slate">Eventos Destacados de la Semana</h2>
+              <h2 className="qph-headline-lg text-deep-slate">
+                Eventos Destacados de la Semana
+              </h2>
               <p className="qph-body-md text-on-surface-variant">
-                Las citas culturales y de entretenimiento imprescindibles en tu ciudad.
+                Las citas culturales y de entretenimiento imprescindibles en tu
+                ciudad.
               </p>
             </div>
             <Link
               href="/events"
               className="text-electric-indigo qph-label-bold flex items-center gap-1 hover:underline transition-all cursor-pointer"
             >
-              Ver cartelera completa <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              Ver cartelera completa{" "}
+              <span className="material-symbols-outlined text-sm">
+                arrow_forward
+              </span>
             </Link>
           </div>
 
@@ -875,7 +984,9 @@ export default function HomePage() {
                 <EventCardSkeleton />
               </>
             ) : weeklyFeaturedEvents.length > 0 ? (
-              weeklyFeaturedEvents.map((ev) => <EventCard key={ev.id} {...ev} />)
+              weeklyFeaturedEvents.map((ev) => (
+                <EventCard key={ev.id} {...ev} />
+              ))
             ) : (
               <EmptySectionMessage message="Próximamente publicaremos nuevos eventos destacados de la semana." />
             )}
@@ -887,21 +998,29 @@ export default function HomePage() {
           <div className="flex justify-between items-end mb-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-vip-gold text-lg">trending_up</span>
+                <span className="material-symbols-outlined text-vip-gold text-lg">
+                  trending_up
+                </span>
                 <span className="font-label-bold text-[12px] text-vip-gold uppercase tracking-wider">
                   Tendencias &amp; Más Populares
                 </span>
               </div>
-              <h2 className="qph-headline-lg text-deep-slate">Planes para Este Fin de Semana</h2>
+              <h2 className="qph-headline-lg text-deep-slate">
+                Planes para Este Fin de Semana
+              </h2>
               <p className="qph-body-md text-on-surface-variant">
-                Las experiencias con mayor demanda y valoraciones más altas de la comunidad.
+                Las experiencias con mayor demanda y valoraciones más altas de
+                la comunidad.
               </p>
             </div>
             <Link
               href="/events"
               className="text-electric-indigo qph-label-bold flex items-center gap-1 hover:underline transition-all cursor-pointer"
             >
-              Ver ranking completo <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              Ver ranking completo{" "}
+              <span className="material-symbols-outlined text-sm">
+                arrow_forward
+              </span>
             </Link>
           </div>
 
@@ -919,7 +1038,6 @@ export default function HomePage() {
             )}
           </div>
         </section>
-
       </div>
     </>
   );

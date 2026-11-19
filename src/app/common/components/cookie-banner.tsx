@@ -63,17 +63,23 @@ export function CookieBanner() {
               aria-label="Cerrar aviso de cookies"
               className="text-slate-400 hover:text-white transition-colors cursor-pointer -mr-1"
             >
-              <span className="material-symbols-outlined text-[18px]">close</span>
+              <span className="material-symbols-outlined text-[18px]">
+                close
+              </span>
             </button>
           </div>
           <p className="text-[11px] sm:text-xs text-platinum-silver leading-relaxed">
-            En <strong>queplanhoy</strong> utilizamos cookies técnicas esenciales para mantener tu sesión segura y procesar tus reservas, además de cookies analíticas para mejorar la plataforma. Conoce más en nuestra{" "}
+            En <strong>queplanhoy</strong> utilizamos cookies técnicas
+            esenciales para mantener tu sesión segura y procesar tus reservas,
+            además de cookies analíticas para mejorar la plataforma. Conoce más
+            en nuestra{" "}
             <Link
               href="/politica-de-cookies"
               className="text-electric-indigo underline hover:text-indigo-300 font-semibold"
             >
               Política de Cookies
-            </Link>.
+            </Link>
+            .
           </p>
           <div className="pt-2 flex flex-wrap items-center gap-2">
             <button

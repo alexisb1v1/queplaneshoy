@@ -3,7 +3,8 @@ import PaymentSuccessScreen from "../../features/orders/ui/payment-success-scree
 
 export const metadata = {
   title: "¡Pago Realizado con Éxito! | queplanhoy",
-  description: "Confirmación de compra oficial y pase digital con código QR para Afterlife Madrid.",
+  description:
+    "Confirmación de compra oficial y pase digital con código QR para Afterlife Madrid.",
 };
 
 export default function CheckoutSuccessPage() {

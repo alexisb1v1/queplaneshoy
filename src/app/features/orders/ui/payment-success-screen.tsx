@@ -7,22 +7,25 @@ import { QRCodeSVG } from "qrcode.react";
 import CheckoutStepper from "./components/checkout-stepper";
 import TicketPrintScreen from "./ticket-print-screen";
 import { GlobalFooter } from "@/app/common/components/global-footer";
+import { trackUmamiEvent } from "@/app/common/utils/analytics";
 
 // Carga dinámica del mapa OpenStreetMap / Leaflet (desactivando SSR)
 const EventLocationMap = dynamic(
   () =>
     import("../../events/ui/components/event-location-map").then(
-      (mod) => mod.EventLocationMap
+      (mod) => mod.EventLocationMap,
     ),
   {
     ssr: false,
     loading: () => (
       <div className="w-full h-48 rounded-xl bg-surface-gray border border-surface-variant flex flex-col items-center justify-center gap-2 text-xs font-semibold text-on-surface-variant animate-pulse">
-        <span className="material-symbols-outlined text-electric-indigo text-2xl">map</span>
+        <span className="material-symbols-outlined text-electric-indigo text-2xl">
+          map
+        </span>
         <span>Cargando ubicación oficial del recinto...</span>
       </div>
     ),
-  }
+  },
 );
 
 export interface PaymentSuccessProps {
@@ -111,6 +114,15 @@ export default function PaymentSuccessScreen({
     }
   }, []);
 
+  useEffect(() => {
+    trackUmamiEvent("purchase_success", {
+      orderCode,
+      eventTitle,
+      totalAmount,
+      ticketCount,
+    });
+  }, [orderCode, eventTitle, totalAmount, ticketCount]);
+
   const handleDownloadPdf = () => {
     setShowPrintView(true);
   };
@@ -152,14 +164,24 @@ export default function PaymentSuccessScreen({
               href="/checkout"
               className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              <span className="hidden sm:inline">Volver a selección de entradas</span>
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_back
+              </span>
+              <span className="hidden sm:inline">
+                Volver a selección de entradas
+              </span>
             </Link>
             <button
-              onClick={() => alert("Centro de Ayuda disponible las 24 horas en soporte@queplanhoy.com")}
+              onClick={() =>
+                alert(
+                  "Centro de Ayuda disponible las 24 horas en soporte@queplanhoy.com",
+                )
+              }
               className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[18px]">help</span>
+              <span className="material-symbols-outlined text-[18px]">
+                help
+              </span>
               <span className="hidden sm:inline">Centro de Ayuda</span>
             </button>
           </div>
@@ -171,7 +193,6 @@ export default function PaymentSuccessScreen({
          ========================================================================= */}
       <main className="flex-grow w-full max-w-container-max mx-auto px-4 sm:px-8 py-8 sm:py-12">
         <div className="flex flex-col w-full">
-
           {/* =====================================================================
               STEPPER SECTION (ESTILO EXACTO Y UNIFORME CON CHECKOUT)
              ===================================================================== */}
@@ -196,7 +217,9 @@ export default function PaymentSuccessScreen({
               </div>
 
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface-gray text-primary mb-4 font-bold text-xs">
-                <span className="material-symbols-outlined text-[16px]">celebration</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  celebration
+                </span>
                 <span>¡Transacción Aprobada!</span>
               </div>
 
@@ -205,8 +228,11 @@ export default function PaymentSuccessScreen({
               </h1>
 
               <p className="text-sm sm:text-base text-on-surface-variant max-w-xl mb-6">
-                Hemos enviado tus entradas y el comprobante detallado de compra a tu correo electrónico:{" "}
-                <strong className="text-deep-slate font-semibold">{userEmail}</strong>
+                Hemos enviado tus entradas y el comprobante detallado de compra
+                a tu correo electrónico:{" "}
+                <strong className="text-deep-slate font-semibold">
+                  {userEmail}
+                </strong>
               </p>
 
               {/* Metadata Badges */}
@@ -216,7 +242,9 @@ export default function PaymentSuccessScreen({
                     receipt_long
                   </span>
                   <span>Código de pedido:</span>
-                  <span className="text-deep-slate font-mono font-extrabold">{orderCode}</span>
+                  <span className="text-deep-slate font-mono font-extrabold">
+                    {orderCode}
+                  </span>
                 </div>
                 <span className="text-platinum-silver hidden sm:inline">•</span>
                 <div className="flex items-center gap-1.5 font-bold">
@@ -236,15 +264,12 @@ export default function PaymentSuccessScreen({
               MAIN GRID: DIGITAL PASS VOUCHER & ORDER SUMMARY (7 COLS / 5 COLS)
              ===================================================================== */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16 items-start">
-            
             {/* -------------------------------------------------------------------
                 LEFT COLUMN: DIGITAL TICKET PASS (7 COLS)
                ------------------------------------------------------------------- */}
             <div className="lg:col-span-7 flex flex-col gap-6">
-              
               {/* Ticket Card Container */}
               <div className="relative bg-white rounded-2xl shadow-md overflow-hidden border border-surface-variant">
-                
                 {/* Ticket Header Banner with Event Context */}
                 <div className="relative h-52 bg-deep-slate text-white p-6 flex flex-col justify-between overflow-hidden">
                   <div
@@ -283,12 +308,13 @@ export default function PaymentSuccessScreen({
 
                 {/* Ticket Body Details */}
                 <div className="p-6 md:p-8 flex flex-col gap-6">
-                  
                   {/* Info Pillars Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-start gap-3 p-4 rounded-xl bg-surface-container-low border border-surface-variant/40">
                       <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm shrink-0">
-                        <span className="material-symbols-outlined text-[22px]">calendar_month</span>
+                        <span className="material-symbols-outlined text-[22px]">
+                          calendar_month
+                        </span>
                       </div>
                       <div className="min-w-0">
                         <span className="block font-bold text-on-surface-variant uppercase text-[11px]">
@@ -305,7 +331,9 @@ export default function PaymentSuccessScreen({
 
                     <div className="flex items-start gap-3 p-4 rounded-xl bg-surface-container-low border border-surface-variant/40">
                       <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm shrink-0">
-                        <span className="material-symbols-outlined text-[22px]">location_on</span>
+                        <span className="material-symbols-outlined text-[22px]">
+                          location_on
+                        </span>
                       </div>
                       <div className="min-w-0">
                         <span className="block font-bold text-on-surface-variant uppercase text-[11px]">
@@ -332,12 +360,15 @@ export default function PaymentSuccessScreen({
                           {ticketCount}x {zoneName}
                         </span>
                         <span className="block text-xs text-on-surface-variant">
-                          Acceso Front Stage VIP prioritario + Barra Libre de cortesía
+                          Acceso Front Stage VIP prioritario + Barra Libre de
+                          cortesía
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-gray text-deep-slate font-bold text-xs">
-                      <span className="material-symbols-outlined text-[16px] text-vip-gold">stars</span>
+                      <span className="material-symbols-outlined text-[16px] text-vip-gold">
+                        stars
+                      </span>
                       <span>Zona Exclusiva</span>
                     </div>
                   </div>
@@ -353,7 +384,11 @@ export default function PaymentSuccessScreen({
                   <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-surface-gray border border-surface-variant/50">
                     <div className="p-3.5 bg-white rounded-2xl shadow-sm shrink-0 flex flex-col items-center">
                       <QRCodeSVG
-                        value={qrPayload || (tickets && tickets[0]?.qrPayload) || `QPH|ORD:${orderCode}|TX:${txCode}`}
+                        value={
+                          qrPayload ||
+                          (tickets && tickets[0]?.qrPayload) ||
+                          `QPH|ORD:${orderCode}|TX:${txCode}`
+                        }
                         size={160}
                         level="H"
                         includeMargin={false}
@@ -380,7 +415,9 @@ export default function PaymentSuccessScreen({
                         <span>Acceso directo móvil</span>
                       </div>
                       <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                        Presenta este código QR directamente desde tu dispositivo o tu pase guardado en el acceso del recinto. No es obligatorio imprimirlo.
+                        Presenta este código QR directamente desde tu
+                        dispositivo o tu pase guardado en el acceso del recinto.
+                        No es obligatorio imprimirlo.
                       </p>
                       <div className="mt-1 flex items-center justify-center sm:justify-start gap-2">
                         <span className="inline-flex items-center gap-1.5 text-xs font-bold text-deep-slate bg-white px-2.5 py-1 rounded-full border border-surface-variant shadow-xs">
@@ -398,7 +435,9 @@ export default function PaymentSuccessScreen({
                       onClick={handleDownloadPdf}
                       className="w-full sm:w-auto min-w-[280px] max-w-md flex items-center justify-center gap-2.5 py-3.5 px-8 rounded-xl bg-electric-indigo text-white font-bold text-sm hover:bg-primary transition-all shadow-md shadow-electric-indigo/25 active:scale-95 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[20px]">download</span>
+                      <span className="material-symbols-outlined text-[20px]">
+                        download
+                      </span>
                       <span>Descargar Entradas (PDF)</span>
                     </button>
                   </div>
@@ -409,7 +448,9 @@ export default function PaymentSuccessScreen({
                       className="inline-flex items-center gap-1.5 font-bold text-xs sm:text-sm text-primary hover:underline"
                     >
                       <span>Ver y gestionar en Mis Entradas</span>
-                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        arrow_forward
+                      </span>
                     </Link>
                   </div>
                 </div>
@@ -420,7 +461,6 @@ export default function PaymentSuccessScreen({
                 RIGHT COLUMN: ORDER SUMMARY & LOGISTICS (5 COLS)
                ------------------------------------------------------------------- */}
             <div className="lg:col-span-5 flex flex-col gap-6">
-              
               {/* Order Summary Breakdown Card */}
               <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col gap-5 border border-surface-variant">
                 <div className="flex items-center justify-between pb-2 border-b border-surface-variant/40">
@@ -442,7 +482,9 @@ export default function PaymentSuccessScreen({
                         S/. {unitPrice.toFixed(2)} por entrada
                       </span>
                     </div>
-                    <span className="font-bold">S/. {subtotalEntradas.toFixed(2)}</span>
+                    <span className="font-bold">
+                      S/. {subtotalEntradas.toFixed(2)}
+                    </span>
                   </div>
 
                   {distributionFee > 0 && (
@@ -462,8 +504,12 @@ export default function PaymentSuccessScreen({
                   {discountAmount > 0 && (
                     <div className="flex justify-between items-center text-emerald-600 font-semibold bg-emerald-50/60 p-2 rounded-lg border border-emerald-200/50">
                       <span className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px]">local_offer</span>
-                        <span>Cupón descuento {couponCode ? `(${couponCode})` : ''}</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          local_offer
+                        </span>
+                        <span>
+                          Cupón descuento {couponCode ? `(${couponCode})` : ""}
+                        </span>
                       </span>
                       <span>-S/. {discountAmount.toFixed(2)}</span>
                     </div>
@@ -478,7 +524,9 @@ export default function PaymentSuccessScreen({
                         Total Pagado
                       </span>
                       <div className="flex items-center gap-1.5 text-xs text-primary font-bold mt-0.5">
-                        <span className="material-symbols-outlined text-[15px]">verified_user</span>
+                        <span className="material-symbols-outlined text-[15px]">
+                          verified_user
+                        </span>
                         <span>Pago Seguro • Aprobado</span>
                       </div>
                     </div>
@@ -491,7 +539,9 @@ export default function PaymentSuccessScreen({
 
                   <div className="text-xs text-on-surface-variant pt-2 flex items-center justify-between border-t border-surface-variant/30">
                     <span>Método: {paymentMethodText}</span>
-                    <span className="font-mono text-platinum-silver">{txCode}</span>
+                    <span className="font-mono text-platinum-silver">
+                      {txCode}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -523,7 +573,9 @@ export default function PaymentSuccessScreen({
               <div className="bg-surface-container-low rounded-2xl p-5 flex items-center justify-between gap-4 border border-surface-variant/40">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm shrink-0">
-                    <span className="material-symbols-outlined text-[20px]">support_agent</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      support_agent
+                    </span>
                   </div>
                   <div>
                     <h4 className="font-bold text-xs sm:text-sm text-deep-slate">
@@ -535,7 +587,11 @@ export default function PaymentSuccessScreen({
                   </div>
                 </div>
                 <button
-                  onClick={() => alert("Asistente en vivo activado. Un agente te responderá en menos de 2 minutos.")}
+                  onClick={() =>
+                    alert(
+                      "Asistente en vivo activado. Un agente te responderá en menos de 2 minutos.",
+                    )
+                  }
                   className="shrink-0 px-3 py-1.5 rounded-lg bg-white text-deep-slate font-bold text-xs hover:bg-surface-container-high transition-colors shadow-sm border border-surface-variant cursor-pointer"
                 >
                   Contactar
@@ -563,8 +619,12 @@ export default function PaymentSuccessScreen({
                   onClick={handleShare}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-gray text-deep-slate font-bold text-xs hover:bg-surface-container transition-colors border border-surface-variant cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[18px]">share</span>
-                  <span>{copiedLink ? "¡Enlace copiado!" : "Compartir con amigos"}</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    share
+                  </span>
+                  <span>
+                    {copiedLink ? "¡Enlace copiado!" : "Compartir con amigos"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -575,7 +635,9 @@ export default function PaymentSuccessScreen({
               <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 border border-surface-variant">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary mb-4 shadow-sm">
-                    <span className="material-symbols-outlined text-[24px]">directions_subway</span>
+                    <span className="material-symbols-outlined text-[24px]">
+                      directions_subway
+                    </span>
                   </div>
                   <h4 className="font-bold text-deep-slate text-base sm:text-lg mb-2">
                     ¿Cómo llegar al recinto?
@@ -584,8 +646,8 @@ export default function PaymentSuccessScreen({
                     {addressReference
                       ? `${addressReference}. Te recomendamos acudir con anticipación al inicio del show.`
                       : venueAddress
-                      ? `Ubicado en ${venueAddress}. Te sugerimos planificar tu transporte y llegar con anticipación.`
-                      : "Te sugerimos planificar tu ruta de llegada con anticipación para un ingreso fluido."}
+                        ? `Ubicado en ${venueAddress}. Te sugerimos planificar tu transporte y llegar con anticipación.`
+                        : "Te sugerimos planificar tu ruta de llegada con anticipación para un ingreso fluido."}
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-surface-variant/40">
@@ -594,14 +656,16 @@ export default function PaymentSuccessScreen({
                     href={
                       googleMapsUrl ||
                       `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                        venueAddress
+                        venueAddress,
                       )}`
                     }
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <span>Abrir en Google Maps</span>
-                    <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      open_in_new
+                    </span>
                   </a>
                 </div>
               </div>
@@ -610,19 +674,27 @@ export default function PaymentSuccessScreen({
               <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 border border-surface-variant">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-surface-gray flex items-center justify-center text-deep-slate mb-4 border border-surface-variant">
-                    <span className="material-symbols-outlined text-[24px]">schedule</span>
+                    <span className="material-symbols-outlined text-[24px]">
+                      schedule
+                    </span>
                   </div>
                   <h4 className="font-bold text-deep-slate text-base sm:text-lg mb-2">
                     Horarios y Control de Acceso
                   </h4>
                   <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                    {doorsOpenStr ? `Apertura de puertas: ${doorsOpenStr}. ` : ""}
-                    Acceso con código QR oficial firmado criptográficamente. Es obligatorio portar documento de identidad (DNI físico o digital).
+                    {doorsOpenStr
+                      ? `Apertura de puertas: ${doorsOpenStr}. `
+                      : ""}
+                    Acceso con código QR oficial firmado criptográficamente. Es
+                    obligatorio portar documento de identidad (DNI físico o
+                    digital).
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-surface-variant/40">
                   <span className="inline-flex items-center gap-1 font-bold text-emerald-600 text-xs">
-                    <span className="material-symbols-outlined text-[16px]">verified</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      verified
+                    </span>
                     <span>Control QR Offline Activo</span>
                   </span>
                 </div>
@@ -632,13 +704,17 @@ export default function PaymentSuccessScreen({
               <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 border border-surface-variant">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800 mb-4 shadow-sm">
-                    <span className="material-symbols-outlined text-[24px]">local_bar</span>
+                    <span className="material-symbols-outlined text-[24px]">
+                      local_bar
+                    </span>
                   </div>
                   <h4 className="font-bold text-deep-slate text-base sm:text-lg mb-2">
                     Pulsera Cashless y Barra
                   </h4>
                   <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                    Tu entrada Platinum incluye barra libre y acreditación de tela conmemorativa que podrás recoger directamente en la carpa de bienvenida VIP.
+                    Tu entrada Platinum incluye barra libre y acreditación de
+                    tela conmemorativa que podrás recoger directamente en la
+                    carpa de bienvenida VIP.
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-surface-variant/40">
@@ -647,11 +723,15 @@ export default function PaymentSuccessScreen({
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert("Tu pulsera NFC se vinculará en el mostrador VIP para accesos y consumiciones.");
+                      alert(
+                        "Tu pulsera NFC se vinculará en el mostrador VIP para accesos y consumiciones.",
+                      );
                     }}
                   >
                     <span>Beneficios de tu entrada</span>
-                    <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      chevron_right
+                    </span>
                   </a>
                 </div>
               </div>
@@ -673,7 +753,8 @@ export default function PaymentSuccessScreen({
                   ¿Buscas más experiencias para este mes?
                 </h4>
                 <p className="text-xs sm:text-sm text-on-surface-variant">
-                  Descubre los festivales, conciertos y obras más exclusivos en Madrid.
+                  Descubre los festivales, conciertos y obras más exclusivos en
+                  Madrid.
                 </p>
               </div>
             </div>
@@ -727,7 +808,6 @@ export default function PaymentSuccessScreen({
           onBack={() => setShowPrintView(false)}
         />
       )}
-
     </div>
   );
 }

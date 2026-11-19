@@ -1,6 +1,6 @@
-import { ResultAsync } from 'neverthrow';
-import { EventRepository } from '../repositories/event.repository';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { EventRepository } from "../repositories/event.repository";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class GetOrganizerEventForEditUseCase {
   constructor(private readonly eventRepository: EventRepository) {}
@@ -9,4 +9,3 @@ export class GetOrganizerEventForEditUseCase {
     return this.eventRepository.getOrganizerEventForEdit(eventId);
   }
 }
-

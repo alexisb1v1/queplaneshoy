@@ -46,14 +46,18 @@ export function EventCard({
 }: EventCardProps) {
   const router = useRouter();
   const { isFavorite: checkFavorite, toggle } = useFavorites();
-  const isFavorite = checkFavorite(String(id)) || (publicUuid ? checkFavorite(publicUuid) : false);
+  const isFavorite =
+    checkFavorite(String(id)) ||
+    (publicUuid ? checkFavorite(publicUuid) : false);
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const res = await toggle(String(id), publicUuid);
     if (res.requiresAuth && typeof window !== "undefined") {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      router.push(
+        `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+      );
     }
   };
 
@@ -87,8 +91,10 @@ export function EventCard({
 
   // Navegación inteligente y segura: si tiene landing va a /e/[slug], si no a /events/[publicUuid] (previniendo BOLA/IDOR)
   const secureIdentifier = publicUuid || slug || id;
-  const ctaHref = hasLandingPage && slug ? `/e/${slug}` : `/events/${secureIdentifier}`;
-  const ctaText = hasLandingPage && slug ? "Ver Experiencia" : "Comprar Entradas";
+  const ctaHref =
+    hasLandingPage && slug ? `/e/${slug}` : `/events/${secureIdentifier}`;
+  const ctaText =
+    hasLandingPage && slug ? "Ver Experiencia" : "Comprar Entradas";
 
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 flex flex-col justify-between border border-surface-variant">
@@ -117,7 +123,9 @@ export function EventCard({
         {/* Botón Favorito */}
         <button
           onClick={toggleFavorite}
-          aria-label={isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"}
+          aria-label={
+            isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"
+          }
           className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer"
         >
           <span
@@ -146,8 +154,12 @@ export function EventCard({
           <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3">
             {description}
           </p>
-          <div className={`flex items-center gap-1.5 ${getUrgencyColorClass()} mb-2`}>
-            <span className="material-symbols-outlined text-sm">{urgencyIcon}</span>
+          <div
+            className={`flex items-center gap-1.5 ${getUrgencyColorClass()} mb-2`}
+          >
+            <span className="material-symbols-outlined text-sm">
+              {urgencyIcon}
+            </span>
             <span className="font-label-bold text-[11px]">{urgencyText}</span>
           </div>
         </div>
@@ -155,7 +167,9 @@ export function EventCard({
         {/* Footer de Card con borde uniforme y botón de compra inteligente */}
         <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
           <div className="flex flex-col">
-            <span className="text-[10px] text-outline uppercase font-label-bold">Precio</span>
+            <span className="text-[10px] text-outline uppercase font-label-bold">
+              Precio
+            </span>
             <span className="font-price-tag text-price-tag text-deep-slate">
               Desde S/. {price}
             </span>

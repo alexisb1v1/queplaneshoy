@@ -3,7 +3,8 @@ import ExploreEventsPageComponent from "../../features/events/ui/explore-page";
 
 export const metadata = {
   title: "Cartelera Oficial de Eventos | queplanhoy",
-  description: "Descubre los mejores conciertos, obras de teatro, festivales y eventos deportivos en todo el Perú con acceso oficial garantizado.",
+  description:
+    "Descubre los mejores conciertos, obras de teatro, festivales y eventos deportivos en todo el Perú con acceso oficial garantizado.",
 };
 
 export default function EventsExplorePage() {
@@ -19,7 +20,9 @@ export default function EventsExplorePage() {
             />
           </div>
           <div className="w-6 h-6 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin mb-3" />
-          <p className="text-sm font-bold text-deep-slate">Cargando cartelera de eventos...</p>
+          <p className="text-sm font-bold text-deep-slate">
+            Cargando cartelera de eventos...
+          </p>
         </div>
       }
     >

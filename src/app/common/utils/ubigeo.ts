@@ -1,4 +1,4 @@
-import ubigeoPeru, { UbigeoItem } from 'ubigeo-peru';
+import ubigeoPeru, { UbigeoItem } from "ubigeo-peru";
 
 export interface UbigeoOption {
   code: string;
@@ -9,12 +9,12 @@ export interface UbigeoOption {
 const rawList: UbigeoItem[] = (ubigeoPeru.inei || []).map((item) => {
   // En ubigeo-inei.json, la provincia de Bagua (Amazonas) viene erróneamente con provincia: "00" en lugar de "02"
   if (
-    item.departamento === '01' &&
-    item.nombre === 'Bagua' &&
-    item.provincia === '00' &&
-    item.distrito === '00'
+    item.departamento === "01" &&
+    item.nombre === "Bagua" &&
+    item.provincia === "00" &&
+    item.distrito === "00"
   ) {
-    return { ...item, provincia: '02' };
+    return { ...item, provincia: "02" };
   }
   return item;
 });
@@ -25,7 +25,7 @@ const rawList: UbigeoItem[] = (ubigeoPeru.inei || []).map((item) => {
 export function getDepartamentos(): UbigeoOption[] {
   const map = new Map<string, UbigeoOption>();
   for (const item of rawList) {
-    if (item.provincia === '00' && item.distrito === '00') {
+    if (item.provincia === "00" && item.distrito === "00") {
       if (!map.has(item.departamento)) {
         map.set(item.departamento, {
           code: item.departamento,
@@ -46,8 +46,8 @@ export function getProvincias(departamentoCode: string): UbigeoOption[] {
   for (const item of rawList) {
     if (
       item.departamento === departamentoCode &&
-      item.provincia !== '00' &&
-      item.distrito === '00'
+      item.provincia !== "00" &&
+      item.distrito === "00"
     ) {
       if (!map.has(item.provincia)) {
         map.set(item.provincia, {
@@ -63,14 +63,17 @@ export function getProvincias(departamentoCode: string): UbigeoOption[] {
 /**
  * Obtiene los distritos correspondientes a una provincia garantizando unicidad
  */
-export function getDistritos(departamentoCode: string, provinciaCode: string): UbigeoOption[] {
+export function getDistritos(
+  departamentoCode: string,
+  provinciaCode: string,
+): UbigeoOption[] {
   if (!departamentoCode || !provinciaCode) return [];
   const map = new Map<string, UbigeoOption>();
   for (const item of rawList) {
     if (
       item.departamento === departamentoCode &&
       item.provincia === provinciaCode &&
-      item.distrito !== '00'
+      item.distrito !== "00"
     ) {
       if (!map.has(item.distrito)) {
         map.set(item.distrito, {
@@ -86,9 +89,13 @@ export function getDistritos(departamentoCode: string, provinciaCode: string): U
 /**
  * Compone el código de ubigeo oficial de 6 dígitos
  */
-export function buildUbigeoCode(dep: string, prov: string, dist: string): string {
-  if (!dep || !prov || !dist) return '';
-  return `${dep.padStart(2, '0')}${prov.padStart(2, '0')}${dist.padStart(2, '0')}`;
+export function buildUbigeoCode(
+  dep: string,
+  prov: string,
+  dist: string,
+): string {
+  if (!dep || !prov || !dist) return "";
+  return `${dep.padStart(2, "0")}${prov.padStart(2, "0")}${dist.padStart(2, "0")}`;
 }
 
 /**
@@ -102,10 +109,10 @@ export function parseUbigeoCode(code: string): {
 } {
   if (!code || code.length !== 6) {
     return {
-      departamentoName: '',
-      provinciaName: '',
-      distritoName: '',
-      fullLabel: '',
+      departamentoName: "",
+      provinciaName: "",
+      distritoName: "",
+      fullLabel: "",
     };
   }
 
@@ -114,22 +121,25 @@ export function parseUbigeoCode(code: string): {
   const dist = code.substring(4, 6);
 
   const depItem = rawList.find(
-    (i) => i.departamento === dep && i.provincia === '00' && i.distrito === '00'
+    (i) =>
+      i.departamento === dep && i.provincia === "00" && i.distrito === "00",
   );
   const provItem = rawList.find(
-    (i) => i.departamento === dep && i.provincia === prov && i.distrito === '00'
+    (i) =>
+      i.departamento === dep && i.provincia === prov && i.distrito === "00",
   );
   const distItem = rawList.find(
-    (i) => i.departamento === dep && i.provincia === prov && i.distrito === dist
+    (i) =>
+      i.departamento === dep && i.provincia === prov && i.distrito === dist,
   );
 
-  const departamentoName = depItem ? depItem.nombre : '';
-  const provinciaName = provItem ? provItem.nombre : '';
-  const distritoName = distItem ? distItem.nombre : '';
+  const departamentoName = depItem ? depItem.nombre : "";
+  const provinciaName = provItem ? provItem.nombre : "";
+  const distritoName = distItem ? distItem.nombre : "";
 
   const fullLabel = [distritoName, provinciaName, departamentoName]
     .filter(Boolean)
-    .join(', ');
+    .join(", ");
 
   return {
     departamentoName,
@@ -138,4 +148,3 @@ export function parseUbigeoCode(code: string): {
     fullLabel,
   };
 }
-

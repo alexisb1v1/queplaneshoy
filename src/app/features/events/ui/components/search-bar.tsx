@@ -1,17 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { searchEventsUseCase, getPublishedCitiesUseCase, PublishedCity } from '../../index';
-import { SearchEventItem } from '../../models/search-event.model';
-import { EVENT_CATEGORIES } from '../../constants/eventConstants';
+import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  searchEventsUseCase,
+  getPublishedCitiesUseCase,
+  PublishedCity,
+} from "../../index";
+import { SearchEventItem } from "../../models/search-event.model";
+import { EVENT_CATEGORIES } from "../../constants/eventConstants";
 
 export function SearchBar() {
   const router = useRouter();
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('Todos');
-  const [city, setCity] = useState('Todas');
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("Todos");
+  const [city, setCity] = useState("Todas");
   const [publishedCities, setPublishedCities] = useState<PublishedCity[]>([]);
   const [results, setResults] = useState<SearchEventItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -26,7 +30,7 @@ export function SearchBar() {
         (cities) => {
           if (isMounted) setPublishedCities(cities);
         },
-        () => { }
+        () => {},
       );
     });
     return () => {
@@ -37,18 +41,21 @@ export function SearchBar() {
   // Cerrar al hacer clic fuera o presionar Escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (e.key === "Escape") setIsOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -65,16 +72,18 @@ export function SearchBar() {
     setIsLoading(true);
     const timer = setTimeout(async () => {
       const categoryParam =
-        category && category !== 'Todos' && category !== 'Todas' ? category : undefined;
+        category && category !== "Todos" && category !== "Todas"
+          ? category
+          : undefined;
       const cityParam =
-        city && city !== 'Todas' && city !== 'Todos' ? city : undefined;
+        city && city !== "Todas" && city !== "Todos" ? city : undefined;
 
       const res = await searchEventsUseCase.execute({
         q: trimmed,
         category: categoryParam,
         city: cityParam,
         limit: 5,
-        status: 'published',
+        status: "published",
       });
 
       res.match(
@@ -87,7 +96,7 @@ export function SearchBar() {
           setResults([]);
           setIsOpen(false);
           setIsLoading(false);
-        }
+        },
       );
     }, 220);
 
@@ -98,22 +107,26 @@ export function SearchBar() {
     e.preventDefault();
     setIsOpen(false);
     const params = new URLSearchParams();
-    if (query.trim()) params.set('search', query.trim());
-    if (category && category !== 'Todos' && category !== 'Todas') {
-      params.set('category', category.toLowerCase());
+    if (query.trim()) params.set("search", query.trim());
+    if (category && category !== "Todos" && category !== "Todas") {
+      params.set("category", category.toLowerCase());
     }
-    if (city && city !== 'Todas') {
-      params.set('city', city.toLowerCase());
+    if (city && city !== "Todas") {
+      params.set("city", city.toLowerCase());
     }
     const queryStr = params.toString();
-    router.push(`/events${queryStr ? `?${queryStr}` : ''}`);
+    router.push(`/events${queryStr ? `?${queryStr}` : ""}`);
   };
 
   const formatDate = (dateStr?: string | null) => {
-    if (!dateStr) return 'Próximamente';
+    if (!dateStr) return "Próximamente";
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+      return d.toLocaleDateString("es-PE", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
     } catch {
       return dateStr;
     }
@@ -138,7 +151,8 @@ export function SearchBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => {
-              if (query.trim().length >= 2 && results.length > 0) setIsOpen(true);
+              if (query.trim().length >= 2 && results.length > 0)
+                setIsOpen(true);
             }}
             className="w-full pl-12 pr-10 py-3.5 bg-transparent border-none text-sm font-semibold text-deep-slate placeholder:text-platinum-silver focus:outline-none"
             placeholder="¿Qué quieres vivir hoy? (artista, concierto, festival...)"
@@ -206,7 +220,9 @@ export function SearchBar() {
           <div className="absolute top-full left-0 right-0 mt-3 bg-white rounded-2xl shadow-2xl border border-surface-variant overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150 text-left">
             <div className="px-5 py-2.5 bg-slate-50 border-b border-surface-variant/60 flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-electric-indigo text-[16px]">bolt</span>
+                <span className="material-symbols-outlined text-electric-indigo text-[16px]">
+                  bolt
+                </span>
                 Resultados de la busqueda
               </span>
               <span className="text-[11px] font-semibold text-slate-400">
@@ -219,7 +235,9 @@ export function SearchBar() {
                 {results.map((item) => {
                   const secureId = item.publicUuid || item.slug || item.id;
                   const targetUrl =
-                    item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${secureId}`;
+                    item.hasLandingPage && item.slug
+                      ? `/e/${item.slug}`
+                      : `/events/${secureId}`;
 
                   return (
                     <Link
@@ -251,7 +269,7 @@ export function SearchBar() {
                             {item.category}
                           </span>
                           <span className="text-xs text-slate-400 truncate">
-                            {item.venue || 'Recinto Principal'}
+                            {item.venue || "Recinto Principal"}
                           </span>
                         </div>
                         <h4 className="text-sm font-bold text-deep-slate group-hover:text-electric-indigo transition-colors truncate">
@@ -264,7 +282,9 @@ export function SearchBar() {
                               Desde S/. {item.minPrice.toFixed(2)}
                             </span>
                           ) : (
-                            <span className="font-bold text-slate-400">Entrada Libre</span>
+                            <span className="font-bold text-slate-400">
+                              Entrada Libre
+                            </span>
                           )}
                         </div>
                       </div>
@@ -296,7 +316,9 @@ export function SearchBar() {
                 className="text-xs font-bold text-electric-indigo hover:text-primary transition-colors flex items-center gap-1"
               >
                 Ver todos los resultados
-                <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                <span className="material-symbols-outlined text-[15px]">
+                  arrow_forward
+                </span>
               </button>
             </div>
           </div>

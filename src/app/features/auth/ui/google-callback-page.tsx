@@ -1,57 +1,62 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { loginWithGoogleCallbackUseCase } from '../index';
+import React, { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { loginWithGoogleCallbackUseCase } from "../index";
 
 export default function GoogleCallbackPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const executedRef = useRef(false);
 
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (executedRef.current) return;
     executedRef.current = true;
 
-    const oauthError = searchParams.get('error');
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
+    const oauthError = searchParams.get("error");
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
 
     if (oauthError) {
-      setStatus('error');
+      setStatus("error");
       setErrorMsg(
-        oauthError === 'access_denied'
-          ? 'Cancelaste el inicio de sesión con Google.'
-          : 'Google no pudo completar el inicio de sesión. Intenta nuevamente.'
+        oauthError === "access_denied"
+          ? "Cancelaste el inicio de sesión con Google."
+          : "Google no pudo completar el inicio de sesión. Intenta nuevamente.",
       );
       return;
     }
 
     if (!code || !state) {
-      setStatus('error');
-      setErrorMsg('No se recibieron las credenciales temporales de Google. Intenta iniciar sesión nuevamente.');
+      setStatus("error");
+      setErrorMsg(
+        "No se recibieron las credenciales temporales de Google. Intenta iniciar sesión nuevamente.",
+      );
       return;
     }
 
     loginWithGoogleCallbackUseCase.execute(code, state).then((result) => {
       result.match(
         (data) => {
-          setStatus('success');
+          setStatus("success");
           setTimeout(() => {
-            router.replace(data.redirectTo || '/');
+            router.replace(data.redirectTo || "/");
             router.refresh();
           }, 500);
         },
         (error) => {
-          setStatus('error');
+          setStatus("error");
           setErrorMsg(
-            error.message || 'No pudimos validar tu cuenta con Google. Inténtalo de nuevo.'
+            error.message ||
+              "No pudimos validar tu cuenta con Google. Inténtalo de nuevo.",
           );
-        }
+        },
       );
     });
   }, [router, searchParams]);
@@ -60,32 +65,41 @@ export default function GoogleCallbackPageComponent() {
     <div className="min-h-screen flex items-center justify-center bg-surface p-4">
       <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-xl border border-surface-variant text-center space-y-6">
         <div className="flex items-center justify-center gap-2">
-          <img src="/logo-qph.svg" className="w-9 h-9 rounded-lg object-contain" alt="Logo QPH" />
+          <img
+            src="/logo-qph.svg"
+            className="w-9 h-9 rounded-lg object-contain"
+            alt="Logo QPH"
+          />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
             queplan<span className="text-electric-indigo">hoy</span>
           </span>
         </div>
 
-        {status === 'loading' && (
+        {status === "loading" && (
           <div className="space-y-4 py-2">
             <div className="w-16 h-16 rounded-2xl bg-electric-indigo/10 text-electric-indigo flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined animate-spin text-3xl">refresh</span>
+              <span className="material-symbols-outlined animate-spin text-3xl">
+                refresh
+              </span>
             </div>
             <div>
               <h1 className="text-xl font-black text-deep-slate">
                 Conectando con Google...
               </h1>
               <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                Estamos verificando tu cuenta de correo para iniciar tu sesión de forma segura.
+                Estamos verificando tu cuenta de correo para iniciar tu sesión
+                de forma segura.
               </p>
             </div>
           </div>
         )}
 
-        {status === 'success' && (
+        {status === "success" && (
           <div className="space-y-4 py-2 animate-in fade-in duration-200">
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-3xl">check_circle</span>
+              <span className="material-symbols-outlined text-3xl">
+                check_circle
+              </span>
             </div>
             <div>
               <h1 className="text-xl font-black text-deep-slate">
@@ -98,7 +112,7 @@ export default function GoogleCallbackPageComponent() {
           </div>
         )}
 
-        {status === 'error' && (
+        {status === "error" && (
           <div className="space-y-5 py-2 animate-in fade-in duration-200">
             <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
               <span className="material-symbols-outlined text-3xl">error</span>
@@ -131,4 +145,3 @@ export default function GoogleCallbackPageComponent() {
     </div>
   );
 }
-

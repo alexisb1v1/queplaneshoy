@@ -1,7 +1,7 @@
-import { ResultAsync } from 'neverthrow';
-import { EventRepository } from '../repositories/event.repository';
-import { HomeEventCardItem } from '../models/home-event-card.model';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { EventRepository } from "../repositories/event.repository";
+import { HomeEventCardItem } from "../models/home-event-card.model";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class GetWeeklyFeaturedEventsUseCase {
   constructor(private readonly eventRepository: EventRepository) {}
@@ -10,4 +10,3 @@ export class GetWeeklyFeaturedEventsUseCase {
     return this.eventRepository.getWeeklyFeaturedEvents();
   }
 }
-

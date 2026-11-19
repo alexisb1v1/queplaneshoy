@@ -3,7 +3,7 @@ export interface FeeTierRule {
   readonly label: string;
   readonly minPrice: number;
   readonly maxPrice: number;
-  readonly feeType: 'fixed' | 'percentage';
+  readonly feeType: "fixed" | "percentage";
   readonly value: number;
 }
 
@@ -15,27 +15,27 @@ export interface FeeTierRule {
  */
 export const QPH_FEE_RULES = {
   TIER_1: {
-    id: 'TIER_1',
-    label: 'Hasta S/ 50.00',
+    id: "TIER_1",
+    label: "Hasta S/ 50.00",
     minPrice: 0,
     maxPrice: 50,
-    feeType: 'fixed' as const,
+    feeType: "fixed" as const,
     value: 6.0,
   },
   TIER_2: {
-    id: 'TIER_2',
-    label: 'De S/ 51.00 a S/ 125.00',
+    id: "TIER_2",
+    label: "De S/ 51.00 a S/ 125.00",
     minPrice: 51,
     maxPrice: 125,
-    feeType: 'fixed' as const,
+    feeType: "fixed" as const,
     value: 10.0,
   },
   TIER_3: {
-    id: 'TIER_3',
-    label: 'A partir de S/ 126.00',
+    id: "TIER_3",
+    label: "A partir de S/ 126.00",
     minPrice: 126,
     maxPrice: Infinity,
-    feeType: 'percentage' as const,
+    feeType: "percentage" as const,
     value: 0.08,
   },
 } as const;
@@ -76,7 +76,9 @@ export function evaluateTicketPricing(
   const basePrice = Math.max(0, Number(price) || 0);
   const officialFee = calculatePlatformFee(basePrice);
   const finalTariff = feeIncluded ? basePrice : basePrice + officialFee;
-  const promoterNet = feeIncluded ? Math.max(0, basePrice - officialFee) : basePrice;
+  const promoterNet = feeIncluded
+    ? Math.max(0, basePrice - officialFee)
+    : basePrice;
 
   return {
     basePrice,
@@ -86,4 +88,3 @@ export function evaluateTicketPricing(
     isFeeIncluded: feeIncluded,
   };
 }
-

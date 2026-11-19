@@ -134,7 +134,7 @@ export default function TicketPrintScreen({
           zoneName: tierZone,
           tierName: tierName,
           unitPrice: unitPrice,
-          qrPayload: `QPH|ORD:${orderNumber}|TKT:${idx + 1}|TIME:${Date.now()}`,
+          qrPayload: `QPH|ORD:${orderNumber}|TKT:${idx + 1}`,
         }));
 
   const totalSheets = resolvedTickets.length;
@@ -272,7 +272,7 @@ export default function TicketPrintScreen({
       unitPrice: number;
       qrPayload: string;
     },
-    index: number
+    index: number,
   ) => {
     const ticketNum = ticket.ticketNumber || index + 1;
     const isHolder = index === 0;
@@ -333,11 +333,16 @@ export default function TicketPrintScreen({
               <span className="font-bold">VERIFICADO · QPH PASS OFICIAL</span>
             </div>
             <p className="text-[11px]">
-              <strong className="font-label-bold text-deep-slate">Pedido:</strong> #{orderNumber}{" "}
-              {orderRef ? `· Ref: ${orderRef}` : ""}
+              <strong className="font-label-bold text-deep-slate">
+                Pedido:
+              </strong>{" "}
+              #{orderNumber} {orderRef ? `· Ref: ${orderRef}` : ""}
             </p>
             <p className="text-[11px]">
-              <strong className="font-label-bold text-deep-slate">Emisión:</strong> {emissionDateStr}
+              <strong className="font-label-bold text-deep-slate">
+                Emisión:
+              </strong>{" "}
+              {emissionDateStr}
             </p>
           </div>
         </div>
@@ -351,7 +356,8 @@ export default function TicketPrintScreen({
               qr_code_scanner
             </span>
             <span className="font-label-bold text-[11px] sm:text-xs font-semibold">
-              Pase digital oficial e intransferible. Muestre el código QR directamente en los tornos o puertas de acceso.
+              Pase digital oficial e intransferible. Muestre el código QR
+              directamente en los tornos o puertas de acceso.
             </span>
           </div>
           <span className="hidden md:inline-block font-label-bold text-[9px] uppercase tracking-widest text-on-surface-variant bg-white px-2 py-0.5 rounded border border-surface-variant font-bold">
@@ -460,7 +466,9 @@ export default function TicketPrintScreen({
             {/* Desglose de Precio Oficial en Soles */}
             <div className="flex items-center justify-between text-[11px] text-on-surface-variant pt-1 border-t border-surface-variant">
               <span>
-                Precio Oficial: <strong>S/. {currentUnitPrice.toFixed(2)}</strong> (Servicio e impuestos incluidos)
+                Precio Oficial:{" "}
+                <strong>S/. {currentUnitPrice.toFixed(2)}</strong> (Servicio e
+                impuestos incluidos)
               </span>
               <span className="font-headline-md text-xs text-deep-slate font-bold">
                 Total Orden:{" "}
@@ -489,7 +497,7 @@ export default function TicketPrintScreen({
               <QRCodeSVG
                 value={
                   ticket.qrPayload ||
-                  `QPH|ORD:${orderNumber}|TKT:${ticketDisplayId}|TIME:${Date.now()}`
+                  `QPH|ORD:${orderNumber}|TKT:${ticketDisplayId}`
                 }
                 size={128}
                 level="H"
@@ -615,34 +623,54 @@ export default function TicketPrintScreen({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1.5 font-body-md text-[9.5px] leading-relaxed">
             <div className="flex items-start gap-1.5">
-              <span className="font-label-bold text-deep-slate shrink-0 font-bold">1.</span>
+              <span className="font-label-bold text-deep-slate shrink-0 font-bold">
+                1.
+              </span>
               <p>
-                <strong className="font-label-bold text-deep-slate">Entrada al Portador:</strong> El acceso se
-                concede al portador que presente el código QR digital único oficial en los tornos o puertas.
+                <strong className="font-label-bold text-deep-slate">
+                  Entrada al Portador:
+                </strong>{" "}
+                El acceso se concede al portador que presente el código QR
+                digital único oficial en los tornos o puertas.
               </p>
             </div>
 
             <div className="flex items-start gap-1.5">
-              <span className="font-label-bold text-deep-slate shrink-0 font-bold">2.</span>
+              <span className="font-label-bold text-deep-slate shrink-0 font-bold">
+                2.
+              </span>
               <p>
-                <strong className="font-label-bold text-deep-slate">Validez del Código:</strong> Cada
-                código QR permite un único acceso en puerta. Prohibida su duplicación o reventa no autorizada.
+                <strong className="font-label-bold text-deep-slate">
+                  Validez del Código:
+                </strong>{" "}
+                Cada código QR permite un único acceso en puerta. Prohibida su
+                duplicación o reventa no autorizada.
               </p>
             </div>
 
             <div className="flex items-start gap-1.5">
-              <span className="font-label-bold text-deep-slate shrink-0 font-bold">3.</span>
+              <span className="font-label-bold text-deep-slate shrink-0 font-bold">
+                3.
+              </span>
               <p>
-                <strong className="font-label-bold text-deep-slate">Apertura y Puntualidad:</strong> Se
-                recomienda llegar con antelación al inicio de la función para el control de seguridad.
+                <strong className="font-label-bold text-deep-slate">
+                  Apertura y Puntualidad:
+                </strong>{" "}
+                Se recomienda llegar con antelación al inicio de la función para
+                el control de seguridad.
               </p>
             </div>
 
             <div className="flex items-start gap-1.5">
-              <span className="font-label-bold text-deep-slate shrink-0 font-bold">4.</span>
+              <span className="font-label-bold text-deep-slate shrink-0 font-bold">
+                4.
+              </span>
               <p>
-                <strong className="font-label-bold text-deep-slate">Soporte Oficial:</strong> En caso
-                de incidencias de acceso, acuda a la boletería oficial del evento o escriba a soporte@queplanhoy.com.
+                <strong className="font-label-bold text-deep-slate">
+                  Soporte Oficial:
+                </strong>{" "}
+                En caso de incidencias de acceso, acuda a la boletería oficial
+                del evento o escriba a soporte@queplanhoy.com.
               </p>
             </div>
           </div>
@@ -688,7 +716,9 @@ export default function TicketPrintScreen({
               href={backHref || "/profile/tickets"}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-on-surface-variant hover:text-deep-slate hover:bg-surface-gray font-label-bold text-xs transition-colors cursor-pointer shrink-0"
             >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_back
+              </span>
               <span className="hidden sm:inline">{backLabel || "Volver"}</span>
             </Link>
           )}
@@ -717,7 +747,9 @@ export default function TicketPrintScreen({
             aria-label="Reducir zoom"
             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white transition-colors cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">remove</span>
+            <span className="material-symbols-outlined text-[18px]">
+              remove
+            </span>
           </button>
           <span className="font-label-bold text-xs px-2 select-none min-w-[48px] text-center font-bold">
             {Math.round(zoomScale * 100)}%
@@ -742,8 +774,10 @@ export default function TicketPrintScreen({
             type="button"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-electric-indigo hover:bg-primary text-white font-label-bold text-xs shadow-md shadow-electric-indigo/25 transition-all cursor-pointer active:scale-95"
           >
-            <span className="material-symbols-outlined text-[18px]">download</span>
-            <span>Descargar PDF / Imprimir</span>
+            <span className="material-symbols-outlined text-[18px]">
+              download
+            </span>
+            <span>Descargar / Imprimir</span>
           </button>
         </div>
       </div>
@@ -783,7 +817,9 @@ export default function TicketPrintScreen({
 
             {/* Cuerpo del Drawer con Scroll Aislado e Independiente */}
             <main className="qph-drawer-body flex-1 w-full overflow-y-auto p-4 sm:p-8 bg-[#eef2f6] flex flex-col items-center gap-8 print:p-0 print:m-0 print:bg-white print:gap-0 print:overflow-visible">
-              {resolvedTickets.map((ticket, index) => renderTicketSheet(ticket, index))}
+              {resolvedTickets.map((ticket, index) =>
+                renderTicketSheet(ticket, index),
+              )}
             </main>
           </div>
         </div>
@@ -802,7 +838,9 @@ export default function TicketPrintScreen({
       {renderHeader(false)}
 
       <main className="w-full pt-6 pb-20 bg-[#f7f9fb] min-h-screen flex flex-col items-center gap-8 overflow-x-auto print:p-0 print:m-0 print:bg-white print:gap-0">
-        {resolvedTickets.map((ticket, index) => renderTicketSheet(ticket, index))}
+        {resolvedTickets.map((ticket, index) =>
+          renderTicketSheet(ticket, index),
+        )}
       </main>
     </div>
   );

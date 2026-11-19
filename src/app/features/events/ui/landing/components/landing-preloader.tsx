@@ -27,7 +27,9 @@ export function LandingPreloader({ isLoading }: LandingPreloaderProps) {
     <div
       aria-hidden={!isLoading}
       className={`fixed inset-0 z-[100] bg-[#0A0D14] flex flex-col items-center justify-center transition-opacity duration-700 ease-out select-none ${
-        isLoading ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        isLoading
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
       }`}
     >
       <div className="relative flex flex-col items-center gap-6">
@@ -61,4 +63,3 @@ export function LandingPreloader({ isLoading }: LandingPreloaderProps) {
     </div>
   );
 }
-

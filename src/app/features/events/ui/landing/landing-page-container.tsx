@@ -12,7 +12,10 @@ interface LandingPageContainerProps {
   previewTemp?: string;
 }
 
-export function LandingPageContainer({ slug, previewTemp }: LandingPageContainerProps) {
+export function LandingPageContainer({
+  slug,
+  previewTemp,
+}: LandingPageContainerProps) {
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState<EventLandingModel | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -40,7 +43,10 @@ export function LandingPageContainer({ slug, previewTemp }: LandingPageContainer
           }
         }
       } catch (err) {
-        console.warn("No se pudo leer preview desde localStorage, recurriendo a API...", err);
+        console.warn(
+          "No se pudo leer preview desde localStorage, recurriendo a API...",
+          err,
+        );
       }
     }
 
@@ -56,10 +62,10 @@ export function LandingPageContainer({ slug, previewTemp }: LandingPageContainer
         setErrorMessage(
           previewTemp
             ? `No se encontró el borrador para '${slug}'. Asegúrate de tener abierta la pestaña de edición del evento en este mismo navegador para cargar la previsualización en vivo.`
-            : (error.message || "No se pudo cargar la experiencia.")
+            : error.message || "No se pudo cargar la experiencia.",
         );
         setLoading(false);
-      }
+      },
     );
 
     return () => {
@@ -114,4 +120,3 @@ export function LandingPageContainer({ slug, previewTemp }: LandingPageContainer
     </>
   );
 }
-

@@ -3,7 +3,8 @@ import PurchaseFlowPageComponent from "../features/orders/ui/purchase-flow-page"
 
 export const metadata = {
   title: "Selección de Entradas y Pasarela de Pagos | queplanhoy",
-  description: "Selecciona tus entradas, zona en el mapa y completa tu pago seguro con tecnología certificada.",
+  description:
+    "Selecciona tus entradas, zona en el mapa y completa tu pago seguro con tecnología certificada.",
 };
 
 export default function CheckoutPage() {
@@ -19,7 +20,9 @@ export default function CheckoutPage() {
             />
           </div>
           <div className="w-6 h-6 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin mb-3" />
-          <p className="text-sm font-bold text-deep-slate">Cargando taquilla oficial...</p>
+          <p className="text-sm font-bold text-deep-slate">
+            Cargando taquilla oficial...
+          </p>
         </div>
       }
     >

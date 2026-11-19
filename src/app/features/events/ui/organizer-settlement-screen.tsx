@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useTransition } from 'react';
-import Link from 'next/link';
-import { OrganizerSidebar } from './components/organizer-sidebar';
+import React, { useState, useTransition } from "react";
+import Link from "next/link";
+import { OrganizerSidebar } from "./components/organizer-sidebar";
 
 interface TransferHistoryItem {
   id: string;
   date: string;
   concept: string;
   amount: number;
-  status: 'En proceso' | 'Pagado' | 'Rechazado';
+  status: "En proceso" | "Pagado" | "Rechazado";
 }
 
 interface EventFinancialData {
@@ -25,34 +25,34 @@ interface EventFinancialData {
 
 const EVENTS_FINANCIAL_LIST: EventFinancialData[] = [
   {
-    id: 'org-1',
-    code: '#EV-2025-UMF',
-    title: 'Ultra Music Fest Madrid 2025',
+    id: "org-1",
+    code: "#EV-2025-UMF",
+    title: "Ultra Music Fest Madrid 2025",
     availableBalance: 230520,
     totalRevenue: 584200,
     alreadyTransferred: 120000,
-    bankAccount: 'Banco Santander · ES91 •••• 4829',
-    bankName: 'Banco Santander',
+    bankAccount: "Banco Santander · ES91 •••• 4829",
+    bankName: "Banco Santander",
   },
   {
-    id: 'org-2',
-    code: '#EV-2024-AFT',
-    title: 'Afterlife Madrid: Global Tour 2024',
+    id: "org-2",
+    code: "#EV-2024-AFT",
+    title: "Afterlife Madrid: Global Tour 2024",
     availableBalance: 95400,
     totalRevenue: 277200,
     alreadyTransferred: 150000,
-    bankAccount: 'BBVA · ES76 •••• 9102',
-    bankName: 'BBVA España',
+    bankAccount: "BBVA · ES76 •••• 9102",
+    bankName: "BBVA España",
   },
   {
-    id: 'org-3',
-    code: '#EV-2024-SNJ',
-    title: 'Sunset Jazz & Wine Sessions',
+    id: "org-3",
+    code: "#EV-2024-SNJ",
+    title: "Sunset Jazz & Wine Sessions",
     availableBalance: 8640,
     totalRevenue: 18000,
     alreadyTransferred: 5000,
-    bankAccount: 'CaixaBank · ES14 •••• 3341',
-    bankName: 'CaixaBank',
+    bankAccount: "CaixaBank · ES14 •••• 3341",
+    bankName: "CaixaBank",
   },
 ];
 
@@ -60,41 +60,45 @@ export default function OrganizerSettlementScreen() {
   const [, startTransition] = useTransition();
 
   // Evento activo seleccionado
-  const [selectedEventId, setSelectedEventId] = useState<string>('org-1');
+  const [selectedEventId, setSelectedEventId] = useState<string>("org-1");
   const [isEventSelectorOpen, setIsEventSelectorOpen] = useState(false);
 
   const activeEvent =
-    EVENTS_FINANCIAL_LIST.find((e) => e.id === selectedEventId) || EVENTS_FINANCIAL_LIST[0];
+    EVENTS_FINANCIAL_LIST.find((e) => e.id === selectedEventId) ||
+    EVENTS_FINANCIAL_LIST[0];
 
   // Modo de operación: 'adelanto' o 'liquidacion'
-  const [operationMode, setOperationMode] = useState<'adelanto' | 'liquidacion'>('adelanto');
+  const [operationMode, setOperationMode] = useState<
+    "adelanto" | "liquidacion"
+  >("adelanto");
 
   // Importe a transferir
-  const [transferAmountInput, setTransferAmountInput] = useState<string>('50.000 €');
+  const [transferAmountInput, setTransferAmountInput] =
+    useState<string>("50.000 €");
   const [numericAmount, setNumericAmount] = useState<number>(50000);
 
   // Historial de transferencias
   const [history, setHistory] = useState<TransferHistoryItem[]>([
     {
-      id: 'tx-1',
-      date: 'Hoy, 10:15',
-      concept: 'Adelanto parcial • Ultra Music Fest 2025',
+      id: "tx-1",
+      date: "Hoy, 10:15",
+      concept: "Adelanto parcial • Ultra Music Fest 2025",
       amount: 50000,
-      status: 'En proceso',
+      status: "En proceso",
     },
     {
-      id: 'tx-2',
-      date: '18 May 2025',
-      concept: 'Adelanto parcial • Ultra Music Fest 2025',
+      id: "tx-2",
+      date: "18 May 2025",
+      concept: "Adelanto parcial • Ultra Music Fest 2025",
       amount: 70000,
-      status: 'Pagado',
+      status: "Pagado",
     },
     {
-      id: 'tx-3',
-      date: '02 May 2025',
-      concept: 'Liquidación final • Primavera Sound Preview',
+      id: "tx-3",
+      date: "02 May 2025",
+      concept: "Liquidación final • Primavera Sound Preview",
       amount: 102568,
-      status: 'Pagado',
+      status: "Pagado",
     },
   ]);
 
@@ -112,47 +116,54 @@ export default function OrganizerSettlementScreen() {
   const setQuickAmount = (val: number) => {
     const capped = Math.min(val, activeEvent.availableBalance);
     setNumericAmount(capped);
-    setTransferAmountInput(`${capped.toLocaleString('es-ES')} €`);
+    setTransferAmountInput(`${capped.toLocaleString("es-ES")} €`);
   };
 
   // Manejo de cambio de modo
-  const handleSelectMode = (mode: 'adelanto' | 'liquidacion') => {
+  const handleSelectMode = (mode: "adelanto" | "liquidacion") => {
     setOperationMode(mode);
-    if (mode === 'adelanto') {
+    if (mode === "adelanto") {
       setQuickAmount(50000);
-      showToast('Modo: Adelanto Parcial de Fondos activado.');
+      showToast("Modo: Adelanto Parcial de Fondos activado.");
     } else {
       setQuickAmount(activeEvent.availableBalance);
-      showToast('Modo: Liquidación Final de Taquilla activado.');
+      showToast("Modo: Liquidación Final de Taquilla activado.");
     }
   };
 
   // Manejador del input manual
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    const cleanNumbers = raw.replace(/[^0-9]/g, '');
+    const cleanNumbers = raw.replace(/[^0-9]/g, "");
     const num = parseInt(cleanNumbers, 10) || 0;
     setNumericAmount(num);
-    setTransferAmountInput(num > 0 ? `${num.toLocaleString('es-ES')} €` : '');
+    setTransferAmountInput(num > 0 ? `${num.toLocaleString("es-ES")} €` : "");
   };
 
   // Solicitar transferencia
   const handleRequestTransfer = () => {
     if (numericAmount <= 0) {
-      showToast('Por favor introduce un importe mayor a 0 €.');
+      showToast("Por favor introduce un importe mayor a 0 €.");
       return;
     }
     if (numericAmount > activeEvent.availableBalance) {
-      showToast(`El importe supera el saldo disponible actual (${activeEvent.availableBalance.toLocaleString('es-ES')} €).`);
+      showToast(
+        `El importe supera el saldo disponible actual (${activeEvent.availableBalance.toLocaleString("es-ES")} €).`,
+      );
       return;
     }
 
     const newTx: TransferHistoryItem = {
-      id: 'tx-' + Date.now(),
-      date: 'Hoy, ' + new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-      concept: `${operationMode === 'adelanto' ? 'Adelanto parcial' : 'Liquidación final'} • ${activeEvent.title}`,
+      id: "tx-" + Date.now(),
+      date:
+        "Hoy, " +
+        new Date().toLocaleTimeString("es-ES", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      concept: `${operationMode === "adelanto" ? "Adelanto parcial" : "Liquidación final"} • ${activeEvent.title}`,
       amount: numericAmount,
-      status: 'En proceso',
+      status: "En proceso",
     };
 
     startTransition(() => {
@@ -160,18 +171,19 @@ export default function OrganizerSettlementScreen() {
       activeEvent.availableBalance -= numericAmount;
       activeEvent.alreadyTransferred += numericAmount;
       showToast(
-        `Transferencia de ${numericAmount.toLocaleString('es-ES')} € tramitada con éxito a ${activeEvent.bankAccount}.`
+        `Transferencia de ${numericAmount.toLocaleString("es-ES")} € tramitada con éxito a ${activeEvent.bankAccount}.`,
       );
     });
   };
 
   return (
     <div className="bg-surface min-h-screen">
-      
       {/* Toast Flotante */}
       {toastMessage && (
         <div className="fixed top-24 right-6 z-50 bg-deep-slate text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
-          <span className="material-symbols-outlined text-electric-indigo text-[20px]">check_circle</span>
+          <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+            check_circle
+          </span>
           <span className="text-sm font-semibold">{toastMessage}</span>
         </div>
       )}
@@ -183,25 +195,32 @@ export default function OrganizerSettlementScreen() {
           onClick={() => setIsMobileMenuOpen(true)}
           className="flex items-center gap-2 text-xs font-bold text-deep-slate bg-surface-gray px-3.5 py-2 rounded-xl border border-surface-variant/70 active:scale-95 transition-all cursor-pointer"
         >
-          <span className="material-symbols-outlined text-[18px] text-electric-indigo">menu</span>
+          <span className="material-symbols-outlined text-[18px] text-electric-indigo">
+            menu
+          </span>
           <span>Menú de Gestión</span>
         </button>
 
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-electric-indigo animate-pulse"></span>
-          <span className="text-xs font-extrabold text-deep-slate">Liquidaciones</span>
+          <span className="text-xs font-extrabold text-deep-slate">
+            Liquidaciones
+          </span>
         </div>
       </div>
 
       <div className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8 py-6 md:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
           <OrganizerSidebar
-            activeSection={operationMode === 'liquidacion' ? 'settlement' : 'advances'}
+            activeSection={
+              operationMode === "liquidacion" ? "settlement" : "advances"
+            }
             isMobileMenuOpen={isMobileMenuOpen}
             onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
             onSelectUnavailableFeature={(featureName) =>
-              showToast(`"${featureName}" se conectará en la siguiente fase del panel promotor.`)
+              showToast(
+                `"${featureName}" se conectará en la siguiente fase del panel promotor.`,
+              )
             }
           />
 
@@ -209,12 +228,13 @@ export default function OrganizerSettlementScreen() {
               CONTENIDO PRINCIPAL: LIQUIDACIÓN Y ADELANTOS (PANEL CENTRAL)
              ========================================================================= */}
           <main className="lg:col-span-9 space-y-6">
-            
             {/* Cabecera Directa y Selector de Evento */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-surface-variant/40 gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="material-symbols-outlined text-electric-indigo text-[20px]">account_balance_wallet</span>
+                  <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+                    account_balance_wallet
+                  </span>
                   <span className="font-extrabold text-[12px] uppercase tracking-wider text-on-surface-variant">
                     Gestión de Fondos
                   </span>
@@ -241,7 +261,7 @@ export default function OrganizerSettlementScreen() {
                     </span>
                   </div>
                   <span className="material-symbols-outlined text-on-surface-variant text-[18px] ml-1">
-                    {isEventSelectorOpen ? 'expand_less' : 'expand_more'}
+                    {isEventSelectorOpen ? "expand_less" : "expand_more"}
                   </span>
                 </button>
 
@@ -258,18 +278,30 @@ export default function OrganizerSettlementScreen() {
                         onClick={() => {
                           setSelectedEventId(ev.id);
                           setIsEventSelectorOpen(false);
-                          setQuickAmount(operationMode === 'adelanto' ? 50000 : ev.availableBalance);
+                          setQuickAmount(
+                            operationMode === "adelanto"
+                              ? 50000
+                              : ev.availableBalance,
+                          );
                           showToast(`Cambiado a ${ev.title}.`);
                         }}
                         className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between text-xs transition-colors cursor-pointer ${
-                          ev.id === selectedEventId ? 'bg-electric-indigo/10 text-electric-indigo font-bold' : 'hover:bg-surface-gray text-deep-slate'
+                          ev.id === selectedEventId
+                            ? "bg-electric-indigo/10 text-electric-indigo font-bold"
+                            : "hover:bg-surface-gray text-deep-slate"
                         }`}
                       >
                         <div className="flex flex-col">
-                          <span className="font-extrabold truncate max-w-[180px]">{ev.title}</span>
-                          <span className="text-[10px] text-on-surface-variant">{ev.code}</span>
+                          <span className="font-extrabold truncate max-w-[180px]">
+                            {ev.title}
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant">
+                            {ev.code}
+                          </span>
                         </div>
-                        <span className="font-bold text-[11px]">€{ev.availableBalance.toLocaleString()}</span>
+                        <span className="font-bold text-[11px]">
+                          €{ev.availableBalance.toLocaleString()}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -281,26 +313,30 @@ export default function OrganizerSettlementScreen() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
                 type="button"
-                onClick={() => handleSelectMode('adelanto')}
+                onClick={() => handleSelectMode("adelanto")}
                 className={`flex items-center gap-3.5 p-5 rounded-2xl text-left transition-all cursor-pointer ${
-                  operationMode === 'adelanto'
-                    ? 'border-2 border-electric-indigo bg-electric-indigo/5 shadow-xs'
-                    : 'border border-surface-variant bg-white hover:bg-surface-gray'
+                  operationMode === "adelanto"
+                    ? "border-2 border-electric-indigo bg-electric-indigo/5 shadow-xs"
+                    : "border border-surface-variant bg-white hover:bg-surface-gray"
                 }`}
               >
                 <div
                   className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                    operationMode === 'adelanto'
-                      ? 'bg-electric-indigo text-white shadow-xs'
-                      : 'bg-surface-gray text-on-surface-variant'
+                    operationMode === "adelanto"
+                      ? "bg-electric-indigo text-white shadow-xs"
+                      : "bg-surface-gray text-on-surface-variant"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[22px]">payments</span>
+                  <span className="material-symbols-outlined text-[22px]">
+                    payments
+                  </span>
                 </div>
                 <div>
                   <div
                     className={`font-extrabold text-sm ${
-                      operationMode === 'adelanto' ? 'text-electric-indigo' : 'text-deep-slate'
+                      operationMode === "adelanto"
+                        ? "text-electric-indigo"
+                        : "text-deep-slate"
                     }`}
                   >
                     Solicitar Adelanto Parcial
@@ -313,26 +349,30 @@ export default function OrganizerSettlementScreen() {
 
               <button
                 type="button"
-                onClick={() => handleSelectMode('liquidacion')}
+                onClick={() => handleSelectMode("liquidacion")}
                 className={`flex items-center gap-3.5 p-5 rounded-2xl text-left transition-all cursor-pointer ${
-                  operationMode === 'liquidacion'
-                    ? 'border-2 border-electric-indigo bg-electric-indigo/5 shadow-xs'
-                    : 'border border-surface-variant bg-white hover:bg-surface-gray'
+                  operationMode === "liquidacion"
+                    ? "border-2 border-electric-indigo bg-electric-indigo/5 shadow-xs"
+                    : "border border-surface-variant bg-white hover:bg-surface-gray"
                 }`}
               >
                 <div
                   className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                    operationMode === 'liquidacion'
-                      ? 'bg-electric-indigo text-white shadow-xs'
-                      : 'bg-surface-gray text-on-surface-variant'
+                    operationMode === "liquidacion"
+                      ? "bg-electric-indigo text-white shadow-xs"
+                      : "bg-surface-gray text-on-surface-variant"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[22px]">task_alt</span>
+                  <span className="material-symbols-outlined text-[22px]">
+                    task_alt
+                  </span>
                 </div>
                 <div>
                   <div
                     className={`font-extrabold text-sm ${
-                      operationMode === 'liquidacion' ? 'text-electric-indigo' : 'text-deep-slate'
+                      operationMode === "liquidacion"
+                        ? "text-electric-indigo"
+                        : "text-deep-slate"
                     }`}
                   >
                     Cierre / Liquidación Final
@@ -346,7 +386,6 @@ export default function OrganizerSettlementScreen() {
 
             {/* Tarjeta Principal de Saldo y Acción Rápida (Stitch Exact Match) */}
             <div className="bg-white rounded-2xl p-6 md:p-8 border border-surface-variant shadow-xs flex flex-col gap-6">
-              
               {/* Balance Destacado y Limpio */}
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-surface-variant/40">
                 <div className="flex flex-col gap-1.5">
@@ -354,31 +393,42 @@ export default function OrganizerSettlementScreen() {
                     Disponible para retirar hoy
                   </span>
                   <div className="text-3xl md:text-5xl font-black text-electric-indigo tracking-tight leading-none">
-                    {activeEvent.availableBalance.toLocaleString('es-ES')} €
+                    {activeEvent.availableBalance.toLocaleString("es-ES")} €
                   </div>
                   <p className="text-xs md:text-sm text-on-surface-variant mt-2 flex flex-wrap items-center gap-2">
                     <span>
-                      Recaudación total: <strong className="text-deep-slate font-extrabold">{activeEvent.totalRevenue.toLocaleString('es-ES')} €</strong>
+                      Recaudación total:{" "}
+                      <strong className="text-deep-slate font-extrabold">
+                        {activeEvent.totalRevenue.toLocaleString("es-ES")} €
+                      </strong>
                     </span>
                     <span className="text-platinum-silver">•</span>
                     <span>
-                      Ya transferido: <strong className="text-deep-slate font-extrabold">{activeEvent.alreadyTransferred.toLocaleString('es-ES')} €</strong>
+                      Ya transferido:{" "}
+                      <strong className="text-deep-slate font-extrabold">
+                        {activeEvent.alreadyTransferred.toLocaleString("es-ES")}{" "}
+                        €
+                      </strong>
                     </span>
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 bg-surface-gray px-3.5 py-2 rounded-xl text-xs font-bold text-on-surface-variant border border-surface-variant/50 self-start sm:self-auto shrink-0">
-                  <span className="material-symbols-outlined text-electric-indigo text-[18px]">bolt</span>
+                  <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                    bolt
+                  </span>
                   <span>Transferencia Inmediata SEPA (24h)</span>
                 </div>
               </div>
 
               {/* Formulario Simple y Directo */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                
                 {/* Selector de Importe */}
                 <div className="lg:col-span-7 flex flex-col gap-3">
-                  <label htmlFor="monto-transferencia" className="text-xs font-bold text-deep-slate">
+                  <label
+                    htmlFor="monto-transferencia"
+                    className="text-xs font-bold text-deep-slate"
+                  >
                     Importe a transferir
                   </label>
                   <div className="relative flex items-center">
@@ -410,10 +460,13 @@ export default function OrganizerSettlementScreen() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setQuickAmount(activeEvent.availableBalance)}
+                      onClick={() =>
+                        setQuickAmount(activeEvent.availableBalance)
+                      }
                       className="px-3.5 py-1.5 rounded-xl bg-electric-indigo/10 hover:bg-electric-indigo/20 font-extrabold text-xs text-electric-indigo transition-colors cursor-pointer border border-electric-indigo/20"
                     >
-                      Todo el saldo ({activeEvent.availableBalance.toLocaleString('es-ES')} €)
+                      Todo el saldo (
+                      {activeEvent.availableBalance.toLocaleString("es-ES")} €)
                     </button>
                   </div>
                 </div>
@@ -423,15 +476,21 @@ export default function OrganizerSettlementScreen() {
                   {/* Cuenta simplificada en 1 línea */}
                   <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-gray border border-surface-variant/60">
                     <div className="flex items-center gap-2.5">
-                      <span className="material-symbols-outlined text-electric-indigo text-[20px]">account_balance</span>
+                      <span className="material-symbols-outlined text-electric-indigo text-[20px]">
+                        account_balance
+                      </span>
                       <div className="flex flex-col text-left">
                         <span className="text-xs font-bold text-deep-slate font-mono">
                           {activeEvent.bankAccount}
                         </span>
-                        <span className="text-[11px] text-on-surface-variant">Cuenta bancaria verificada</span>
+                        <span className="text-[11px] text-on-surface-variant">
+                          Cuenta bancaria verificada
+                        </span>
                       </div>
                     </div>
-                    <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+                    <span className="material-symbols-outlined text-emerald-600 text-[18px]">
+                      verified
+                    </span>
                   </div>
 
                   {/* Botón Principal */}
@@ -440,13 +499,13 @@ export default function OrganizerSettlementScreen() {
                     onClick={handleRequestTransfer}
                     className="w-full py-4 px-6 rounded-xl bg-electric-indigo text-white font-extrabold text-sm md:text-base shadow-md shadow-electric-indigo/25 hover:bg-primary transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-[20px]">send</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      send
+                    </span>
                     <span>Solicitar Transferencia Inmediata</span>
                   </button>
                 </div>
-
               </div>
-
             </div>
 
             {/* Tabla Minimalista de Historial Reciente (Stitch Exact Match) */}
@@ -456,14 +515,22 @@ export default function OrganizerSettlementScreen() {
                   <h2 className="text-base md:text-lg font-extrabold text-deep-slate">
                     Historial Reciente de Transferencias
                   </h2>
-                  <p className="text-xs text-on-surface-variant">Últimos movimientos registrados en tus liquidaciones</p>
+                  <p className="text-xs text-on-surface-variant">
+                    Últimos movimientos registrados en tus liquidaciones
+                  </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => showToast('Extracto bancario oficial en PDF generado y descargado.')}
+                  onClick={() =>
+                    showToast(
+                      "Extracto bancario oficial en PDF generado y descargado.",
+                    )
+                  }
                   className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[16px]">download</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    download
+                  </span>
                   <span>Descargar Extracto</span>
                 </button>
               </div>
@@ -472,32 +539,49 @@ export default function OrganizerSettlementScreen() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-surface-gray text-on-surface-variant font-extrabold text-[11px] uppercase tracking-wider border-b border-surface-variant/40">
                     <tr>
-                      <th scope="col" className="py-3 px-4">Fecha</th>
-                      <th scope="col" className="py-3 px-4">Concepto</th>
-                      <th scope="col" className="py-3 px-4 text-right">Importe</th>
-                      <th scope="col" className="py-3 px-4 text-center">Estado</th>
+                      <th scope="col" className="py-3 px-4">
+                        Fecha
+                      </th>
+                      <th scope="col" className="py-3 px-4">
+                        Concepto
+                      </th>
+                      <th scope="col" className="py-3 px-4 text-right">
+                        Importe
+                      </th>
+                      <th scope="col" className="py-3 px-4 text-center">
+                        Estado
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-variant/30 text-deep-slate font-medium">
                     {history.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-surface-gray/50 transition-colors">
-                        <td className="py-3.5 px-4 text-on-surface-variant">{tx.date}</td>
-                        <td className="py-3.5 px-4 font-bold text-deep-slate">{tx.concept}</td>
+                      <tr
+                        key={tx.id}
+                        className="hover:bg-surface-gray/50 transition-colors"
+                      >
+                        <td className="py-3.5 px-4 text-on-surface-variant">
+                          {tx.date}
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-deep-slate">
+                          {tx.concept}
+                        </td>
                         <td className="py-3.5 px-4 text-right font-black text-deep-slate">
-                          {tx.amount.toLocaleString('es-ES')} €
+                          {tx.amount.toLocaleString("es-ES")} €
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
-                              tx.status === 'En proceso'
-                                ? 'bg-secondary-container text-on-secondary-container'
-                                : 'bg-green-100 text-green-700'
+                              tx.status === "En proceso"
+                                ? "bg-secondary-container text-on-secondary-container"
+                                : "bg-green-100 text-green-700"
                             }`}
                           >
-                            {tx.status === 'En proceso' ? (
+                            {tx.status === "En proceso" ? (
                               <span className="w-1.5 h-1.5 rounded-full bg-electric-indigo animate-pulse"></span>
                             ) : (
-                              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                              <span className="material-symbols-outlined text-[14px]">
+                                check_circle
+                              </span>
                             )}
                             {tx.status}
                           </span>
@@ -508,9 +592,7 @@ export default function OrganizerSettlementScreen() {
                 </table>
               </div>
             </div>
-
           </main>
-
         </div>
       </div>
     </div>

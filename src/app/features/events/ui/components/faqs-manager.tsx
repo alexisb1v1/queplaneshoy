@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 export interface FaqItem {
   id: string;
@@ -14,22 +14,22 @@ interface FaqsManagerProps {
 }
 
 export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
 
   const handleAddFaq = (e: React.FormEvent) => {
     e.preventDefault();
     if (!question.trim() || !answer.trim()) return;
 
     const newFaq: FaqItem = {
-      id: 'faq-' + Date.now(),
+      id: "faq-" + Date.now(),
       question: question.trim(),
       answer: answer.trim(),
     };
 
     onChange([...faqs, newFaq]);
-    setQuestion('');
-    setAnswer('');
+    setQuestion("");
+    setAnswer("");
   };
 
   const handleRemoveFaq = (identifier: string, targetIdx?: number) => {
@@ -50,7 +50,8 @@ export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
           Preguntas Frecuentes (FAQs)
         </span>
         <p className="text-xs text-on-surface-variant">
-          Resuelve dudas comunes sobre accesos, objetos permitidos, estacionamiento y devoluciones.
+          Resuelve dudas comunes sobre accesos, objetos permitidos,
+          estacionamiento y devoluciones.
         </p>
       </div>
 
@@ -98,7 +99,8 @@ export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
       {faqs.length > 0 && (
         <div className="space-y-2">
           {faqs.map((f, idx) => {
-            const itemKey = f.id || `faq-item-${idx}-${f.question.slice(0, 10)}`;
+            const itemKey =
+              f.id || `faq-item-${idx}-${f.question.slice(0, 10)}`;
             return (
               <div
                 key={itemKey}
@@ -118,7 +120,9 @@ export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
                   className="text-platinum-silver hover:text-rose-600 p-1 cursor-pointer"
                   title="Eliminar pregunta"
                 >
-                  <span className="material-symbols-outlined text-[16px]">close</span>
+                  <span className="material-symbols-outlined text-[16px]">
+                    close
+                  </span>
                 </button>
               </div>
             );
@@ -128,4 +132,3 @@ export function FaqsManager({ faqs, onChange }: FaqsManagerProps) {
     </div>
   );
 }
-

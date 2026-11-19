@@ -1,7 +1,7 @@
-import { ResultAsync } from 'neverthrow';
-import { EventRepository } from '../repositories/event.repository';
-import { EventModel } from '../models/event.model';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { EventRepository } from "../repositories/event.repository";
+import { EventModel } from "../models/event.model";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class PublishEventUseCase {
   constructor(private readonly eventRepository: EventRepository) {}
@@ -10,4 +10,3 @@ export class PublishEventUseCase {
     return this.eventRepository.publishEvent(eventId);
   }
 }
-

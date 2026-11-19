@@ -5,12 +5,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useFavorites } from "../../../common/hooks/use-favorites";
-import { getEventDetailUseCase, searchEventsUseCase, SearchEventItem } from "../index";
+import {
+  getEventDetailUseCase,
+  searchEventsUseCase,
+  SearchEventItem,
+} from "../index";
 import { EventDetailModel, EventZoneModel } from "../models/event-detail.model";
 import { formatAgeRestriction } from "../utils/age-restriction";
 import { VideoTeaserModal } from "./landing/components/video-teaser-modal";
+import { ShareSocialPopover } from "@/app/common/components/share-social-popover";
+import { trackUmamiEvent } from "@/app/common/utils/analytics";
 
-function getBuyerZonePrice(zone: Pick<EventZoneModel, "currentPrice" | "serviceFee" | "feeIncluded">): number {
+function getBuyerZonePrice(
+  zone: Pick<EventZoneModel, "currentPrice" | "serviceFee" | "feeIncluded">,
+): number {
   const base = Number(zone.currentPrice) || 0;
   const fee = Math.max(0, Number(zone.serviceFee) || 0);
   return zone.feeIncluded ? base : Math.round((base + fee) * 100) / 100;
@@ -20,17 +28,19 @@ function getBuyerZonePrice(zone: Pick<EventZoneModel, "currentPrice" | "serviceF
 const EventLocationMap = dynamic(
   () =>
     import("./components/event-location-map").then(
-      (mod) => mod.EventLocationMap
+      (mod) => mod.EventLocationMap,
     ),
   {
     ssr: false,
     loading: () => (
       <div className="w-full h-80 sm:h-96 rounded-2xl bg-surface-gray border border-surface-variant flex flex-col items-center justify-center gap-2 text-xs font-semibold text-on-surface-variant animate-pulse">
-        <span className="material-symbols-outlined text-electric-indigo text-3xl">map</span>
+        <span className="material-symbols-outlined text-electric-indigo text-3xl">
+          map
+        </span>
         <span>Cargando mapa interactivo del recinto...</span>
       </div>
     ),
-  }
+  },
 );
 
 interface EventDetailPageProps {
@@ -48,7 +58,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   const { isFavorite: checkFavorite, toggle: toggleFavApi } = useFavorites();
-  const isFavorite = checkFavorite(event?.id) || (event?.publicUuid ? checkFavorite(event.publicUuid) : false);
+  const isFavorite =
+    checkFavorite(event?.id) ||
+    (event?.publicUuid ? checkFavorite(event.publicUuid) : false);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,6 +72,15 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         if (!isMounted) return;
         setEvent(data);
         setIsLoading(false);
+
+        trackUmamiEvent("event_detail_view", {
+          event_uuid: data.publicUuid || data.id,
+          eventId: data.publicUuid || data.id,
+          eventSlug: data.slug,
+          eventName: data.name,
+          category: data.category,
+          venue: data.venue,
+        });
 
         // Cargar eventos similares reales basados en la categoría del evento actual
         try {
@@ -76,10 +97,10 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 (item) =>
                   item.id !== data.id &&
                   item.publicUuid !== data.publicUuid &&
-                  item.slug !== data.slug
+                  item.slug !== data.slug,
               );
             },
-            () => {}
+            () => {},
           );
 
           // Si hay menos de 4 de la misma categoría, complementamos con próximos eventos generales
@@ -92,11 +113,11 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                     item.id !== data.id &&
                     item.publicUuid !== data.publicUuid &&
                     item.slug !== data.slug &&
-                    !items.some((existing) => existing.id === item.id)
+                    !items.some((existing) => existing.id === item.id),
                 );
                 items = [...items, ...complementary];
               },
-              () => {}
+              () => {},
             );
           }
 
@@ -110,9 +131,11 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
       },
       (error) => {
         if (!isMounted) return;
-        setErrorMessage(error.message || "No se pudo cargar la información del evento.");
+        setErrorMessage(
+          error.message || "No se pudo cargar la información del evento.",
+        );
         setIsLoading(false);
-      }
+      },
     );
 
     return () => {
@@ -124,18 +147,26 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
     if (!event) return;
     const res = await toggleFavApi(event.id, event.publicUuid);
     if (res.requiresAuth && typeof window !== "undefined") {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      router.push(
+        `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+      );
     }
   };
 
-  const toggleRecommendationFavorite = async (recId: string, publicUuid?: string, e?: React.MouseEvent) => {
+  const toggleRecommendationFavorite = async (
+    recId: string,
+    publicUuid?: string,
+    e?: React.MouseEvent,
+  ) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     const res = await toggleFavApi(recId, publicUuid);
     if (res.requiresAuth && typeof window !== "undefined") {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      router.push(
+        `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+      );
     }
   };
 
@@ -157,6 +188,16 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
   const handleBuyTickets = (zoneId?: string) => {
     if (!event) return;
     const targetEventId = event.publicUuid || event.id;
+
+    trackUmamiEvent("event_detail_buy_click", {
+      event_uuid: targetEventId,
+      eventId: targetEventId,
+      eventSlug: event.slug,
+      eventName: event.name,
+      category: event.category,
+      zoneId: zoneId || "all",
+    });
+
     const url = zoneId
       ? `/checkout?eventId=${targetEventId}&zoneId=${zoneId}`
       : `/checkout?eventId=${targetEventId}`;
@@ -175,8 +216,12 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
           />
         </div>
         <div className="w-6 h-6 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-sm font-bold text-deep-slate">Cargando experiencia...</p>
-        <p className="text-xs text-on-surface-variant mt-1">Obteniendo datos de taquilla oficial</p>
+        <p className="text-sm font-bold text-deep-slate">
+          Cargando experiencia...
+        </p>
+        <p className="text-xs text-on-surface-variant mt-1">
+          Obteniendo datos de taquilla oficial
+        </p>
       </div>
     );
   }
@@ -186,7 +231,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
     return (
       <main className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
         <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mb-6 shadow-sm border border-red-200">
-          <span className="material-symbols-outlined text-3xl text-red-600">error</span>
+          <span className="material-symbols-outlined text-3xl text-red-600">
+            error
+          </span>
         </div>
         <span className="text-xs font-bold uppercase tracking-widest text-electric-indigo mb-2">
           Evento no disponible
@@ -195,7 +242,8 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
           No pudimos encontrar este evento
         </h1>
         <p className="text-sm text-on-surface-variant max-w-md mb-8 leading-relaxed">
-          {errorMessage || "El evento no existe, no está publicado o el enlace es incorrecto."}
+          {errorMessage ||
+            "El evento no existe, no está publicado o el enlace es incorrecto."}
         </p>
         <Link
           href="/"
@@ -234,8 +282,8 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
 
   const hasSocialLinks = Boolean(
     event.socialLinks?.instagramUrl ||
-      event.socialLinks?.tiktokUrl ||
-      event.socialLinks?.facebookUrl
+    event.socialLinks?.tiktokUrl ||
+    event.socialLinks?.facebookUrl,
   );
 
   const eventBanner =
@@ -270,7 +318,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             onClick={() => window.history.back()}
             aria-label="Volver"
           >
-            <span className="material-symbols-outlined text-on-surface text-[24px]">arrow_back</span>
+            <span className="material-symbols-outlined text-on-surface text-[24px]">
+              arrow_back
+            </span>
           </button>
           <Link href="/" className="flex items-center gap-2">
             <img
@@ -282,20 +332,23 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
               queplan<span className="text-electric-indigo">hoy</span>
             </span>
           </Link>
-          <button
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({
-                  title: event.name,
-                  url: window.location.href,
-                }).catch(() => {});
-              }
-            }}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-gray transition-all cursor-pointer active:scale-95"
-            aria-label="Compartir evento"
+          <ShareSocialPopover
+            title={event.name}
+            slug={event.slug}
+            publicUuid={event.publicUuid || event.id}
+            source="event_detail"
+            theme="light"
+            align="right"
           >
-            <span className="material-symbols-outlined text-on-surface text-[24px]">share</span>
-          </button>
+            <button
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-gray transition-all cursor-pointer active:scale-95"
+              aria-label="Compartir evento"
+            >
+              <span className="material-symbols-outlined text-on-surface text-[24px]">
+                share
+              </span>
+            </button>
+          </ShareSocialPopover>
         </nav>
 
         {/* Hero Section */}
@@ -318,7 +371,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
               {event.name}
             </h1>
             <div className="flex items-center text-platinum-silver qph-label-bold text-sm">
-              <span className="material-symbols-outlined mr-2 text-[18px]">calendar_today</span>
+              <span className="material-symbols-outlined mr-2 text-[18px]">
+                calendar_today
+              </span>
               <span className="capitalize">
                 {formattedShowDate}
                 {formattedShowTime ? ` • ${formattedShowTime} hrs` : ""}
@@ -332,20 +387,26 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
           <div className="bg-white rounded-2xl shadow-xs p-6 flex flex-col gap-4 border border-surface-variant">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-surface-gray border border-surface-variant/40 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-electric-indigo text-[24px]">location_on</span>
+                <span className="material-symbols-outlined text-electric-indigo text-[24px]">
+                  location_on
+                </span>
               </div>
               <div>
                 <h3 className="qph-label-bold text-on-surface font-semibold text-sm">
                   {event.venue || "Recinto Principal"}
                 </h3>
                 <p className="text-on-surface-variant qph-body-md text-xs mt-0.5">
-                  {event.address ? `${event.address}, ${event.city}` : event.city}
+                  {event.address
+                    ? `${event.address}, ${event.city}`
+                    : event.city}
                 </p>
                 <div className="flex items-center gap-3 mt-1">
                   <button
                     onClick={() => {
-                      const section = document.getElementById("entradas-seccion");
-                      if (section) section.scrollIntoView({ behavior: "smooth" });
+                      const section =
+                        document.getElementById("entradas-seccion");
+                      if (section)
+                        section.scrollIntoView({ behavior: "smooth" });
                     }}
                     className="text-electric-indigo qph-label-bold text-xs hover:underline cursor-pointer"
                   >
@@ -354,8 +415,11 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                   <span className="text-surface-variant font-bold">•</span>
                   <button
                     onClick={() => {
-                      const section = document.getElementById("ubicacion-seccion-movil");
-                      if (section) section.scrollIntoView({ behavior: "smooth" });
+                      const section = document.getElementById(
+                        "ubicacion-seccion-movil",
+                      );
+                      if (section)
+                        section.scrollIntoView({ behavior: "smooth" });
                     }}
                     className="text-electric-indigo qph-label-bold text-xs hover:underline cursor-pointer"
                   >
@@ -369,7 +433,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                         onClick={() => setIsVideoOpen(true)}
                         className="text-electric-indigo qph-label-bold text-xs hover:underline cursor-pointer inline-flex items-center gap-1"
                       >
-                        <span className="material-symbols-outlined text-[14px]">play_circle</span>
+                        <span className="material-symbols-outlined text-[14px]">
+                          play_circle
+                        </span>
                         Ver video
                       </button>
                     </>
@@ -379,9 +445,12 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             </div>
             <div className="h-px bg-surface-variant"></div>
             <div>
-              <h3 className="qph-headline-md text-[18px] mb-2 font-semibold text-on-surface">Sobre el evento</h3>
+              <h3 className="qph-headline-md text-[18px] mb-2 font-semibold text-on-surface">
+                Sobre el evento
+              </h3>
               <p className="text-on-surface-variant qph-body-md text-xs leading-relaxed">
-                {event.description || "Evento oficial disponible en la plataforma queplanhoy."}
+                {event.description ||
+                  "Evento oficial disponible en la plataforma queplanhoy."}
               </p>
             </div>
           </div>
@@ -425,14 +494,21 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                     <span className="text-electric-indigo qph-price-tag text-[22px] font-extrabold block">
                       S/. {getBuyerZonePrice(ticket).toFixed(2)}
                     </span>
-                    {!ticket.feeIncluded && Number(ticket.serviceFee || 0) > 0 && (
-                      <span className="text-[10px] text-slate-500 block">
-                        Incluye S/. {Number(ticket.serviceFee).toFixed(2)} serv.
-                      </span>
-                    )}
+                    {!ticket.feeIncluded &&
+                      Number(ticket.serviceFee || 0) > 0 && (
+                        <span className="text-[10px] text-slate-500 block">
+                          Incluye S/. {Number(ticket.serviceFee).toFixed(2)}{" "}
+                          serv.
+                        </span>
+                      )}
                     {ticket.regularPrice > ticket.currentPrice && (
                       <span className="text-[11px] text-gray-400 line-through">
-                        S/. {(ticket.feeIncluded ? Number(ticket.regularPrice) : Number(ticket.regularPrice) + Number(ticket.serviceFee || 0)).toFixed(2)}
+                        S/.{" "}
+                        {(ticket.feeIncluded
+                          ? Number(ticket.regularPrice)
+                          : Number(ticket.regularPrice) +
+                            Number(ticket.serviceFee || 0)
+                        ).toFixed(2)}
                       </span>
                     )}
                   </div>
@@ -444,7 +520,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 )}
                 <div className="pt-2.5 border-t border-surface-variant/60 flex items-center justify-between text-[11px]">
                   <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                    <span className="material-symbols-outlined text-[14px]">
+                      check_circle
+                    </span>
                     Acceso oficial garantizado
                   </span>
                   <button
@@ -493,7 +571,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 Bases Legales y Términos Oficiales (PDF)
               </a>
             ) : (
-              <span className="text-xs">Sujeto a los Términos y Condiciones Generales de QPH</span>
+              <span className="text-xs">
+                Sujeto a los Términos y Condiciones Generales de QPH
+              </span>
             )}
             <span className="mt-1">queplanhoy © 2026</span>
           </div>
@@ -502,7 +582,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         {/* Persistant Purchase Bar (Mobile bottom sticky) */}
         <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-surface-variant p-4 pb-8 flex items-center justify-between gap-4 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)]">
           <div className="flex flex-col">
-            <span className="qph-label-bold text-on-surface-variant uppercase text-[10px]">Desde</span>
+            <span className="qph-label-bold text-on-surface-variant uppercase text-[10px]">
+              Desde
+            </span>
             <span className="qph-price-tag text-[20px] text-on-surface font-bold">
               S/. {Number(minPrice).toFixed(2)}
             </span>
@@ -512,7 +594,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             className="flex-grow bg-electric-indigo hover:bg-primary text-white h-14 rounded-xl qph-label-bold text-xs font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-electric-indigo/20 cursor-pointer"
           >
             <span>COMPRAR ENTRADAS</span>
-            <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
+            <span className="material-symbols-outlined text-[20px]">
+              confirmation_number
+            </span>
           </button>
         </div>
       </div>
@@ -522,20 +606,22 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
       {/* ========================================================================= */}
       <div className="hidden lg:block bg-background min-h-screen pb-20">
         {/* Hero Section Banner */}
-        <section className="relative w-full h-[600px] overflow-hidden">
+        <section className="relative w-full h-[600px]">
           <img
             className="w-full h-full object-cover"
             src={eventBanner}
             alt={event.name}
           />
-          <div className="absolute inset-0 qph-hero-gradient flex flex-col justify-end pb-16 px-8">
+          <div className="absolute inset-0 qph-hero-gradient flex flex-col justify-end pb-16 px-8 z-10">
             <div className="max-w-container-max mx-auto w-full">
               {/* Botón de retroceso */}
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 text-white/90 hover:text-white mb-6 transition-colors text-sm font-semibold w-fit bg-black/40 hover:bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10"
               >
-                <span className="material-symbols-outlined text-sm">arrow_back</span>
+                <span className="material-symbols-outlined text-sm">
+                  arrow_back
+                </span>
                 <span>Volver a Cartelera</span>
               </Link>
 
@@ -548,16 +634,21 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 </h1>
                 <div className="flex flex-wrap gap-8 items-center mt-4">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-lg">calendar_today</span>
+                    <span className="material-symbols-outlined text-lg">
+                      calendar_today
+                    </span>
                     <span className="qph-label-bold text-sm capitalize">
                       {formattedShowDate}
                       {formattedShowTime ? ` • ${formattedShowTime} hrs` : ""}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-lg">location_on</span>
+                    <span className="material-symbols-outlined text-lg">
+                      location_on
+                    </span>
                     <span className="qph-label-bold text-sm">
-                      {(event.venue || "Recinto Oficial").toUpperCase()}, {event.city.toUpperCase()}
+                      {(event.venue || "Recinto Oficial").toUpperCase()},{" "}
+                      {event.city.toUpperCase()}
                     </span>
                   </div>
                   <button
@@ -566,21 +657,48 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                   >
                     <span
                       className="material-symbols-outlined text-lg"
-                      style={{ fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0" }}
+                      style={{
+                        fontVariationSettings: isFavorite
+                          ? "'FILL' 1"
+                          : "'FILL' 0",
+                      }}
                     >
                       favorite
                     </span>
                     <span className="qph-label-bold text-sm">
-                      {isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                      {isFavorite
+                        ? "Quitar de favoritos"
+                        : "Añadir a favoritos"}
                     </span>
                   </button>
+
+                  <ShareSocialPopover
+                    title={event.name}
+                    slug={event.slug}
+                    publicUuid={event.publicUuid || event.id}
+                    source="event_detail"
+                    theme="dark"
+                    align="center"
+                  >
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-lg px-6 py-3 rounded-xl transition-all border border-white/20 cursor-pointer active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-lg">
+                        share
+                      </span>
+                      <span className="qph-label-bold text-sm">Compartir</span>
+                    </button>
+                  </ShareSocialPopover>
                   {event.promoVideoUrl && (
                     <button
                       type="button"
                       onClick={() => setIsVideoOpen(true)}
                       className="flex items-center gap-2 bg-electric-indigo hover:bg-primary px-5 py-3 rounded-xl transition-all border border-white/20 cursor-pointer active:scale-95 shadow-lg"
                     >
-                      <span className="material-symbols-outlined text-lg">play_circle</span>
+                      <span className="material-symbols-outlined text-lg">
+                        play_circle
+                      </span>
                       <span className="qph-label-bold text-sm">Ver Video</span>
                     </button>
                   )}
@@ -591,14 +709,16 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         </section>
 
         {/* Content Grid */}
-        <div className="max-w-container-max mx-auto px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="max-w-container-max mx-auto px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-0">
           {/* Main Content (Left) */}
           <div className="lg:col-span-8 flex flex-col gap-10">
             {/* About Section - Detalle del Evento en Card Enmarcada */}
             <section className="bg-white p-6 sm:p-8 rounded-2xl border border-surface-variant shadow-xs flex flex-col gap-6">
               <div className="flex items-center gap-3 pb-4 border-b border-surface-variant">
                 <div className="w-10 h-10 rounded-xl bg-electric-indigo/10 border border-electric-indigo/20 flex items-center justify-center text-electric-indigo">
-                  <span className="material-symbols-outlined text-2xl">description</span>
+                  <span className="material-symbols-outlined text-2xl">
+                    description
+                  </span>
                 </div>
                 <div>
                   <span className="text-[10px] qph-label-bold uppercase tracking-widest text-electric-indigo block">
@@ -611,14 +731,17 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
               </div>
 
               <p className="qph-body-lg text-on-surface-variant leading-relaxed text-sm sm:text-base">
-                {event.description || "Evento oficial en vivo disponible a través de queplanhoy."}
+                {event.description ||
+                  "Evento oficial en vivo disponible a través de queplanhoy."}
               </p>
 
               {/* Sub-cards de Requisitos y Horarios */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="bg-surface-gray/60 p-4.5 rounded-xl flex gap-3.5 items-start border border-surface-variant">
                   <div className="w-9 h-9 rounded-lg bg-white border border-surface-variant/40 flex items-center justify-center flex-shrink-0 text-electric-indigo shadow-xs">
-                    <span className="material-symbols-outlined text-xl">verified_user</span>
+                    <span className="material-symbols-outlined text-xl">
+                      verified_user
+                    </span>
                   </div>
                   <div>
                     <h4 className="qph-label-bold text-deep-slate font-bold text-xs uppercase tracking-wider">
@@ -633,7 +756,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
 
                 <div className="bg-surface-gray/60 p-4.5 rounded-xl flex gap-3.5 items-start border border-surface-variant">
                   <div className="w-9 h-9 rounded-lg bg-white border border-surface-variant/40 flex items-center justify-center flex-shrink-0 text-electric-indigo shadow-xs">
-                    <span className="material-symbols-outlined text-xl">schedule</span>
+                    <span className="material-symbols-outlined text-xl">
+                      schedule
+                    </span>
                   </div>
                   <div>
                     <h4 className="qph-label-bold text-deep-slate font-bold text-xs uppercase tracking-wider">
@@ -660,7 +785,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-pink-50 text-xs font-bold text-deep-slate hover:text-pink-700 border border-surface-variant transition-colors"
                       >
-                        <span className="material-symbols-outlined text-[16px]">photo_camera</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          photo_camera
+                        </span>
                         Instagram
                       </a>
                     )}
@@ -671,7 +798,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-slate-100 text-xs font-bold text-deep-slate border border-surface-variant transition-colors"
                       >
-                        <span className="material-symbols-outlined text-[16px]">music_video</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          music_video
+                        </span>
                         TikTok
                       </a>
                     )}
@@ -682,7 +811,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-gray hover:bg-blue-50 text-xs font-bold text-deep-slate hover:text-blue-700 border border-surface-variant transition-colors"
                       >
-                        <span className="material-symbols-outlined text-[16px]">thumb_up</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          thumb_up
+                        </span>
                         Facebook
                       </a>
                     )}
@@ -726,14 +857,17 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                           {ticket.title || ticket.name}
                         </h4>
                         <span className="inline-flex items-center gap-1 text-[10px] font-label-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          <span className="material-symbols-outlined text-[12px]">bolt</span>
+                          <span className="material-symbols-outlined text-[12px]">
+                            bolt
+                          </span>
                           {ticket.activeTierName}
                         </span>
-                        {ticket.remainingTickets <= 30 && ticket.remainingTickets > 0 && (
-                          <span className="text-[10px] font-label-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-                            Últimas {ticket.remainingTickets} entradas
-                          </span>
-                        )}
+                        {ticket.remainingTickets <= 30 &&
+                          ticket.remainingTickets > 0 && (
+                            <span className="text-[10px] font-label-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                              Últimas {ticket.remainingTickets} entradas
+                            </span>
+                          )}
                       </div>
                       {ticket.benefits && (
                         <p className="qph-body-md text-xs text-on-surface-variant max-w-xl leading-relaxed">
@@ -754,17 +888,26 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                           </span>
                           {ticket.regularPrice > ticket.currentPrice && (
                             <span className="text-xs text-outline line-through font-semibold text-gray-400">
-                              S/. {(ticket.feeIncluded ? Number(ticket.regularPrice) : Number(ticket.regularPrice) + Number(ticket.serviceFee || 0)).toFixed(2)}
+                              S/.{" "}
+                              {(ticket.feeIncluded
+                                ? Number(ticket.regularPrice)
+                                : Number(ticket.regularPrice) +
+                                  Number(ticket.serviceFee || 0)
+                              ).toFixed(2)}
                             </span>
                           )}
                         </div>
-                        {!ticket.feeIncluded && Number(ticket.serviceFee || 0) > 0 && (
-                          <span className="text-[10px] text-slate-500 block">
-                            Incluye S/. {Number(ticket.serviceFee).toFixed(2)} de servicio
-                          </span>
-                        )}
+                        {!ticket.feeIncluded &&
+                          Number(ticket.serviceFee || 0) > 0 && (
+                            <span className="text-[10px] text-slate-500 block">
+                              Incluye S/. {Number(ticket.serviceFee).toFixed(2)}{" "}
+                              de servicio
+                            </span>
+                          )}
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 mt-0.5">
-                          <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                          <span className="material-symbols-outlined text-[13px]">
+                            check_circle
+                          </span>
                           Disponible
                         </span>
                       </div>
@@ -858,16 +1001,26 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                   {/* Metadatos en cajas enmarcadas */}
                   <div className="flex flex-col gap-2.5 mb-6">
                     <div className="flex items-center gap-3 p-3 bg-surface-gray rounded-xl border border-surface-variant">
-                      <span className="material-symbols-outlined text-electric-indigo text-lg">calendar_month</span>
+                      <span className="material-symbols-outlined text-electric-indigo text-lg">
+                        calendar_month
+                      </span>
                       <div>
-                        <p className="qph-body-md text-[10px] text-on-surface-variant font-medium">Fecha confirmada</p>
-                        <p className="qph-label-bold text-xs text-deep-slate font-bold capitalize">{formattedShowDate}</p>
+                        <p className="qph-body-md text-[10px] text-on-surface-variant font-medium">
+                          Fecha confirmada
+                        </p>
+                        <p className="qph-label-bold text-xs text-deep-slate font-bold capitalize">
+                          {formattedShowDate}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-surface-gray rounded-xl border border-surface-variant">
-                      <span className="material-symbols-outlined text-electric-indigo text-lg">location_on</span>
+                      <span className="material-symbols-outlined text-electric-indigo text-lg">
+                        location_on
+                      </span>
                       <div>
-                        <p className="qph-body-md text-[10px] text-on-surface-variant font-medium">Recinto oficial</p>
+                        <p className="qph-body-md text-[10px] text-on-surface-variant font-medium">
+                          Recinto oficial
+                        </p>
                         <p className="qph-label-bold text-xs text-deep-slate font-bold truncate">
                           {event.venue || "Lugar confirmado"}, {event.city}
                         </p>
@@ -881,7 +1034,9 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                     className="w-full bg-electric-indigo hover:bg-primary text-white py-4 rounded-xl font-label-bold text-sm active:scale-95 transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
                   >
                     <span>Comprar Entradas</span>
-                    <span className="material-symbols-outlined text-base">arrow_forward</span>
+                    <span className="material-symbols-outlined text-base">
+                      arrow_forward
+                    </span>
                   </button>
 
                   {/* Métodos de Pago aceptados en píldoras con borde */}
@@ -907,9 +1062,12 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
 
                   {/* Sello de Seguridad */}
                   <div className="mt-4 p-3 border border-surface-variant border-dashed rounded-xl bg-surface-gray/50 flex items-center gap-2 text-xs text-on-surface-variant">
-                    <span className="material-symbols-outlined text-electric-indigo text-lg">verified_user</span>
+                    <span className="material-symbols-outlined text-electric-indigo text-lg">
+                      verified_user
+                    </span>
                     <span className="text-[11px] font-medium leading-tight">
-                      Garantía QPH: Entradas 100% verificadas y reserva protegida SSL.
+                      Garantía QPH: Entradas 100% verificadas y reserva
+                      protegida SSL.
                     </span>
                   </div>
                 </div>
@@ -917,11 +1075,17 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
 
               {/* Support Card */}
               <div className="bg-deep-slate p-6 rounded-2xl text-white border border-surface-variant shadow-xs">
-                <h4 className="qph-label-bold text-white mb-2 font-bold">¿Necesitas ayuda?</h4>
+                <h4 className="qph-label-bold text-white mb-2 font-bold">
+                  ¿Necesitas ayuda?
+                </h4>
                 <p className="qph-body-md text-xs opacity-75 mb-4 leading-relaxed">
-                  Nuestro equipo de soporte está disponible 24/7 para asistirte con tu compra y asignación de asientos.
+                  Nuestro equipo de soporte está disponible 24/7 para asistirte
+                  con tu compra y asignación de asientos.
                 </p>
-                <a className="text-electric-indigo hover:text-white transition-colors qph-label-bold text-xs flex items-center gap-1" href="#">
+                <a
+                  className="text-electric-indigo hover:text-white transition-colors qph-label-bold text-xs flex items-center gap-1"
+                  href="#"
+                >
                   Contactar Soporte &rarr;
                 </a>
               </div>
@@ -930,7 +1094,7 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
         </div>
 
         {/* Similar Events Section */}
-        {(!isLoadingSimilar && similarEvents.length === 0) ? null : (
+        {!isLoadingSimilar && similarEvents.length === 0 ? null : (
           <section className="bg-surface-container-low py-16 mt-16 border-t border-surface-variant">
             <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-end mb-8">
@@ -942,7 +1106,10 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                     Eventos Similares
                   </h2>
                 </div>
-                <Link href="/events" className="text-electric-indigo qph-label-bold hover:underline text-sm">
+                <Link
+                  href="/events"
+                  className="text-electric-indigo qph-label-bold hover:underline text-sm"
+                >
                   Ver todos los eventos &rarr;
                 </Link>
               </div>
@@ -965,9 +1132,14 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {similarEvents.map((sim) => {
-                    const isFav = checkFavorite(sim.id) || (sim.publicUuid ? checkFavorite(sim.publicUuid) : false);
+                    const isFav =
+                      checkFavorite(sim.id) ||
+                      (sim.publicUuid ? checkFavorite(sim.publicUuid) : false);
                     const targetId = sim.slug || sim.publicUuid || sim.id;
-                    const ctaHref = sim.hasLandingPage && sim.slug ? `/e/${sim.slug}` : `/events/${targetId}`;
+                    const ctaHref =
+                      sim.hasLandingPage && sim.slug
+                        ? `/e/${sim.slug}`
+                        : `/events/${targetId}`;
                     const fallbackImg =
                       "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80";
 
@@ -992,14 +1164,26 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                           </div>
                           <button
                             type="button"
-                            onClick={(e) => toggleRecommendationFavorite(sim.id, sim.publicUuid, e)}
-                            aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                            onClick={(e) =>
+                              toggleRecommendationFavorite(
+                                sim.id,
+                                sim.publicUuid,
+                                e,
+                              )
+                            }
+                            aria-label={
+                              isFav
+                                ? "Quitar de favoritos"
+                                : "Guardar en favoritos"
+                            }
                             className="absolute top-3 right-3 w-8 h-8 rounded-full bg-deep-slate/60 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95 z-10"
                           >
                             <span
                               className="material-symbols-outlined text-[18px]"
                               style={{
-                                fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
+                                fontVariationSettings: isFav
+                                  ? "'FILL' 1"
+                                  : "'FILL' 0",
                                 color: isFav ? "#e11d48" : "white",
                               }}
                             >
@@ -1011,7 +1195,8 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                         <div className="p-5 flex flex-col flex-1 justify-between gap-4">
                           <div>
                             <p className="font-label-bold text-[11px] text-electric-indigo mb-1 uppercase tracking-wider">
-                              {formatSimilarDate(sim.date)} • {sim.venue || sim.city || "PERÚ"}
+                              {formatSimilarDate(sim.date)} •{" "}
+                              {sim.venue || sim.city || "PERÚ"}
                             </p>
                             <Link href={ctaHref}>
                               <h3 className="font-headline-md text-base text-deep-slate group-hover:text-electric-indigo transition-colors font-bold line-clamp-2 leading-snug">
@@ -1026,14 +1211,18 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                                 Precio
                               </span>
                               <span className="font-price-tag text-deep-slate font-extrabold text-sm sm:text-base">
-                                {sim.minPrice > 0 ? `Desde S/ ${sim.minPrice.toFixed(2)}` : "Entrada Libre"}
+                                {sim.minPrice > 0
+                                  ? `Desde S/ ${sim.minPrice.toFixed(2)}`
+                                  : "Entrada Libre"}
                               </span>
                             </div>
                             <Link
                               href={ctaHref}
                               className="px-3.5 py-2 bg-electric-indigo text-white rounded-xl font-label-bold text-[12px] hover:bg-primary active:scale-95 transition-all shadow-xs"
                             >
-                              {sim.hasLandingPage && sim.slug ? "Ver Experiencia" : "Comprar"}
+                              {sim.hasLandingPage && sim.slug
+                                ? "Ver Experiencia"
+                                : "Comprar"}
                             </Link>
                           </div>
                         </div>

@@ -23,4 +23,3 @@ export interface UserFavoriteIdsResult {
   favoriteIds: string[];
   favoritePublicUuids: string[];
 }
-

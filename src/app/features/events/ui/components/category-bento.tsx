@@ -14,7 +14,15 @@ interface BentoItemProps {
   isLarge?: boolean;
 }
 
-function BentoItem({ id, title, description, imageUrl, altText, className, isLarge = false }: BentoItemProps) {
+function BentoItem({
+  id,
+  title,
+  description,
+  imageUrl,
+  altText,
+  className,
+  isLarge = false,
+}: BentoItemProps) {
   return (
     <Link
       href={`/events?category=${id.toLowerCase()}`}
@@ -28,7 +36,9 @@ function BentoItem({ id, title, description, imageUrl, altText, className, isLar
       />
       {/* Dark Overlay Gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-6 md:p-8">
-        <h3 className={`text-white mb-1 font-bold ${isLarge ? "qph-headline-lg" : "qph-headline-md"}`}>
+        <h3
+          className={`text-white mb-1 font-bold ${isLarge ? "qph-headline-lg" : "qph-headline-md"}`}
+        >
           {title}
         </h3>
         {description && (
@@ -50,17 +60,21 @@ export function CategoryBento() {
             Explora por Categoría
           </h2>
           <p className="qph-body-md text-on-surface-variant">
-            Descubre los mejores espectáculos organizados por lo que más te apasiona.
+            Descubre los mejores espectáculos organizados por lo que más te
+            apasiona.
           </p>
         </div>
         <Link
           href="/events"
           className="text-electric-indigo qph-label-bold flex items-center gap-1 hover:underline transition-all cursor-pointer text-sm"
         >
-          Ver todas <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          Ver todas{" "}
+          <span className="material-symbols-outlined text-sm">
+            arrow_forward
+          </span>
         </Link>
       </div>
-      
+
       {/* Bento Grid layout con las 6 categorías oficiales */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-6">
         {/* Conciertos (Grande: 4 cols) */}

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { getGoogleAuthUrlUseCase } from '../../index';
+import React, { useState } from "react";
+import { getGoogleAuthUrlUseCase } from "../../index";
 
 interface GoogleAuthButtonProps {
   redirectTo?: string;
@@ -16,7 +16,7 @@ interface GoogleAuthButtonProps {
 export function GoogleAuthButton({
   redirectTo,
   disabled = false,
-  label = 'Continuar con Google',
+  label = "Continuar con Google",
   onError,
 }: GoogleAuthButtonProps) {
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -29,7 +29,7 @@ export function GoogleAuthButton({
 
     result.match(
       ({ url }) => {
-        if (typeof window !== 'undefined' && url) {
+        if (typeof window !== "undefined" && url) {
           window.location.href = url;
         } else {
           setIsRedirecting(false);
@@ -38,13 +38,14 @@ export function GoogleAuthButton({
       (error) => {
         setIsRedirecting(false);
         const msg =
-          error.message || 'No se pudo iniciar la autenticación con Google en este momento.';
+          error.message ||
+          "No se pudo iniciar la autenticación con Google en este momento.";
         if (onError) {
           onError(msg);
         } else {
           alert(msg);
         }
-      }
+      },
     );
   };
 
@@ -92,4 +93,3 @@ export function GoogleAuthButton({
     </button>
   );
 }
-

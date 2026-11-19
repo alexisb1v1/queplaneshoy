@@ -7,19 +7,54 @@ import { QRCodeSVG } from "qrcode.react";
 import { getMyOrdersUseCase, UserOrderModel } from "../../orders";
 import TicketPrintScreen from "../../orders/ui/ticket-print-screen";
 
+/**
+ * Formatea una fecha ISO o string al formato: DD/MM/YYYY hh:mm am/pm
+ */
+function formatEventDateTime(
+  isoDateString?: string,
+  fallbackDate?: string,
+  fallbackTime?: string,
+): string {
+  if (!isoDateString) {
+    return `${fallbackDate || ""} ${fallbackTime || ""}`.trim();
+  }
+
+  const d = new Date(isoDateString);
+  if (isNaN(d.getTime())) {
+    return `${fallbackDate || ""} ${fallbackTime || ""}`.trim();
+  }
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  hours = hours ? hours : 12; // Las 0 horas corresponden a las 12
+  const formattedHours = String(hours).padStart(2, "0");
+
+  return `${day}/${month}/${year} ${formattedHours}:${minutes} ${ampm}`;
+}
+
 export default function TicketsTab() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
   const [orders, setOrders] = useState<UserOrderModel[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [userProfile, setUserProfile] = useState<{ name?: string; email?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{
+    name?: string;
+    email?: string;
+  } | null>(null);
 
   // Estado para la vista de impresión / descarga PDF en pantalla completa
   const [printOrder, setPrintOrder] = useState<UserOrderModel | null>(null);
 
   // Estado para el modal de pase digital móvil individual
-  const [selectedOrderForQR, setSelectedOrderForQR] = useState<UserOrderModel | null>(null);
+  const [selectedOrderForQR, setSelectedOrderForQR] =
+    useState<UserOrderModel | null>(null);
   const [activeTicketIndex, setActiveTicketIndex] = useState<number>(0);
 
   // Cargar usuario autenticado y órdenes desde el backend
@@ -32,7 +67,9 @@ export default function TicketsTab() {
       if (storedUser) {
         const parsed = JSON.parse(storedUser);
         setUserProfile({
-          name: `${parsed.firstName || ""} ${parsed.lastName || ""}`.trim() || parsed.email,
+          name:
+            `${parsed.firstName || ""} ${parsed.lastName || ""}`.trim() ||
+            parsed.email,
           email: parsed.email,
         });
       }
@@ -51,12 +88,16 @@ export default function TicketsTab() {
         },
         (error) => {
           // Si retorna error de autorización
-          if (error.code === "AUTH_001" || error.code === "UNAUTHORIZED" || error.message?.includes("401")) {
+          if (
+            error.code === "AUTH_001" ||
+            error.code === "UNAUTHORIZED" ||
+            error.message?.includes("401")
+          ) {
             setIsAuthenticated(false);
           }
           setOrders([]);
           setIsLoading(false);
-        }
+        },
       );
     });
   }, []);
@@ -70,25 +111,28 @@ export default function TicketsTab() {
     return orders.filter((o) => o.isPast);
   }, [orders]);
 
-  const displayedOrders = activeTab === "upcoming" ? upcomingOrders : pastOrders;
+  const displayedOrders =
+    activeTab === "upcoming" ? upcomingOrders : pastOrders;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-250">
-      
       {/* =========================================================================
           CABECERA Y SELECTOR DE PESTAÑAS (PRÓXIMAS VS HISTORIAL PASADO)
          ========================================================================= */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-surface-variant pb-5">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-electric-indigo/10 text-electric-indigo text-[11px] font-label-bold mb-1.5">
-            <span className="material-symbols-outlined text-[14px]">confirmation_number</span>
+            <span className="material-symbols-outlined text-[14px]">
+              confirmation_number
+            </span>
             <span>Billetera Digital Oficial</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-deep-slate tracking-tight">
             Mis Entradas
           </h1>
           <p className="text-on-surface-variant text-xs sm:text-sm mt-0.5">
-            Descarga tus pases oficiales o consulta tu historial permanente de eventos asistidos.
+            Descarga tus pases oficiales o consulta tu historial permanente de
+            eventos asistidos.
           </p>
         </div>
 
@@ -177,7 +221,8 @@ export default function TicketsTab() {
             Inicia sesión para ver tus entradas
           </h3>
           <p className="text-on-surface-variant text-xs leading-relaxed">
-            Tus compras y pases digitales con código QR oficial quedan vinculados a tu cuenta registrada.
+            Tus compras y pases digitales con código QR oficial quedan
+            vinculados a tu cuenta registrada.
           </p>
           <Link
             href="/login"
@@ -225,13 +270,25 @@ export default function TicketsTab() {
             return (
               <article
                 key={order.orderId}
-                className="bg-white rounded-2xl p-4 shadow-xs hover:shadow-md border border-surface-variant flex flex-col justify-between gap-3 group transition-all duration-200"
+                className={`rounded-2xl p-4 shadow-xs hover:shadow-md border flex flex-col justify-between gap-3 group transition-all duration-200 ${
+                  order.isPast
+                    ? "bg-slate-100/80 border-slate-300/80 text-slate-500"
+                    : "bg-white border-surface-variant text-deep-slate"
+                }`}
               >
                 {/* Fila Superior Compacta: Miniatura + Info del Evento */}
                 <div className="flex items-start gap-3.5">
-                  <div className="w-20 h-24 sm:w-24 sm:h-24 rounded-xl overflow-hidden relative bg-slate-900 shrink-0 border border-surface-variant/50">
+                  <div
+                    className={`w-20 h-24 sm:w-24 sm:h-24 rounded-xl overflow-hidden relative shrink-0 border ${
+                      order.isPast
+                        ? "bg-slate-300 border-slate-300"
+                        : "bg-slate-900 border-surface-variant/50"
+                    }`}
+                  >
                     <img
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                        order.isPast ? "grayscale contrast-75 opacity-70" : ""
+                      }`}
                       src={order.bannerImageUrl || fallbackImage}
                       alt={order.eventTitle}
                       onError={(e) => {
@@ -241,63 +298,122 @@ export default function TicketsTab() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    {/* Badges compactos de estado y cantidad */}
+                    {/* Badge compacto de cantidad de entradas */}
                     <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white ${
-                          order.isPast ? "bg-slate-600" : "bg-electric-indigo"
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                          order.isPast
+                            ? "bg-slate-200 text-slate-600 border-slate-300"
+                            : "bg-surface-gray text-deep-slate border-surface-variant"
                         }`}
                       >
-                        {order.isPast ? "Finalizado" : "Pase Válido"}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-surface-gray text-deep-slate border border-surface-variant">
-                        {order.ticketCount} {order.ticketCount === 1 ? "entrada" : "entradas"}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                        • {order.category}
+                        {order.ticketCount}{" "}
+                        {order.ticketCount === 1 ? "entrada" : "entradas"}
                       </span>
                     </div>
 
-                    <h2 className="font-headline-md text-base font-bold text-deep-slate leading-snug group-hover:text-electric-indigo transition-colors line-clamp-2 mb-1.5">
+                    <h2
+                      className={`font-headline-md text-base font-bold leading-snug line-clamp-2 mb-1.5 ${
+                        order.isPast
+                          ? "text-slate-600"
+                          : "text-deep-slate group-hover:text-electric-indigo transition-colors"
+                      }`}
+                    >
                       {order.eventTitle}
                     </h2>
 
-                    <div className="space-y-1 text-xs text-on-surface-variant font-medium">
-                      <div className="flex items-center gap-1.5 text-deep-slate font-semibold">
-                        <span className="material-symbols-outlined text-[15px] text-electric-indigo shrink-0">
+                    <div className="space-y-1 text-xs font-medium">
+                      <div
+                        className={`flex items-center gap-1.5 font-semibold ${
+                          order.isPast ? "text-slate-600" : "text-deep-slate"
+                        }`}
+                      >
+                        <span
+                          className={`material-symbols-outlined text-[15px] shrink-0 ${
+                            order.isPast
+                              ? "text-slate-500"
+                              : "text-electric-indigo"
+                          }`}
+                        >
                           calendar_today
                         </span>
                         <span className="truncate">
-                          {order.eventDateFormatted} • {order.eventTimeFormatted}
+                          {formatEventDateTime(
+                            order.showStartTimeIso,
+                            order.eventDateFormatted,
+                            order.eventTimeFormatted,
+                          )}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[15px] text-electric-indigo shrink-0">
-                          location_on
-                        </span>
-                        <span className="truncate">
-                          {order.venueName}, {order.city}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <span className="material-symbols-outlined text-[15px] text-electric-indigo shrink-0">
-                          confirmation_number
-                        </span>
-                        <span className="truncate">
-                          Zona: <strong className="text-deep-slate font-bold">{order.zoneName}</strong>
-                        </span>
-                      </div>
+                      {order.googleMapsUrl ? (
+                        <a
+                          href={order.googleMapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center gap-1.5 hover:underline transition-colors ${
+                            order.isPast
+                              ? "text-slate-500 hover:text-slate-700"
+                              : "text-on-surface-variant hover:text-electric-indigo"
+                          }`}
+                          title="Abrir ubicación en Google Maps / Waze"
+                        >
+                          <span
+                            className={`material-symbols-outlined text-[15px] shrink-0 ${
+                              order.isPast
+                                ? "text-slate-500"
+                                : "text-electric-indigo"
+                            }`}
+                          >
+                            location_on
+                          </span>
+                          <span className="truncate">
+                            {order.venueName}, {order.city}
+                          </span>
+                          <span className="material-symbols-outlined text-[12px] opacity-70">
+                            open_in_new
+                          </span>
+                        </a>
+                      ) : (
+                        <div
+                          className={`flex items-center gap-1.5 ${
+                            order.isPast
+                              ? "text-slate-500"
+                              : "text-on-surface-variant"
+                          }`}
+                        >
+                          <span
+                            className={`material-symbols-outlined text-[15px] shrink-0 ${
+                              order.isPast
+                                ? "text-slate-500"
+                                : "text-electric-indigo"
+                            }`}
+                          >
+                            location_on
+                          </span>
+                          <span className="truncate">
+                            {order.venueName}, {order.city}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Pie Compacto: Código/Total y Botones Visibles Ver QR + Descargar PDF */}
-                <div className="pt-3 border-t border-dashed border-surface-variant flex flex-wrap items-center justify-between gap-2.5">
+                {/* Pie Compacto: Código/Total y Botones Visibles Ver QR + Descargar */}
+                <div
+                  className={`pt-3 border-t border-dashed flex flex-wrap items-center justify-between gap-2.5 ${
+                    order.isPast ? "border-slate-300" : "border-surface-variant"
+                  }`}
+                >
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-mono font-semibold text-on-surface-variant">
+                    <span className="text-[10px] font-mono font-semibold text-slate-500">
                       {order.orderCode}
                     </span>
-                    <span className="font-headline-md text-sm sm:text-base font-black text-deep-slate tabular-nums">
+                    <span
+                      className={`font-headline-md text-sm sm:text-base font-black tabular-nums ${
+                        order.isPast ? "text-slate-600" : "text-deep-slate"
+                      }`}
+                    >
                       S/. {order.totalAmount.toFixed(2)}
                     </span>
                   </div>
@@ -309,19 +425,31 @@ export default function TicketsTab() {
                         setSelectedOrderForQR(order);
                         setActiveTicketIndex(0);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-electric-indigo/30 bg-electric-indigo/5 hover:bg-electric-indigo/10 text-electric-indigo text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                        order.isPast
+                          ? "border-slate-300 bg-slate-200/80 hover:bg-slate-200 text-slate-700"
+                          : "border-electric-indigo/30 bg-electric-indigo/5 hover:bg-electric-indigo/10 text-electric-indigo"
+                      }`}
                     >
-                      <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        qr_code_2
+                      </span>
                       <span>Ver QR</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setPrintOrder(order)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-electric-indigo hover:bg-primary text-white rounded-xl text-xs font-bold shadow-sm shadow-electric-indigo/20 active:scale-95 transition-all cursor-pointer"
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all cursor-pointer ${
+                        order.isPast
+                          ? "bg-slate-500 hover:bg-slate-600 text-white"
+                          : "bg-electric-indigo hover:bg-primary text-white shadow-sm shadow-electric-indigo/20"
+                      }`}
                     >
-                      <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                      <span>Descargar PDF</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        picture_as_pdf
+                      </span>
+                      <span>Descargar</span>
                     </button>
                   </div>
                 </div>
@@ -337,7 +465,6 @@ export default function TicketsTab() {
       {selectedOrderForQR && (
         <div className="fixed inset-0 bg-deep-slate/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-surface-variant animate-in fade-in zoom-in-95 duration-150">
-            
             {/* Header del Modal */}
             <div className="bg-deep-slate p-5 text-white flex justify-between items-start">
               <div>
@@ -348,7 +475,8 @@ export default function TicketsTab() {
                   {selectedOrderForQR.eventTitle}
                 </h3>
                 <p className="text-[11px] text-platinum-silver">
-                  {selectedOrderForQR.orderCode} • Entrada {activeTicketIndex + 1} de {selectedOrderForQR.ticketCount}
+                  {selectedOrderForQR.orderCode} • Entrada{" "}
+                  {activeTicketIndex + 1} de {selectedOrderForQR.ticketCount}
                 </p>
               </div>
 
@@ -357,7 +485,9 @@ export default function TicketsTab() {
                 onClick={() => setSelectedOrderForQR(null)}
                 className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
               >
-                <span className="material-symbols-outlined text-[18px]">close</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  close
+                </span>
               </button>
             </div>
 
@@ -411,12 +541,15 @@ export default function TicketsTab() {
                 <div className="flex justify-between">
                   <span className="text-on-surface-variant">Zona:</span>
                   <span className="font-bold text-electric-indigo">
-                    {selectedOrderForQR.tickets[activeTicketIndex]?.zoneName || selectedOrderForQR.zoneName}
+                    {selectedOrderForQR.tickets[activeTicketIndex]?.zoneName ||
+                      selectedOrderForQR.zoneName}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-on-surface-variant">Fecha:</span>
-                  <span className="font-semibold text-deep-slate">{selectedOrderForQR.eventDateFormatted}</span>
+                  <span className="font-semibold text-deep-slate">
+                    {selectedOrderForQR.eventDateFormatted}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-on-surface-variant">Recinto:</span>
@@ -436,13 +569,13 @@ export default function TicketsTab() {
                   }}
                   className="w-full py-3 bg-electric-indigo hover:bg-primary text-white rounded-xl text-xs font-bold shadow-md shadow-electric-indigo/20 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
                 >
-                  <span className="material-symbols-outlined text-[18px]">download</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    download
+                  </span>
                   <span>Descargar Documento Oficial A4 (PDF)</span>
                 </button>
               </div>
-
             </div>
-
           </div>
         </div>
       )}
@@ -481,7 +614,6 @@ export default function TicketsTab() {
           onBack={() => setPrintOrder(null)}
         />
       )}
-
     </div>
   );
 }

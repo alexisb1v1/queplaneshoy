@@ -1,5 +1,5 @@
-import { ResultAsync } from 'neverthrow';
-import { OrderRepository } from './order.repository';
+import { ResultAsync } from "neverthrow";
+import { OrderRepository } from "./order.repository";
 import {
   CancelPendingCulqiOrderModel,
   ConfirmCulqiChargeModel,
@@ -13,9 +13,9 @@ import {
   UserOrderModel,
   ValidateCouponParams,
   ValidateCouponResponseModel,
-} from '../models/order.model';
-import { DomainError } from '../../../common/errors/domain-error';
-import { apiClient } from '../../../common/services/api-client';
+} from "../models/order.model";
+import { DomainError } from "../../../common/errors/domain-error";
+import { apiClient } from "../../../common/services/api-client";
 
 export class OrderRepositoryImpl implements OrderRepository {
   createDraft(
@@ -25,11 +25,14 @@ export class OrderRepositoryImpl implements OrderRepository {
   ): ResultAsync<{ orderToken: string; expiresIn: number }, DomainError> {
     return apiClient
       .requestResult<{ order_token: string; expires_in: number }>(
-        apiClient.post<{ order_token: string; expires_in: number }>('/orders/draft', {
-          show_id: showId,
-          zone_id: zoneId,
-          quantity: quantity,
-        }),
+        apiClient.post<{ order_token: string; expires_in: number }>(
+          "/orders/draft",
+          {
+            show_id: showId,
+            zone_id: zoneId,
+            quantity: quantity,
+          },
+        ),
       )
       .map((res) => ({
         orderToken: res.order_token,
@@ -69,7 +72,10 @@ export class OrderRepositoryImpl implements OrderRepository {
     params: SimulateCheckoutParams,
   ): ResultAsync<SimulateCheckoutResponseModel, DomainError> {
     return apiClient.requestResult<SimulateCheckoutResponseModel>(
-      apiClient.post<SimulateCheckoutResponseModel>('/orders/simulate-checkout', params),
+      apiClient.post<SimulateCheckoutResponseModel>(
+        "/orders/simulate-checkout",
+        params,
+      ),
     );
   }
 
@@ -77,7 +83,10 @@ export class OrderRepositoryImpl implements OrderRepository {
     params: PrepareCulqiCheckoutParams,
   ): ResultAsync<PrepareCulqiCheckoutModel, DomainError> {
     return apiClient.requestResult<PrepareCulqiCheckoutModel>(
-      apiClient.post<PrepareCulqiCheckoutModel>('/orders/culqi/prepare', params),
+      apiClient.post<PrepareCulqiCheckoutModel>(
+        "/orders/culqi/prepare",
+        params,
+      ),
     );
   }
 
@@ -85,9 +94,13 @@ export class OrderRepositoryImpl implements OrderRepository {
     params: ConfirmCulqiChargeParams,
   ): ResultAsync<ConfirmCulqiChargeModel, DomainError> {
     return apiClient.requestResult<ConfirmCulqiChargeModel>(
-      apiClient.post<ConfirmCulqiChargeModel>('/orders/culqi/confirm-charge', params, {
-        timeoutMs: 25000,
-      }),
+      apiClient.post<ConfirmCulqiChargeModel>(
+        "/orders/culqi/confirm-charge",
+        params,
+        {
+          timeoutMs: 25000,
+        },
+      ),
     );
   }
 
@@ -95,7 +108,9 @@ export class OrderRepositoryImpl implements OrderRepository {
     orderPublicUuid: string,
   ): ResultAsync<CulqiOrderStatusModel, DomainError> {
     return apiClient.requestResult<CulqiOrderStatusModel>(
-      apiClient.get<CulqiOrderStatusModel>(`/orders/culqi/status/${orderPublicUuid}`),
+      apiClient.get<CulqiOrderStatusModel>(
+        `/orders/culqi/status/${orderPublicUuid}`,
+      ),
     );
   }
 
@@ -103,13 +118,16 @@ export class OrderRepositoryImpl implements OrderRepository {
     orderPublicUuid: string,
   ): ResultAsync<CancelPendingCulqiOrderModel, DomainError> {
     return apiClient.requestResult<CancelPendingCulqiOrderModel>(
-      apiClient.post<CancelPendingCulqiOrderModel>(`/orders/culqi/cancel/${orderPublicUuid}`, {}),
+      apiClient.post<CancelPendingCulqiOrderModel>(
+        `/orders/culqi/cancel/${orderPublicUuid}`,
+        {},
+      ),
     );
   }
 
   getMyOrders(): ResultAsync<UserOrderModel[], DomainError> {
     return apiClient.requestResult<UserOrderModel[]>(
-      apiClient.get<UserOrderModel[]>('/orders/my-orders'),
+      apiClient.get<UserOrderModel[]>("/orders/my-orders"),
     );
   }
 
@@ -117,7 +135,10 @@ export class OrderRepositoryImpl implements OrderRepository {
     params: ValidateCouponParams,
   ): ResultAsync<ValidateCouponResponseModel, DomainError> {
     return apiClient.requestResult<ValidateCouponResponseModel>(
-      apiClient.post<ValidateCouponResponseModel>('/orders/validate-coupon', params),
+      apiClient.post<ValidateCouponResponseModel>(
+        "/orders/validate-coupon",
+        params,
+      ),
     );
   }
 }

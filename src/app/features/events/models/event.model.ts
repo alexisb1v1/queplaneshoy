@@ -24,7 +24,7 @@ export interface EventModel {
   bannerUrl?: string;
   price: number;
   capacity: number;
-  status: 'draft' | 'published' | 'cancelled' | string;
+  status: "draft" | "published" | "cancelled" | string;
   createdAt: Date;
   updatedAt?: Date;
 }

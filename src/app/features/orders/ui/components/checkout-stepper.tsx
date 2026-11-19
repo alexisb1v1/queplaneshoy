@@ -31,7 +31,9 @@ export default function CheckoutStepper({
             }`}
           >
             {currentStep > 1 ? (
-              <span className="material-symbols-outlined text-sm font-black">check</span>
+              <span className="material-symbols-outlined text-sm font-black">
+                check
+              </span>
             ) : (
               "1"
             )}
@@ -40,7 +42,9 @@ export default function CheckoutStepper({
             Entradas
           </span>
         </div>
-        <span className="text-[11px] font-medium text-electric-indigo sm:hidden">Entradas</span>
+        <span className="text-[11px] font-medium text-electric-indigo sm:hidden">
+          Entradas
+        </span>
       </div>
 
       {/* Conector Paso 1 -> 2 */}
@@ -56,7 +60,11 @@ export default function CheckoutStepper({
           if (onStepClick && canNavigateToStep2) onStepClick(2);
         }}
         className={`flex flex-col items-center sm:items-start gap-1 ${
-          onStepClick && canNavigateToStep2 ? "cursor-pointer" : currentStep < 2 ? "opacity-60" : ""
+          onStepClick && canNavigateToStep2
+            ? "cursor-pointer"
+            : currentStep < 2
+              ? "opacity-60"
+              : ""
         }`}
       >
         <div className="flex items-center gap-2 sm:gap-3">
@@ -65,19 +73,23 @@ export default function CheckoutStepper({
               currentStep === 2
                 ? "border-electric-indigo bg-electric-indigo text-white shadow-md shadow-electric-indigo/25 ring-4 ring-electric-indigo/20"
                 : currentStep > 2
-                ? "border-electric-indigo bg-electric-indigo text-white shadow-md"
-                : "border-surface-variant text-on-surface-variant bg-surface-container-low"
+                  ? "border-electric-indigo bg-electric-indigo text-white shadow-md"
+                  : "border-surface-variant text-on-surface-variant bg-surface-container-low"
             }`}
           >
             {currentStep > 2 ? (
-              <span className="material-symbols-outlined text-sm font-black">check</span>
+              <span className="material-symbols-outlined text-sm font-black">
+                check
+              </span>
             ) : (
               "2"
             )}
           </span>
           <span
             className={`font-bold text-xs sm:text-sm hidden sm:inline ${
-              currentStep >= 2 ? "text-electric-indigo" : "text-on-surface-variant"
+              currentStep >= 2
+                ? "text-electric-indigo"
+                : "text-on-surface-variant"
             }`}
           >
             Pago y Método
@@ -85,7 +97,9 @@ export default function CheckoutStepper({
         </div>
         <span
           className={`text-[11px] font-medium sm:hidden ${
-            currentStep >= 2 ? "text-electric-indigo" : "text-on-surface-variant"
+            currentStep >= 2
+              ? "text-electric-indigo"
+              : "text-on-surface-variant"
           }`}
         >
           Pago
@@ -110,14 +124,18 @@ export default function CheckoutStepper({
             }`}
           >
             {currentStep === 3 ? (
-              <span className="material-symbols-outlined text-sm font-black">check</span>
+              <span className="material-symbols-outlined text-sm font-black">
+                check
+              </span>
             ) : (
               "3"
             )}
           </span>
           <span
             className={`font-bold text-xs sm:text-sm hidden sm:inline ${
-              currentStep === 3 ? "text-electric-indigo" : "text-on-surface-variant"
+              currentStep === 3
+                ? "text-electric-indigo"
+                : "text-on-surface-variant"
             }`}
           >
             Confirmación
@@ -125,7 +143,9 @@ export default function CheckoutStepper({
         </div>
         <span
           className={`text-[11px] font-medium sm:hidden ${
-            currentStep === 3 ? "text-electric-indigo" : "text-on-surface-variant"
+            currentStep === 3
+              ? "text-electric-indigo"
+              : "text-on-surface-variant"
           }`}
         >
           Confirmar

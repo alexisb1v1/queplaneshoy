@@ -8,7 +8,6 @@ export function WatchlistSection() {
     <section className="bg-surface-container-low py-section-gap">
       <div className="max-w-container-max mx-auto px-margin-x">
         <div className="flex flex-col md:flex-row gap-12 items-center">
-          
           {/* Lado Izquierdo: Información */}
           <div className="flex-1 space-y-6">
             <div className="flex items-center gap-3">
@@ -26,7 +25,9 @@ export function WatchlistSection() {
               No te pierdas tus favoritos
             </h2>
             <p className="qph-body-lg text-on-surface-variant max-w-md">
-              Guarda los eventos que te interesan y recibe notificaciones exclusivas cuando las entradas estén a punto de agotarse o bajen de precio.
+              Guarda los eventos que te interesan y recibe notificaciones
+              exclusivas cuando las entradas estén a punto de agotarse o bajen
+              de precio.
             </p>
             <div className="flex gap-4">
               <button className="px-6 py-3 bg-deep-slate text-white rounded-xl qph-label-bold hover:bg-primary transition-all duration-200 cursor-pointer active:scale-98">
@@ -80,7 +81,6 @@ export function WatchlistSection() {
               </p>
             </Link>
           </div>
-
         </div>
       </div>
     </section>

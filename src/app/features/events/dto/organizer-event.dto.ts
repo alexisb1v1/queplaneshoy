@@ -15,6 +15,8 @@ export interface OrganizerEventZoneDto {
   isPresaleActive: boolean;
   statusBadge: string;
   revenue: number;
+  feeIncluded?: boolean;
+  serviceFee?: number;
 }
 
 export interface OrganizerDraftChecklistDto {
@@ -37,6 +39,8 @@ export interface OrganizerEventDto {
   isSoldOut: boolean;
   statusLabel: string;
   hasLandingPage: boolean;
+  feeIncluded?: boolean;
+  feeChargedTo?: "buyer" | "promoter" | "mixed";
   imageUrl: string | null;
   venue: string | null;
   city: string;
@@ -57,4 +61,3 @@ export interface OrganizerEventDto {
   draftChecklist: OrganizerDraftChecklistDto;
   zones: OrganizerEventZoneDto[];
 }
-

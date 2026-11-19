@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { registerUseCase } from '../index';
-import { GoogleAuthButton } from './components/google-auth-button';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { registerUseCase } from "../index";
+import { GoogleAuthButton } from "./components/google-auth-button";
 
 export default function RegisterPageComponent() {
   const router = useRouter();
 
   // Estados del Formulario
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [terms, setTerms] = useState(false);
 
   // Estados de Interfaz
@@ -22,45 +22,46 @@ export default function RegisterPageComponent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isEmailAlreadyRegistered, setIsEmailAlreadyRegistered] = useState(false);
+  const [isEmailAlreadyRegistered, setIsEmailAlreadyRegistered] =
+    useState(false);
   const [success, setSuccess] = useState(false);
 
   // Validación en tiempo real / submit
   const validateForm = (): string | null => {
     const trimmedName = fullName.trim();
     if (!trimmedName || trimmedName.length < 2) {
-      return 'Por favor, introduce tu nombre completo (mínimo 2 caracteres).';
+      return "Por favor, introduce tu nombre completo (mínimo 2 caracteres).";
     }
     if (trimmedName.length > 100) {
-      return 'El nombre completo no puede exceder los 100 caracteres.';
+      return "El nombre completo no puede exceder los 100 caracteres.";
     }
 
     const trimmedEmail = email.trim().toLowerCase();
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
-      return 'Por favor, introduce un correo electrónico válido.';
+      return "Por favor, introduce un correo electrónico válido.";
     }
     if (trimmedEmail.length > 150) {
-      return 'El correo electrónico no puede exceder los 150 caracteres.';
+      return "El correo electrónico no puede exceder los 150 caracteres.";
     }
 
     if (phone.trim() && phone.trim().length > 30) {
-      return 'El teléfono no puede exceder los 30 caracteres.';
+      return "El teléfono no puede exceder los 30 caracteres.";
     }
 
     if (!password || password.length < 6) {
-      return 'La contraseña debe tener al menos 6 caracteres.';
+      return "La contraseña debe tener al menos 6 caracteres.";
     }
     if (password.length > 100) {
-      return 'La contraseña no puede exceder los 100 caracteres.';
+      return "La contraseña no puede exceder los 100 caracteres.";
     }
 
     if (password !== confirmPassword) {
-      return 'Las contraseñas no coinciden. Por favor, verifícalas.';
+      return "Las contraseñas no coinciden. Por favor, verifícalas.";
     }
 
     if (!terms) {
-      return 'Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.';
+      return "Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.";
     }
 
     return null;
@@ -83,7 +84,7 @@ export default function RegisterPageComponent() {
       fullName.trim(),
       email.trim().toLowerCase(),
       phone.trim(),
-      password
+      password,
     );
 
     result.match(
@@ -92,23 +93,24 @@ export default function RegisterPageComponent() {
         setIsLoading(false);
         // Redirigir a la pantalla de verificación de correo
         setTimeout(() => {
-          router.push('/verify-email');
+          router.push("/verify-email");
         }, 1000);
       },
       (error) => {
         setIsLoading(false);
-        const message = error.message || 'Error al crear la cuenta. Inténtalo de nuevo.';
+        const message =
+          error.message || "Error al crear la cuenta. Inténtalo de nuevo.";
         setErrorMsg(message);
 
         // Detectar si el error es de conflicto (correo duplicado)
         if (
-          error.code === 'CONF_001' ||
-          message.toLowerCase().includes('ya está registrado') ||
-          message.toLowerCase().includes('already exists')
+          error.code === "CONF_001" ||
+          message.toLowerCase().includes("ya está registrado") ||
+          message.toLowerCase().includes("already exists")
         ) {
           setIsEmailAlreadyRegistered(true);
         }
-      }
+      },
     );
   };
 
@@ -128,8 +130,15 @@ export default function RegisterPageComponent() {
         {/* Contenido Visual */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity">
-              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplanhoy logo" />
+            <Link
+              href="/"
+              className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity"
+            >
+              <img
+                src="/logo-qph.svg"
+                className="w-10 h-10 rounded-md object-contain"
+                alt="queplanhoy logo"
+              />
               <span className="font-extrabold text-2xl tracking-tight text-white">
                 queplan<span className="text-electric-indigo">hoy</span>
               </span>
@@ -139,7 +148,8 @@ export default function RegisterPageComponent() {
               <span className="text-electric-indigo">Crea recuerdos.</span>
             </h1>
             <p className="text-platinum-silver text-lg max-w-md">
-              Únete a miles de personas que descubren y disfrutan de los mejores eventos culturales y de entretenimiento cada día.
+              Únete a miles de personas que descubren y disfrutan de los mejores
+              eventos culturales y de entretenimiento cada día.
             </p>
           </div>
           <div className="flex items-center gap-4 text-white">
@@ -160,7 +170,9 @@ export default function RegisterPageComponent() {
                 alt="Usuario 3"
               />
             </div>
-            <span className="font-semibold text-sm text-platinum-silver">+50k usuarios ya planean su hoy.</span>
+            <span className="font-semibold text-sm text-platinum-silver">
+              +50k usuarios ya planean su hoy.
+            </span>
           </div>
         </div>
       </div>
@@ -170,7 +182,11 @@ export default function RegisterPageComponent() {
         {/* Logo Móvil */}
         <div className="w-full max-w-md flex justify-start mb-6 lg:hidden">
           <Link href="/" className="flex items-center gap-2 cursor-pointer">
-            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
+            <img
+              src="/logo-qph.svg"
+              className="w-8 h-8 rounded-md object-contain"
+              alt="queplanhoy logo"
+            />
             <span className="font-black text-xl text-deep-slate tracking-tight">
               queplan<span className="text-electric-indigo">hoy</span>
             </span>
@@ -180,8 +196,12 @@ export default function RegisterPageComponent() {
         <div className="w-full max-w-md space-y-6">
           {/* Header del Formulario */}
           <header className="space-y-1.5">
-            <h2 className="text-3xl font-extrabold tracking-tight text-deep-slate">Crear una cuenta</h2>
-            <p className="text-on-surface-variant text-sm">Empieza a descubrir experiencias inolvidables hoy mismo.</p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-deep-slate">
+              Crear una cuenta
+            </h2>
+            <p className="text-on-surface-variant text-sm">
+              Empieza a descubrir experiencias inolvidables hoy mismo.
+            </p>
           </header>
 
           {/* Alerta de Error */}
@@ -218,7 +238,9 @@ export default function RegisterPageComponent() {
               <div className="w-full border-t border-outline-variant/30"></div>
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-4 text-xs text-platinum-silver font-semibold">O con tu correo electrónico</span>
+              <span className="bg-white px-4 text-xs text-platinum-silver font-semibold">
+                O con tu correo electrónico
+              </span>
             </div>
           </div>
 
@@ -226,7 +248,10 @@ export default function RegisterPageComponent() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             {/* 1. Nombre Completo (BD: users.name - varchar(100) NOT NULL) */}
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="full_name">
+              <label
+                className="block text-xs font-semibold text-on-surface-variant"
+                htmlFor="full_name"
+              >
                 Nombre completo <span className="text-rose-500">*</span>
               </label>
               <div className="relative group">
@@ -252,7 +277,10 @@ export default function RegisterPageComponent() {
 
             {/* 2. Correo Electrónico (BD: users.email - varchar(150) NOT NULL, UNIQUE) */}
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="email">
+              <label
+                className="block text-xs font-semibold text-on-surface-variant"
+                htmlFor="email"
+              >
                 Correo electrónico <span className="text-rose-500">*</span>
               </label>
               <div className="relative group">
@@ -279,10 +307,15 @@ export default function RegisterPageComponent() {
             {/* 3. Teléfono / WhatsApp (BD: users.organizer_phone - varchar(30) NULL) */}
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="phone">
+                <label
+                  className="block text-xs font-semibold text-on-surface-variant"
+                  htmlFor="phone"
+                >
                   Teléfono / Celular
                 </label>
-                <span className="text-[11px] text-platinum-silver">Opcional</span>
+                <span className="text-[11px] text-platinum-silver">
+                  Opcional
+                </span>
               </div>
               <div className="relative group">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-platinum-silver transition-colors group-focus-within:text-electric-indigo">
@@ -306,7 +339,10 @@ export default function RegisterPageComponent() {
 
             {/* 4. Contraseña (BD: users.password_hash - varchar(255) NOT NULL) */}
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="password">
+              <label
+                className="block text-xs font-semibold text-on-surface-variant"
+                htmlFor="password"
+              >
                 Contraseña <span className="text-rose-500">*</span>
               </label>
               <div className="relative group">
@@ -320,7 +356,7 @@ export default function RegisterPageComponent() {
                   required
                   minLength={6}
                   maxLength={100}
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -333,10 +369,12 @@ export default function RegisterPageComponent() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading || success}
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  aria-label={
+                    showPassword ? "Ocultar contraseña" : "Ver contraseña"
+                  }
                 >
                   <span className="material-symbols-outlined select-none text-[20px]">
-                    {showPassword ? 'visibility_off' : 'visibility'}
+                    {showPassword ? "visibility_off" : "visibility"}
                   </span>
                 </button>
               </div>
@@ -344,7 +382,10 @@ export default function RegisterPageComponent() {
 
             {/* 5. Confirmar Contraseña (Validación de Seguridad en Cliente) */}
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="confirm_password">
+              <label
+                className="block text-xs font-semibold text-on-surface-variant"
+                htmlFor="confirm_password"
+              >
                 Confirmar contraseña <span className="text-rose-500">*</span>
               </label>
               <div className="relative group">
@@ -358,7 +399,7 @@ export default function RegisterPageComponent() {
                   required
                   minLength={6}
                   maxLength={100}
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => {
                     setConfirmPassword(e.target.value);
@@ -371,10 +412,14 @@ export default function RegisterPageComponent() {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   disabled={isLoading || success}
-                  aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  aria-label={
+                    showConfirmPassword
+                      ? "Ocultar contraseña"
+                      : "Ver contraseña"
+                  }
                 >
                   <span className="material-symbols-outlined select-none text-[20px]">
-                    {showConfirmPassword ? 'visibility_off' : 'visibility'}
+                    {showConfirmPassword ? "visibility_off" : "visibility"}
                   </span>
                 </button>
               </div>
@@ -394,13 +439,24 @@ export default function RegisterPageComponent() {
                 }}
                 disabled={isLoading || success}
               />
-              <label className="text-xs text-on-surface-variant select-none cursor-pointer leading-relaxed" htmlFor="terms">
-                He leído y acepto los{' '}
-                <a className="text-electric-indigo hover:underline font-semibold" href="#" onClick={(e) => e.preventDefault()}>
+              <label
+                className="text-xs text-on-surface-variant select-none cursor-pointer leading-relaxed"
+                htmlFor="terms"
+              >
+                He leído y acepto los{" "}
+                <a
+                  className="text-electric-indigo hover:underline font-semibold"
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                >
                   Términos y Condiciones
-                </a>{' '}
-                y la{' '}
-                <a className="text-electric-indigo hover:underline font-semibold" href="#" onClick={(e) => e.preventDefault()}>
+                </a>{" "}
+                y la{" "}
+                <a
+                  className="text-electric-indigo hover:underline font-semibold"
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                >
                   Política de Privacidad
                 </a>
                 .
@@ -411,8 +467,8 @@ export default function RegisterPageComponent() {
             <button
               className={`w-full py-4 rounded-xl text-white font-semibold text-base transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer ${
                 success
-                  ? 'bg-emerald-600 shadow-emerald-600/20'
-                  : 'bg-electric-indigo shadow-electric-indigo/25 hover:bg-primary active:scale-[0.98] disabled:opacity-50'
+                  ? "bg-emerald-600 shadow-emerald-600/20"
+                  : "bg-electric-indigo shadow-electric-indigo/25 hover:bg-primary active:scale-[0.98] disabled:opacity-50"
               }`}
               type="submit"
               disabled={isLoading || success}
@@ -427,7 +483,11 @@ export default function RegisterPageComponent() {
                   check_circle
                 </span>
               )}
-              {success ? '¡Cuenta creada con éxito! Redirigiendo...' : isLoading ? 'Creando cuenta...' : 'Crear cuenta'}
+              {success
+                ? "¡Cuenta creada con éxito! Redirigiendo..."
+                : isLoading
+                  ? "Creando cuenta..."
+                  : "Crear cuenta"}
             </button>
           </form>
 

@@ -7,6 +7,7 @@ import PaymentSuccessScreen from "./payment-success-screen";
 import CheckoutStepper from "./components/checkout-stepper";
 import VenueZonesMap from "./components/venue-zones-map";
 import { GlobalFooter } from "@/app/common/components/global-footer";
+import { trackUmamiEvent } from "@/app/common/utils/analytics";
 import { getEventDetailUseCase } from "../../events";
 import { EventDetailModel } from "../../events/models/event-detail.model";
 import { getCurrentUserUseCase } from "../../auth";
@@ -129,13 +130,18 @@ export default function PurchaseFlowPageComponent() {
 
   // Temporizador de Reserva regresivo persistente ante recargas (14:59 min)
   const checkoutTimerKey = getCheckoutTimerKey(eventId);
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(CHECKOUT_RESERVATION_DURATION_SECONDS);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(
+    CHECKOUT_RESERVATION_DURATION_SECONDS,
+  );
   const [isTimerSynced, setIsTimerSynced] = useState<boolean>(false);
   const expiresAtRef = useRef<number | null>(null);
 
   // Lista de Funciones y Zonas Dinámicas
-  const [showFunctions, setShowFunctions] = useState<ShowFunction[]>(DEFAULT_SHOW_FUNCTIONS);
-  const [ticketTiers, setTicketTiers] = useState<TicketTier[]>(DEFAULT_TICKET_TIERS);
+  const [showFunctions, setShowFunctions] = useState<ShowFunction[]>(
+    DEFAULT_SHOW_FUNCTIONS,
+  );
+  const [ticketTiers, setTicketTiers] =
+    useState<TicketTier[]>(DEFAULT_TICKET_TIERS);
 
   // Método de pago en Paso 2 (Estándar Multipago Perú / Culqi)
   const [paymentMethod, setPaymentMethod] = useState<
@@ -143,9 +149,12 @@ export default function PurchaseFlowPageComponent() {
   >("yape");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGatewayModalOpen, setIsGatewayModalOpen] = useState(false);
-  const [processingLabel, setProcessingLabel] = useState<string>("Conectando con Culqi...");
+  const [processingLabel, setProcessingLabel] = useState<string>(
+    "Conectando con Culqi...",
+  );
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [checkoutResult, setCheckoutResult] = useState<SimulateCheckoutResponseModel | null>(null);
+  const [checkoutResult, setCheckoutResult] =
+    useState<SimulateCheckoutResponseModel | null>(null);
   const [pendingAsyncOrder, setPendingAsyncOrder] = useState<{
     orderPublicUuid: string;
     orderCode: string;
@@ -153,20 +162,25 @@ export default function PurchaseFlowPageComponent() {
     paymentCode?: string | null;
     method: "yape" | "card" | "transfer" | "cuotealo";
   } | null>(null);
-  const [isCheckingAsyncStatus, setIsCheckingAsyncStatus] = useState<boolean>(false);
+  const [isCheckingAsyncStatus, setIsCheckingAsyncStatus] =
+    useState<boolean>(false);
   const [isMobileSummaryExpanded, setIsMobileSummaryExpanded] = useState(false);
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState<boolean>(false);
 
   // Cupón de descuento (6 casos de uso + doble check atómico)
   const [couponCodeInput, setCouponCodeInput] = useState<string>("");
-  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResponseModel | null>(null);
+  const [appliedCoupon, setAppliedCoupon] =
+    useState<ValidateCouponResponseModel | null>(null);
   const [isCouponLoading, setIsCouponLoading] = useState<boolean>(false);
   const [couponError, setCouponError] = useState<string | null>(null);
-  const [couponSuccessMessage, setCouponSuccessMessage] = useState<string | null>(null);
+  const [couponSuccessMessage, setCouponSuccessMessage] = useState<
+    string | null
+  >(null);
 
   // Usuario autenticado en sesión y entradas ya compradas para este evento
   const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
-  const [alreadyPurchasedTicketsCount, setAlreadyPurchasedTicketsCount] = useState<number>(0);
+  const [alreadyPurchasedTicketsCount, setAlreadyPurchasedTicketsCount] =
+    useState<number>(0);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
   // Sincronizar sesión activa del comprador
@@ -176,13 +190,13 @@ export default function PurchaseFlowPageComponent() {
       if (stored) {
         setCurrentUser(JSON.parse(stored));
       }
-    } catch { }
+    } catch {}
 
     getCurrentUserUseCase.execute().match(
       (user) => {
         setCurrentUser(user);
       },
-      () => { }
+      () => {},
     );
   }, []);
 
@@ -195,14 +209,17 @@ export default function PurchaseFlowPageComponent() {
           (orders || []).forEach((o) => {
             const matchesEvent =
               (event && o.eventId && String(o.eventId) === String(event.id)) ||
-              (event && o.eventTitle && o.eventTitle.trim().toLowerCase() === event.name.trim().toLowerCase());
+              (event &&
+                o.eventTitle &&
+                o.eventTitle.trim().toLowerCase() ===
+                  event.name.trim().toLowerCase());
             if (matchesEvent) {
               count += o.ticketCount || o.tickets?.length || 0;
             }
           });
           setAlreadyPurchasedTicketsCount(count);
         },
-        () => { }
+        () => {},
       );
     });
   }, [event, eventId]);
@@ -251,7 +268,9 @@ export default function PurchaseFlowPageComponent() {
         // 2. Mapear zonas con preselección inteligente de zoneId (soporta publicUuid o ID)
         if (data.zones && data.zones.length > 0) {
           const mappedTiers: TicketTier[] = data.zones.map((zone) => {
-            const isTarget = zoneId ? (zone.id === zoneId || zone.publicUuid === zoneId) : false;
+            const isTarget = zoneId
+              ? zone.id === zoneId || zone.publicUuid === zoneId
+              : false;
             const rawPrice = Number(zone.currentPrice) || 0;
             const zoneFee = Math.max(0, Number(zone.serviceFee) || 0);
             const isFeeIncluded = Boolean(zone.feeIncluded);
@@ -267,7 +286,8 @@ export default function PurchaseFlowPageComponent() {
                 ? "bg-red-100 text-red-800"
                 : "bg-emerald-100 text-emerald-800",
               description:
-                zone.benefits || `Acceso oficial garantizado para la localidad ${zone.name}`,
+                zone.benefits ||
+                `Acceso oficial garantizado para la localidad ${zone.name}`,
               price: buyerUnitPrice,
               serviceFee: zoneFee,
               feeIncluded: isFeeIncluded,
@@ -296,7 +316,7 @@ export default function PurchaseFlowPageComponent() {
       () => {
         if (!isMounted) return;
         setLoadingEvent(false);
-      }
+      },
     );
 
     return () => {
@@ -306,10 +326,14 @@ export default function PurchaseFlowPageComponent() {
 
   // Límites oficiales de entradas por persona (Regla 1: Por Evento)
   const eventUserTicketLimit = event?.userTicketLimit ?? 6;
-  const remainingUserQuotaForEvent = Math.max(0, eventUserTicketLimit - alreadyPurchasedTicketsCount);
+  const remainingUserQuotaForEvent = Math.max(
+    0,
+    eventUserTicketLimit - alreadyPurchasedTicketsCount,
+  );
 
   // Estado derivado cuando vence la ventana de reserva (solo tras sincronizar con sessionStorage)
-  const isReservationExpired = isTimerSynced && currentStep !== 3 && secondsRemaining <= 0;
+  const isReservationExpired =
+    isTimerSynced && currentStep !== 3 && secondsRemaining <= 0;
 
   // Hidratación inicial del temporizador desde sessionStorage para mantener el tiempo al refrescar
   useEffect(() => {
@@ -322,7 +346,8 @@ export default function PurchaseFlowPageComponent() {
       return;
     }
 
-    let resolvedExpiresAt = Date.now() + CHECKOUT_RESERVATION_DURATION_SECONDS * 1000;
+    let resolvedExpiresAt =
+      Date.now() + CHECKOUT_RESERVATION_DURATION_SECONDS * 1000;
     try {
       const storedValue = sessionStorage.getItem(checkoutTimerKey);
       const parsedExpiresAt = storedValue ? Number(storedValue) : NaN;
@@ -336,7 +361,10 @@ export default function PurchaseFlowPageComponent() {
     }
 
     expiresAtRef.current = resolvedExpiresAt;
-    const syncedRemaining = Math.max(0, Math.ceil((resolvedExpiresAt - Date.now()) / 1000));
+    const syncedRemaining = Math.max(
+      0,
+      Math.ceil((resolvedExpiresAt - Date.now()) / 1000),
+    );
     setSecondsRemaining(syncedRemaining);
     setIsTimerSynced(true);
   }, [checkoutTimerKey, currentStep]);
@@ -347,7 +375,10 @@ export default function PurchaseFlowPageComponent() {
 
     const syncRemainingTime = () => {
       if (!expiresAtRef.current) return;
-      const nextRemaining = Math.max(0, Math.ceil((expiresAtRef.current - Date.now()) / 1000));
+      const nextRemaining = Math.max(
+        0,
+        Math.ceil((expiresAtRef.current - Date.now()) / 1000),
+      );
       setSecondsRemaining(nextRemaining);
     };
 
@@ -424,17 +455,25 @@ export default function PurchaseFlowPageComponent() {
       const effectiveMaxForThisTier = Math.min(
         zoneMaxPerOrder,
         target.remainingTickets ?? 999,
-        Math.max(0, remainingUserQuotaForEvent - currentTotalExcludingTarget)
+        Math.max(0, remainingUserQuotaForEvent - currentTotalExcludingTarget),
       );
 
-      const newQty = Math.max(0, Math.min(effectiveMaxForThisTier, target.quantity + delta));
-      return prev.map((tier) => (tier.id === tierId ? { ...tier, quantity: newQty } : tier));
+      const newQty = Math.max(
+        0,
+        Math.min(effectiveMaxForThisTier, target.quantity + delta),
+      );
+      return prev.map((tier) =>
+        tier.id === tierId ? { ...tier, quantity: newQty } : tier,
+      );
     });
   };
 
   // Cálculos de Totales en Soles (PEN)
   const totalTickets = ticketTiers.reduce((acc, t) => acc + t.quantity, 0);
-  const subtotal = ticketTiers.reduce((acc, t) => acc + t.price * t.quantity, 0);
+  const subtotal = ticketTiers.reduce(
+    (acc, t) => acc + t.price * t.quantity,
+    0,
+  );
 
   // Recálculo dinámico de descuento si cambia el subtotal
   const effectiveDiscountAmount = appliedCoupon
@@ -444,7 +483,10 @@ export default function PurchaseFlowPageComponent() {
     : 0;
 
   // El precio de la entrada ya incluye el servicio definido al crear el evento (sin cobro duplicado)
-  const grandTotal = Math.max(0, Math.round((subtotal - effectiveDiscountAmount) * 100) / 100);
+  const grandTotal = Math.max(
+    0,
+    Math.round((subtotal - effectiveDiscountAmount) * 100) / 100,
+  );
 
   const handleApplyCoupon = () => {
     const trimmedCode = couponCodeInput.trim().toUpperCase();
@@ -453,7 +495,9 @@ export default function PurchaseFlowPageComponent() {
       return;
     }
     if (subtotal <= 0) {
-      setCouponError("Selecciona al menos una entrada antes de aplicar un cupón.");
+      setCouponError(
+        "Selecciona al menos una entrada antes de aplicar un cupón.",
+      );
       return;
     }
 
@@ -461,7 +505,7 @@ export default function PurchaseFlowPageComponent() {
     setCouponError(null);
     setCouponSuccessMessage(null);
 
-    const targetEventId = event ? (event.publicUuid || event.id) : eventId || "1";
+    const targetEventId = event ? event.publicUuid || event.id : eventId || "1";
 
     validateCouponUseCase
       .execute({
@@ -473,16 +517,18 @@ export default function PurchaseFlowPageComponent() {
         (res) => {
           setIsCouponLoading(false);
           setAppliedCoupon(res);
-          setCouponSuccessMessage(res.message || "¡Cupón aplicado exitosamente!");
+          setCouponSuccessMessage(
+            res.message || "¡Cupón aplicado exitosamente!",
+          );
           setCouponCodeInput("");
         },
         (err) => {
           setIsCouponLoading(false);
           setCouponError(
             err.message ||
-            "El cupón ingresado no es válido, ha expirado o no cumple con las condiciones."
+              "El cupón ingresado no es válido, ha expirado o no cumple con las condiciones.",
           );
-        }
+        },
       );
   };
 
@@ -496,11 +542,13 @@ export default function PurchaseFlowPageComponent() {
   const selectedFunction =
     showFunctions.find((f) => f.id === selectedFunctionId) || showFunctions[0];
 
-  const primarySelectedTier = ticketTiers.find((t) => t.quantity > 0) || ticketTiers[0];
+  const primarySelectedTier =
+    ticketTiers.find((t) => t.quantity > 0) || ticketTiers[0];
 
   // Referencia al contenedor del botón de acción del resumen para detectar visibilidad en móvil (Paso 1 y Paso 2)
   const summaryCtaContainerRef = useRef<HTMLDivElement | null>(null);
-  const [isSummaryCtaVisible, setIsSummaryCtaVisible] = useState<boolean>(false);
+  const [isSummaryCtaVisible, setIsSummaryCtaVisible] =
+    useState<boolean>(false);
 
   useEffect(() => {
     if (currentStep === 3) {
@@ -525,7 +573,11 @@ export default function PurchaseFlowPageComponent() {
 
     let observer: IntersectionObserver | null = null;
     const target = summaryCtaContainerRef.current;
-    if (typeof window !== "undefined" && "IntersectionObserver" in window && target) {
+    if (
+      typeof window !== "undefined" &&
+      "IntersectionObserver" in window &&
+      target
+    ) {
       observer = new IntersectionObserver(
         ([entry]) => {
           setIsSummaryCtaVisible(entry.isIntersecting);
@@ -533,7 +585,7 @@ export default function PurchaseFlowPageComponent() {
         {
           threshold: 0.1,
           rootMargin: "0px",
-        }
+        },
       );
       observer.observe(target);
     }
@@ -550,7 +602,8 @@ export default function PurchaseFlowPageComponent() {
   }, [currentStep, ticketTiers, loadingEvent]);
 
   // Mostrar el footer flotante en móvil en pasos 1 y 2 mientras no sea visible el botón oficial del resumen
-  const showMobileOrderFooter = (currentStep === 1 || currentStep === 2) && !isSummaryCtaVisible;
+  const showMobileOrderFooter =
+    (currentStep === 1 || currentStep === 2) && !isSummaryCtaVisible;
 
   useEffect(() => {
     if (!showMobileOrderFooter) {
@@ -563,7 +616,9 @@ export default function PurchaseFlowPageComponent() {
     setIsMobileSummaryExpanded(false);
     if (currentStep === 2) {
       const timer = setTimeout(() => {
-        const paymentSection = document.getElementById("payment-methods-section");
+        const paymentSection = document.getElementById(
+          "payment-methods-section",
+        );
         if (paymentSection) {
           paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
         } else {
@@ -584,7 +639,7 @@ export default function PurchaseFlowPageComponent() {
     }
     if (totalTickets > remainingUserQuotaForEvent) {
       alert(
-        `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`
+        `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`,
       );
       return;
     }
@@ -593,6 +648,12 @@ export default function PurchaseFlowPageComponent() {
       setShowAuthModal(true);
       return;
     }
+    trackUmamiEvent("checkout_proceed_step2", {
+      eventId: event ? event.publicUuid || event.id : eventId,
+      eventName: event?.name,
+      totalTickets,
+      grandTotal,
+    });
     setCurrentStep(2);
     setTimeout(() => {
       const paymentSection = document.getElementById("payment-methods-section");
@@ -602,7 +663,9 @@ export default function PurchaseFlowPageComponent() {
     }, 50);
   };
 
-  const completeSuccessfulCheckout = (response: SimulateCheckoutResponseModel) => {
+  const completeSuccessfulCheckout = (
+    response: SimulateCheckoutResponseModel,
+  ) => {
     setIsGatewayModalOpen(false);
     setIsProcessing(false);
     setPendingAsyncOrder(null);
@@ -615,14 +678,24 @@ export default function PurchaseFlowPageComponent() {
     }
   };
 
-  const handleCheckoutDomainError = (error: { code: string; message?: string }) => {
+  const handleCheckoutDomainError = (error: {
+    code: string;
+    message?: string;
+  }) => {
     setIsGatewayModalOpen(false);
     setIsProcessing(false);
-    if (error.code === "AUTH_001" || error.code === "UNAUTHORIZED" || error.message?.toLowerCase().includes("sesión")) {
+    if (
+      error.code === "AUTH_001" ||
+      error.code === "UNAUTHORIZED" ||
+      error.message?.toLowerCase().includes("sesión")
+    ) {
       setShowAuthModal(true);
       return;
     }
-    if (error.code === "COUPON_INVALID_OR_EXPIRED" || error.message?.toLowerCase().includes("cupón")) {
+    if (
+      error.code === "COUPON_INVALID_OR_EXPIRED" ||
+      error.message?.toLowerCase().includes("cupón")
+    ) {
       setAppliedCoupon(null);
       setCouponError(
         "El cupón de descuento ya no se encuentra disponible o ha expirado. Por favor retíralo o prueba con otro cupón.",
@@ -644,12 +717,17 @@ export default function PurchaseFlowPageComponent() {
 
     let isCancelled = false;
     const pollStatus = async () => {
-      const statusRes = await getCulqiOrderStatusUseCase.execute(pendingAsyncOrder.orderPublicUuid);
+      const statusRes = await getCulqiOrderStatusUseCase.execute(
+        pendingAsyncOrder.orderPublicUuid,
+      );
       if (isCancelled) return;
 
       statusRes.match(
         (data) => {
-          if (data.paymentCode && data.paymentCode !== pendingAsyncOrder.paymentCode) {
+          if (
+            data.paymentCode &&
+            data.paymentCode !== pendingAsyncOrder.paymentCode
+          ) {
             setPendingAsyncOrder((prev) =>
               prev ? { ...prev, paymentCode: data.paymentCode } : null,
             );
@@ -660,7 +738,9 @@ export default function PurchaseFlowPageComponent() {
           }
           if (data.status === "expired" || data.status === "cancelled") {
             setPendingAsyncOrder(null);
-            setPaymentError("La orden de pago expiró o fue cancelada. Puedes generar una nueva orden.");
+            setPaymentError(
+              "La orden de pago expiró o fue cancelada. Puedes generar una nueva orden.",
+            );
           }
         },
         () => {
@@ -681,7 +761,9 @@ export default function PurchaseFlowPageComponent() {
     setIsCheckingAsyncStatus(true);
     setPaymentError(null);
 
-    const statusRes = await getCulqiOrderStatusUseCase.execute(pendingAsyncOrder.orderPublicUuid);
+    const statusRes = await getCulqiOrderStatusUseCase.execute(
+      pendingAsyncOrder.orderPublicUuid,
+    );
     setIsCheckingAsyncStatus(false);
 
     statusRes.match(
@@ -697,7 +779,9 @@ export default function PurchaseFlowPageComponent() {
         }
         if (data.status === "expired" || data.status === "cancelled") {
           setPendingAsyncOrder(null);
-          setPaymentError("Tu orden expiró o fue cancelada. Inicia nuevamente tu pago.");
+          setPaymentError(
+            "Tu orden expiró o fue cancelada. Inicia nuevamente tu pago.",
+          );
           return;
         }
         setPaymentError(
@@ -705,7 +789,10 @@ export default function PurchaseFlowPageComponent() {
         );
       },
       (err) => {
-        setPaymentError(err.message || "No se pudo consultar el estado en Culqi en este momento.");
+        setPaymentError(
+          err.message ||
+            "No se pudo consultar el estado en Culqi en este momento.",
+        );
       },
     );
   };
@@ -733,7 +820,9 @@ export default function PurchaseFlowPageComponent() {
       return;
     }
     if (!acceptedLegalTerms) {
-      alert("Por favor acepta los Términos y Condiciones y las Políticas de Privacidad para continuar con el pago.");
+      alert(
+        "Por favor acepta los Términos y Condiciones y las Políticas de Privacidad para continuar con el pago.",
+      );
       return;
     }
 
@@ -748,6 +837,14 @@ export default function PurchaseFlowPageComponent() {
     setProcessingLabel("Preparando orden en Culqi...");
     setPaymentError(null);
     setPendingAsyncOrder(null);
+
+    trackUmamiEvent("checkout_submit_payment", {
+      eventId: event ? event.publicUuid || event.id : eventId,
+      eventName: event?.name,
+      totalTickets,
+      paymentMethod,
+      grandTotal,
+    });
 
     const selectedItems = ticketTiers
       .filter((t) => t.quantity > 0)
@@ -803,9 +900,13 @@ export default function PurchaseFlowPageComponent() {
 
     if (modalOutcome.type === "CANCELLED") {
       setProcessingLabel("Liberando reserva temporal...");
-      const cancelRes = await cancelPendingCulqiOrderUseCase.execute(prepared.orderPublicUuid);
+      const cancelRes = await cancelPendingCulqiOrderUseCase.execute(
+        prepared.orderPublicUuid,
+      );
       if (cancelRes.isOk() && cancelRes.value.status === "paid") {
-        const paidCheck = await getCulqiOrderStatusUseCase.execute(prepared.orderPublicUuid);
+        const paidCheck = await getCulqiOrderStatusUseCase.execute(
+          prepared.orderPublicUuid,
+        );
         if (paidCheck.isOk() && paidCheck.value.checkoutResult) {
           completeSuccessfulCheckout(paidCheck.value.checkoutResult);
           return;
@@ -836,7 +937,9 @@ export default function PurchaseFlowPageComponent() {
     }
 
     // Token recibido (Tarjeta de Crédito/Débito o Yape con código de aprobación)
-    const resolvedMethodForCharge = modalOutcome.isYapeToken ? "yape" : paymentMethod;
+    const resolvedMethodForCharge = modalOutcome.isYapeToken
+      ? "yape"
+      : paymentMethod;
     setProcessingLabel("Confirmando transacción con Culqi...");
 
     const chargeRes = await confirmCulqiChargeUseCase.execute({
@@ -891,7 +994,9 @@ export default function PurchaseFlowPageComponent() {
             return;
           }
           setIsProcessing(false);
-          setPaymentError("No se pudo confirmar la autenticación 3D Secure con el emisor.");
+          setPaymentError(
+            "No se pudo confirmar la autenticación 3D Secure con el emisor.",
+          );
         },
         (retryErr) => handleCheckoutDomainError(retryErr),
       );
@@ -899,7 +1004,9 @@ export default function PurchaseFlowPageComponent() {
     }
 
     setIsProcessing(false);
-    setPaymentError("No se recibió confirmación definitiva de Culqi. Intenta nuevamente.");
+    setPaymentError(
+      "No se recibió confirmación definitiva de Culqi. Intenta nuevamente.",
+    );
   };
 
   const paymentMethodLabel = {
@@ -921,8 +1028,12 @@ export default function PurchaseFlowPageComponent() {
           />
         </div>
         <div className="w-6 h-6 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-sm font-bold text-deep-slate">Cargando taquilla oficial...</p>
-        <p className="text-xs text-on-surface-variant mt-1">Configurando zonas y accesos del evento</p>
+        <p className="text-sm font-bold text-deep-slate">
+          Cargando taquilla oficial...
+        </p>
+        <p className="text-xs text-on-surface-variant mt-1">
+          Configurando zonas y accesos del evento
+        </p>
       </div>
     );
   }
@@ -931,44 +1042,89 @@ export default function PurchaseFlowPageComponent() {
   if (currentStep === 3) {
     return (
       <PaymentSuccessScreen
-        orderCode={checkoutResult ? checkoutResult.orderCode : `#QPH-${Math.floor(100000 + Math.random() * 900000)}`}
+        orderCode={
+          checkoutResult ? checkoutResult.orderCode : "#QPH-PROVISIONAL"
+        }
         userEmail={currentUser?.email || "comprador@queplanhoy.com"}
-        customerName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : "Comprador Oficial QPH"}
+        customerName={
+          currentUser
+            ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+            : "Comprador Oficial QPH"
+        }
         eventTitle={event ? event.name : "Evento Oficial"}
-        categoryTag={event ? `${event.category} • Venta Oficial` : "Música en Vivo • Oficial"}
+        categoryTag={
+          event
+            ? `${event.category} • Venta Oficial`
+            : "Música en Vivo • Oficial"
+        }
         bannerImageUrl={
           event?.bannerUrl ||
           "https://lh3.googleusercontent.com/aida-public/AB6AXuB6zlOV5Dky2moZZwBSETqhUT5lhvjwGPa9jJGDrr1krL9Lx8Y4cFqyEjtp_ep-p-XDjKBTdINqn32bKAXlcfVJ0iTnh5Z2nin5LAEEHCum75H9xWBMzSYey9B_8rQxRHEOWCqOizX5JHNzZXbyPQiWaR2DBYAmA7kEL4btLbIxCzLN-_52Xuuk4dYbl8qvh89DpQmSEwN_SYN2pKZSOIl0T-8Ry-WFWoBS8y9Y0uW5XlDwgdnoI0SnVQ"
         }
-        dateStr={selectedFunction ? selectedFunction.dateStr : "Fecha Confirmada"}
-        timeStr={selectedFunction ? selectedFunction.timeStr : "Horario Oficial"}
+        dateStr={
+          selectedFunction ? selectedFunction.dateStr : "Fecha Confirmada"
+        }
+        timeStr={
+          selectedFunction ? selectedFunction.timeStr : "Horario Oficial"
+        }
         doorsOpenStr={event?.openingHoursComment || "Apertura 2 hrs antes"}
         venueName={event ? event.venue || "Recinto Oficial" : "Campo Ferial"}
-        venueAccess={event?.entryRequirements || "Puerta Principal • Control QR Ed25519"}
-        venueAddress={event ? `${event.address || ""}, ${event.city}` : "Ucayali, Perú"}
+        venueAccess={
+          event?.entryRequirements || "Puerta Principal • Control QR Ed25519"
+        }
+        venueAddress={
+          event ? `${event.address || ""}, ${event.city}` : "Ucayali, Perú"
+        }
         coordinates={event?.coordinates || null}
         addressReference={event?.addressReference || null}
         city={event?.city || "Ucayali"}
         googleMapsUrl={event?.googleMapsUrl || null}
-        zoneName={primarySelectedTier ? primarySelectedTier.name : "Zona General"}
+        zoneName={
+          primarySelectedTier ? primarySelectedTier.name : "Zona General"
+        }
         tierBadge={primarySelectedTier ? primarySelectedTier.name : "General"}
-        ticketCount={checkoutResult ? checkoutResult.tickets.length : (totalTickets > 0 ? totalTickets : 1)}
+        ticketCount={
+          checkoutResult
+            ? checkoutResult.tickets.length
+            : totalTickets > 0
+              ? totalTickets
+              : 1
+        }
         unitPrice={primarySelectedTier ? primarySelectedTier.price : 65}
         distributionFee={0}
         vatAmount={0}
-        discountAmount={checkoutResult?.discountAmount ?? effectiveDiscountAmount}
-        couponCode={checkoutResult?.couponCode ?? (appliedCoupon ? appliedCoupon.code : null)}
-        totalAmount={checkoutResult ? checkoutResult.totalAmount : (grandTotal > 0 ? grandTotal : (primarySelectedTier ? primarySelectedTier.price : 65))}
+        discountAmount={
+          checkoutResult?.discountAmount ?? effectiveDiscountAmount
+        }
+        couponCode={
+          checkoutResult?.couponCode ??
+          (appliedCoupon ? appliedCoupon.code : null)
+        }
+        totalAmount={
+          checkoutResult
+            ? checkoutResult.totalAmount
+            : grandTotal > 0
+              ? grandTotal
+              : primarySelectedTier
+                ? primarySelectedTier.price
+                : 65
+        }
         paymentMethodText={paymentMethodLabel}
-        txCode={checkoutResult ? checkoutResult.txCode : `TX-${Math.floor(100000 + Math.random() * 900000)}`}
-        qrPayload={checkoutResult && checkoutResult.tickets.length > 0 ? checkoutResult.tickets[0].qrPayload : undefined}
+        txCode={checkoutResult ? checkoutResult.txCode : "TX-PROVISIONAL"}
+        qrPayload={
+          checkoutResult && checkoutResult.tickets.length > 0
+            ? checkoutResult.tickets[0].qrPayload
+            : undefined
+        }
         tickets={checkoutResult ? checkoutResult.tickets : []}
       />
     );
   }
 
   const eventTitle = event ? event.name : "Bareto en Concierto";
-  const eventVenue = event ? `${event.venue || "Recinto Oficial"}, ${event.city}` : "Campo Ferial, Pucallpa";
+  const eventVenue = event
+    ? `${event.venue || "Recinto Oficial"}, ${event.city}`
+    : "Campo Ferial, Pucallpa";
   const eventBanner =
     event?.bannerUrl ||
     "https://lh3.googleusercontent.com/aida-public/AB6AXuAvDbqbGnlbfqUeC8z7aI3S9qHtQrEg0HBuv40tjwOWpwyto7jUUN4aK6zHkyjFpgrQuCmYbnML65LyCOmt4qfAeTI0iyr2BVCmLgaCJy5sBpz6YzL3uZFZIH-KYQuDSVFbpbW2Y6TUpo9uKWoJ2zKmlgzeVlfID8YoiQklT8co4xHrZ6sDZeLPqiY-dRNUsdzl8wQ2M9YvHfLR7G5WFio3W-SCX1AidCHyLkxiMeElBOJP2LgUnEYlNJevy2WQSrRm2T5c0o7zVSlx";
@@ -997,10 +1153,16 @@ export default function PurchaseFlowPageComponent() {
             </Link>
 
             <Link
-              href={event ? `/events/${event.publicUuid || event.slug || event.id}` : "/"}
+              href={
+                event
+                  ? `/events/${event.publicUuid || event.slug || event.id}`
+                  : "/"
+              }
               className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors pl-4 border-l border-surface-variant"
             >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_back
+              </span>
               <span>Volver al evento</span>
             </Link>
           </div>
@@ -1013,10 +1175,14 @@ export default function PurchaseFlowPageComponent() {
               Cartelera
             </Link>
             <button
-              onClick={() => alert("Soporte disponible en soporte@queplanhoy.com")}
+              onClick={() =>
+                alert("Soporte disponible en soporte@queplanhoy.com")
+              }
               className="flex items-center gap-2 text-on-surface-variant hover:text-electric-indigo transition-colors font-semibold text-xs cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[20px]">help</span>
+              <span className="material-symbols-outlined text-[20px]">
+                help
+              </span>
               <span className="hidden sm:inline">Centro de Ayuda</span>
             </button>
           </div>
@@ -1124,10 +1290,11 @@ export default function PurchaseFlowPageComponent() {
                             key={fn.id}
                             type="button"
                             onClick={() => setSelectedFunctionId(fn.id)}
-                            className={`p-3.5 rounded-xl text-left transition-all relative cursor-pointer ${isSelected
+                            className={`p-3.5 rounded-xl text-left transition-all relative cursor-pointer ${
+                              isSelected
                                 ? "border-2 border-electric-indigo bg-electric-indigo/5 shadow-md shadow-electric-indigo/10"
                                 : "border border-surface-variant hover:border-electric-indigo bg-surface-container-low/50 hover:bg-surface-gray"
-                              }`}
+                            }`}
                           >
                             {isSelected && (
                               <span className="absolute -top-2.5 right-3 bg-electric-indigo text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
@@ -1135,8 +1302,11 @@ export default function PurchaseFlowPageComponent() {
                               </span>
                             )}
                             <div
-                              className={`text-xs font-bold ${isSelected ? "text-electric-indigo" : "text-on-surface-variant"
-                                }`}
+                              className={`text-xs font-bold ${
+                                isSelected
+                                  ? "text-electric-indigo"
+                                  : "text-on-surface-variant"
+                              }`}
                             >
                               {fn.dateStr}
                             </div>
@@ -1145,12 +1315,17 @@ export default function PurchaseFlowPageComponent() {
                             </div>
                             <div className="text-[11px] mt-1 flex items-center gap-1 font-medium">
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${fn.statusType === "last_passes" ? "bg-vip-gold" : "bg-emerald-500"
-                                  }`}
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  fn.statusType === "last_passes"
+                                    ? "bg-vip-gold"
+                                    : "bg-emerald-500"
+                                }`}
                               />
                               <span
                                 className={
-                                  fn.statusType === "last_passes" ? "text-vip-gold" : "text-platinum-silver"
+                                  fn.statusType === "last_passes"
+                                    ? "text-vip-gold"
+                                    : "text-platinum-silver"
                                 }
                               >
                                 {fn.statusText}
@@ -1180,10 +1355,13 @@ export default function PurchaseFlowPageComponent() {
                       setTicketTiers((prev) =>
                         prev.map((t) => {
                           if (t.id === selectedId && t.available) {
-                            return { ...t, quantity: t.quantity > 0 ? t.quantity : 1 };
+                            return {
+                              ...t,
+                              quantity: t.quantity > 0 ? t.quantity : 1,
+                            };
                           }
                           return t;
-                        })
+                        }),
                       );
                     }}
                     occupancyPercentage={
@@ -1194,26 +1372,44 @@ export default function PurchaseFlowPageComponent() {
                               0,
                               Math.round(
                                 (event.zones.reduce(
-                                  (acc, z) => acc + Math.max(0, z.capacity - z.remainingTickets),
-                                  0
+                                  (acc, z) =>
+                                    acc +
+                                    Math.max(
+                                      0,
+                                      z.capacity - z.remainingTickets,
+                                    ),
+                                  0,
                                 ) /
-                                  (event.zones.reduce((acc, z) => acc + z.capacity, 0) || 1)) *
-                                  100
-                              )
-                            )
+                                  (event.zones.reduce(
+                                    (acc, z) => acc + z.capacity,
+                                    0,
+                                  ) || 1)) *
+                                  100,
+                              ),
+                            ),
                           )
                         : 0
                     }
                   />
 
                   {/* Banner Oficial de Límites por Persona / Antirreventa */}
-                  <div className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${remainingUserQuotaForEvent <= 0
-                      ? "bg-rose-50 border-rose-200 text-rose-900"
-                      : "bg-electric-indigo/5 border-electric-indigo/20 text-deep-slate"
-                    }`}>
-                    <span className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${remainingUserQuotaForEvent <= 0 ? "text-rose-600" : "text-electric-indigo"
-                      }`}>
-                      {remainingUserQuotaForEvent <= 0 ? "block" : "verified_user"}
+                  <div
+                    className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${
+                      remainingUserQuotaForEvent <= 0
+                        ? "bg-rose-50 border-rose-200 text-rose-900"
+                        : "bg-electric-indigo/5 border-electric-indigo/20 text-deep-slate"
+                    }`}
+                  >
+                    <span
+                      className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${
+                        remainingUserQuotaForEvent <= 0
+                          ? "text-rose-600"
+                          : "text-electric-indigo"
+                      }`}
+                    >
+                      {remainingUserQuotaForEvent <= 0
+                        ? "block"
+                        : "verified_user"}
                     </span>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1222,25 +1418,46 @@ export default function PurchaseFlowPageComponent() {
                             ? "Límite Oficial de Entradas Alcanzado"
                             : "Política Oficial de Venta Antirreventa QPH"}
                         </span>
-                        <span className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${remainingUserQuotaForEvent <= 0
-                            ? "bg-rose-100 text-rose-700"
-                            : "bg-electric-indigo/10 text-electric-indigo"
-                          }`}>
+                        <span
+                          className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${
+                            remainingUserQuotaForEvent <= 0
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-electric-indigo/10 text-electric-indigo"
+                          }`}
+                        >
                           Tope: {eventUserTicketLimit} entradas por persona
                         </span>
                       </div>
                       <p className="text-on-surface-variant leading-relaxed">
                         {remainingUserQuotaForEvent <= 0 ? (
                           <strong className="text-rose-700 font-semibold block">
-                            Ya cuentas con {alreadyPurchasedTicketsCount} entrada(s) registrada(s) para este evento. Se ha alcanzado el tope máximo permitido por persona ({eventUserTicketLimit}).
+                            Ya cuentas con {alreadyPurchasedTicketsCount}{" "}
+                            entrada(s) registrada(s) para este evento. Se ha
+                            alcanzado el tope máximo permitido por persona (
+                            {eventUserTicketLimit}).
                           </strong>
                         ) : alreadyPurchasedTicketsCount > 0 ? (
                           <span>
-                            Ya cuentas con <strong>{alreadyPurchasedTicketsCount} entrada(s)</strong> registrada(s). En esta orden puedes adquirir hasta un máximo de <strong>{remainingUserQuotaForEvent} entrada(s) más</strong>.
+                            Ya cuentas con{" "}
+                            <strong>
+                              {alreadyPurchasedTicketsCount} entrada(s)
+                            </strong>{" "}
+                            registrada(s). En esta orden puedes adquirir hasta
+                            un máximo de{" "}
+                            <strong>
+                              {remainingUserQuotaForEvent} entrada(s) más
+                            </strong>
+                            .
                           </span>
                         ) : (
                           <span>
-                            Para garantizar un acceso equitativo y evitar la reventa, cada cliente puede adquirir hasta un máximo de <strong>{eventUserTicketLimit} entradas oficiales</strong> para este evento.
+                            Para garantizar un acceso equitativo y evitar la
+                            reventa, cada cliente puede adquirir hasta un máximo
+                            de{" "}
+                            <strong>
+                              {eventUserTicketLimit} entradas oficiales
+                            </strong>{" "}
+                            para este evento.
                           </span>
                         )}
                       </p>
@@ -1264,12 +1481,13 @@ export default function PurchaseFlowPageComponent() {
                       return (
                         <div
                           key={tier.id}
-                          className={`p-5 rounded-2xl border-2 transition-all relative ${!tier.available
+                          className={`p-5 rounded-2xl border-2 transition-all relative ${
+                            !tier.available
                               ? "bg-white/60 border-surface-variant/70 opacity-70"
                               : isSelected
                                 ? "bg-white border-electric-indigo shadow-md shadow-electric-indigo/10"
                                 : "bg-white border-surface-variant hover:border-outline-variant"
-                            }`}
+                          }`}
                         >
                           {isSelected && tier.available && (
                             <span className="absolute -top-3 right-4 bg-electric-indigo text-white text-[11px] font-bold px-3 py-0.5 rounded-full shadow-sm">
@@ -1316,7 +1534,9 @@ export default function PurchaseFlowPageComponent() {
                                   <div className="flex items-center border border-surface-variant rounded-xl bg-surface-container-low p-1">
                                     <button
                                       type="button"
-                                      onClick={() => handleQuantityChange(tier.id, -1)}
+                                      onClick={() =>
+                                        handleQuantityChange(tier.id, -1)
+                                      }
                                       disabled={tier.quantity === 0}
                                       className="w-9 h-9 rounded-lg bg-white text-deep-slate hover:bg-surface-gray font-bold flex items-center justify-center border border-surface-variant shadow-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                                     >
@@ -1327,10 +1547,16 @@ export default function PurchaseFlowPageComponent() {
                                     </span>
                                     <button
                                       type="button"
-                                      onClick={() => handleQuantityChange(tier.id, 1)}
+                                      onClick={() =>
+                                        handleQuantityChange(tier.id, 1)
+                                      }
                                       disabled={isPlusDisabled}
                                       className="w-9 h-9 rounded-lg bg-electric-indigo text-white hover:bg-primary font-bold flex items-center justify-center shadow-sm transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                                      title={isPlusDisabled ? "Límite de entradas alcanzado" : "Añadir entrada"}
+                                      title={
+                                        isPlusDisabled
+                                          ? "Límite de entradas alcanzado"
+                                          : "Añadir entrada"
+                                      }
                                     >
                                       +
                                     </button>
@@ -1338,7 +1564,8 @@ export default function PurchaseFlowPageComponent() {
 
                                   <div className="text-right min-w-[90px]">
                                     <span className="block font-bold text-base text-deep-slate">
-                                      S/. {(tier.price * tier.quantity).toFixed(2)}
+                                      S/.{" "}
+                                      {(tier.price * tier.quantity).toFixed(2)}
                                     </span>
                                     <span className="text-[11px] text-platinum-silver">
                                       {tier.quantity} entradas
@@ -1371,14 +1598,17 @@ export default function PurchaseFlowPageComponent() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-variant/60 pb-5">
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-electric-indigo/10 text-electric-indigo text-[11px] font-bold mb-1.5">
-                        <span className="material-symbols-outlined text-[14px]">verified_user</span>
+                        <span className="material-symbols-outlined text-[14px]">
+                          verified_user
+                        </span>
                         <span>Pasarela Segura • Pagos en Soles (PEN)</span>
                       </div>
                       <h1 className="text-2xl font-black text-deep-slate tracking-tight">
                         Elige cómo quieres pagar
                       </h1>
                       <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
-                        Al confirmar se abrirá la pasarela protegida para completar tu pago sin salir de la plataforma.
+                        Al confirmar se abrirá la pasarela protegida para
+                        completar tu pago sin salir de la plataforma.
                       </p>
                     </div>
                     <button
@@ -1391,7 +1621,9 @@ export default function PurchaseFlowPageComponent() {
                       }}
                       className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-electric-indigo hover:bg-surface-gray border border-surface-variant/70 transition-colors cursor-pointer shrink-0"
                     >
-                      <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+                      <span className="material-symbols-outlined text-[15px]">
+                        arrow_back
+                      </span>
                       <span>Editar entradas</span>
                     </button>
                   </div>
@@ -1406,14 +1638,18 @@ export default function PurchaseFlowPageComponent() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center flex-wrap gap-2">
                             <h4 className="font-extrabold text-sm text-deep-slate">
-                              Esperando confirmación de Culqi ({pendingAsyncOrder.orderCode})
+                              Esperando confirmación de Culqi (
+                              {pendingAsyncOrder.orderCode})
                             </h4>
                             <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
                               En proceso
                             </span>
                           </div>
                           <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                            Tus entradas permanecen reservadas mientras completas la operación. Verificamos automáticamente cada pocos segundos para emitir tus códigos QR al instante.
+                            Tus entradas permanecen reservadas mientras
+                            completas la operación. Verificamos automáticamente
+                            cada pocos segundos para emitir tus códigos QR al
+                            instante.
                           </p>
                           {pendingAsyncOrder.paymentCode && (
                             <div className="mt-3 p-3 rounded-xl bg-white border border-surface-variant flex items-center justify-between gap-3">
@@ -1428,8 +1664,13 @@ export default function PurchaseFlowPageComponent() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (typeof navigator !== "undefined" && pendingAsyncOrder.paymentCode) {
-                                    void navigator.clipboard.writeText(pendingAsyncOrder.paymentCode);
+                                  if (
+                                    typeof navigator !== "undefined" &&
+                                    pendingAsyncOrder.paymentCode
+                                  ) {
+                                    void navigator.clipboard.writeText(
+                                      pendingAsyncOrder.paymentCode,
+                                    );
                                   }
                                 }}
                                 className="px-3 py-1.5 rounded-lg bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold cursor-pointer shrink-0"
@@ -1454,7 +1695,9 @@ export default function PurchaseFlowPageComponent() {
                             </>
                           ) : (
                             <>
-                              <span className="material-symbols-outlined text-[16px]">refresh</span>
+                              <span className="material-symbols-outlined text-[16px]">
+                                refresh
+                              </span>
                               <span>Ya pagué, verificar ahora</span>
                             </>
                           )}
@@ -1477,10 +1720,16 @@ export default function PurchaseFlowPageComponent() {
                         error
                       </span>
                       <div className="flex-1">
-                        <h4 className="font-bold text-sm">Transacción no completada</h4>
-                        <p className="text-xs text-red-700 mt-1">{paymentError}</p>
+                        <h4 className="font-bold text-sm">
+                          Transacción no completada
+                        </h4>
+                        <p className="text-xs text-red-700 mt-1">
+                          {paymentError}
+                        </p>
                         <p className="text-xs text-slate-600 mt-2">
-                          💡 <strong>Tus entradas continúan reservadas:</strong> Puedes reintentar o elegir otro medio de pago (por ejemplo, Tarjeta o PagoEfectivo).
+                          💡 <strong>Tus entradas continúan reservadas:</strong>{" "}
+                          Puedes reintentar o elegir otro medio de pago (por
+                          ejemplo, Tarjeta o PagoEfectivo).
                         </p>
                       </div>
                       <button
@@ -1511,10 +1760,14 @@ export default function PurchaseFlowPageComponent() {
                       </span>
                       <div className="flex items-center gap-3.5 pr-2">
                         <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 shrink-0 border border-purple-200/70">
-                          <span className="material-symbols-outlined text-2xl">qr_code_scanner</span>
+                          <span className="material-symbols-outlined text-2xl">
+                            qr_code_scanner
+                          </span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">Yape / Plin</span>
+                          <span className="font-bold text-sm text-deep-slate">
+                            Yape / Plin
+                          </span>
                           <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
                             Escanea el QR o usa código de aprobación
                           </span>
@@ -1522,11 +1775,18 @@ export default function PurchaseFlowPageComponent() {
                       </div>
                       <span
                         className={`material-symbols-outlined shrink-0 ${
-                          paymentMethod === "yape" ? "text-electric-indigo" : "text-slate-300"
+                          paymentMethod === "yape"
+                            ? "text-electric-indigo"
+                            : "text-slate-300"
                         }`}
-                        style={{ fontVariationSettings: paymentMethod === "yape" ? "'FILL' 1" : "'FILL' 0" }}
+                        style={{
+                          fontVariationSettings:
+                            paymentMethod === "yape" ? "'FILL' 1" : "'FILL' 0",
+                        }}
                       >
-                        {paymentMethod === "yape" ? "check_circle" : "radio_button_unchecked"}
+                        {paymentMethod === "yape"
+                          ? "check_circle"
+                          : "radio_button_unchecked"}
                       </span>
                     </button>
 
@@ -1542,7 +1802,9 @@ export default function PurchaseFlowPageComponent() {
                     >
                       <div className="flex items-center gap-3.5 pr-2">
                         <div className="w-11 h-11 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0 border border-electric-indigo/20">
-                          <span className="material-symbols-outlined text-2xl">credit_card</span>
+                          <span className="material-symbols-outlined text-2xl">
+                            credit_card
+                          </span>
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-deep-slate">
@@ -1555,11 +1817,18 @@ export default function PurchaseFlowPageComponent() {
                       </div>
                       <span
                         className={`material-symbols-outlined shrink-0 ${
-                          paymentMethod === "card" ? "text-electric-indigo" : "text-slate-300"
+                          paymentMethod === "card"
+                            ? "text-electric-indigo"
+                            : "text-slate-300"
                         }`}
-                        style={{ fontVariationSettings: paymentMethod === "card" ? "'FILL' 1" : "'FILL' 0" }}
+                        style={{
+                          fontVariationSettings:
+                            paymentMethod === "card" ? "'FILL' 1" : "'FILL' 0",
+                        }}
                       >
-                        {paymentMethod === "card" ? "check_circle" : "radio_button_unchecked"}
+                        {paymentMethod === "card"
+                          ? "check_circle"
+                          : "radio_button_unchecked"}
                       </span>
                     </button>
 
@@ -1575,7 +1844,9 @@ export default function PurchaseFlowPageComponent() {
                     >
                       <div className="flex items-center gap-3.5 pr-2">
                         <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 shrink-0 border border-amber-200/70">
-                          <span className="material-symbols-outlined text-2xl">account_balance</span>
+                          <span className="material-symbols-outlined text-2xl">
+                            account_balance
+                          </span>
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-deep-slate">
@@ -1588,11 +1859,20 @@ export default function PurchaseFlowPageComponent() {
                       </div>
                       <span
                         className={`material-symbols-outlined shrink-0 ${
-                          paymentMethod === "transfer" ? "text-electric-indigo" : "text-slate-300"
+                          paymentMethod === "transfer"
+                            ? "text-electric-indigo"
+                            : "text-slate-300"
                         }`}
-                        style={{ fontVariationSettings: paymentMethod === "transfer" ? "'FILL' 1" : "'FILL' 0" }}
+                        style={{
+                          fontVariationSettings:
+                            paymentMethod === "transfer"
+                              ? "'FILL' 1"
+                              : "'FILL' 0",
+                        }}
                       >
-                        {paymentMethod === "transfer" ? "check_circle" : "radio_button_unchecked"}
+                        {paymentMethod === "transfer"
+                          ? "check_circle"
+                          : "radio_button_unchecked"}
                       </span>
                     </button>
 
@@ -1608,10 +1888,14 @@ export default function PurchaseFlowPageComponent() {
                     >
                       <div className="flex items-center gap-3.5 pr-2">
                         <div className="w-11 h-11 rounded-xl bg-sky-50 flex items-center justify-center text-sky-700 shrink-0 border border-sky-200/70">
-                          <span className="material-symbols-outlined text-2xl">calendar_month</span>
+                          <span className="material-symbols-outlined text-2xl">
+                            calendar_month
+                          </span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">Cuotéalo BCP</span>
+                          <span className="font-bold text-sm text-deep-slate">
+                            Cuotéalo BCP
+                          </span>
                           <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
                             Financia en cuotas sin tarjeta con BCP
                           </span>
@@ -1619,11 +1903,20 @@ export default function PurchaseFlowPageComponent() {
                       </div>
                       <span
                         className={`material-symbols-outlined shrink-0 ${
-                          paymentMethod === "cuotealo" ? "text-electric-indigo" : "text-slate-300"
+                          paymentMethod === "cuotealo"
+                            ? "text-electric-indigo"
+                            : "text-slate-300"
                         }`}
-                        style={{ fontVariationSettings: paymentMethod === "cuotealo" ? "'FILL' 1" : "'FILL' 0" }}
+                        style={{
+                          fontVariationSettings:
+                            paymentMethod === "cuotealo"
+                              ? "'FILL' 1"
+                              : "'FILL' 0",
+                        }}
                       >
-                        {paymentMethod === "cuotealo" ? "check_circle" : "radio_button_unchecked"}
+                        {paymentMethod === "cuotealo"
+                          ? "check_circle"
+                          : "radio_button_unchecked"}
                       </span>
                     </button>
                   </div>
@@ -1636,18 +1929,22 @@ export default function PurchaseFlowPageComponent() {
                           {paymentMethod === "yape"
                             ? "qr_code_2"
                             : paymentMethod === "card"
-                            ? "shield_lock"
-                            : paymentMethod === "transfer"
-                            ? "receipt_long"
-                            : "payments"}
+                              ? "shield_lock"
+                              : paymentMethod === "transfer"
+                                ? "receipt_long"
+                                : "payments"}
                         </span>
                       </div>
                       <div className="space-y-1">
                         <h3 className="text-deep-slate text-sm font-bold">
-                          {paymentMethod === "yape" && "Pago instantáneo con Yape o Plin"}
-                          {paymentMethod === "card" && "Pago cifrado con Tarjeta (Protección 3D Secure)"}
-                          {paymentMethod === "transfer" && "Pago con Código CIP vía PagoEfectivo"}
-                          {paymentMethod === "cuotealo" && "Financiamiento directo con Cuotéalo BCP"}
+                          {paymentMethod === "yape" &&
+                            "Pago instantáneo con Yape o Plin"}
+                          {paymentMethod === "card" &&
+                            "Pago cifrado con Tarjeta (Protección 3D Secure)"}
+                          {paymentMethod === "transfer" &&
+                            "Pago con Código CIP vía PagoEfectivo"}
+                          {paymentMethod === "cuotealo" &&
+                            "Financiamiento directo con Cuotéalo BCP"}
                         </h3>
                         <p className="text-on-surface-variant text-xs leading-relaxed">
                           {paymentMethod === "yape" &&
@@ -1663,23 +1960,33 @@ export default function PurchaseFlowPageComponent() {
                     </div>
 
                     {/* Aviso Inteligente de Límites para Yape / QR */}
-                    {paymentMethod === "yape" && grandTotal > 500 && grandTotal <= 2000 && (
-                      <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-[11px]">
-                        <span className="material-symbols-outlined text-amber-600 text-[17px] shrink-0 mt-0.5">
-                          info
-                        </span>
-                        <span>
-                          Para compras entre <strong>S/. 500 y S/. 2,000</strong>, selecciona la opción de <strong>Yape con Código de Aprobación</strong> dentro de la pasarela (o verifica tu límite diario en tu app).
-                        </span>
-                      </div>
-                    )}
+                    {paymentMethod === "yape" &&
+                      grandTotal > 500 &&
+                      grandTotal <= 2000 && (
+                        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-[11px]">
+                          <span className="material-symbols-outlined text-amber-600 text-[17px] shrink-0 mt-0.5">
+                            info
+                          </span>
+                          <span>
+                            Para compras entre{" "}
+                            <strong>S/. 500 y S/. 2,000</strong>, selecciona la
+                            opción de{" "}
+                            <strong>Yape con Código de Aprobación</strong>{" "}
+                            dentro de la pasarela (o verifica tu límite diario
+                            en tu app).
+                          </span>
+                        </div>
+                      )}
                     {paymentMethod === "yape" && grandTotal > 2000 && (
                       <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-[11px]">
                         <span className="material-symbols-outlined text-rose-600 text-[17px] shrink-0 mt-0.5">
                           warning
                         </span>
                         <span>
-                          Tu compra supera el límite estándar por operación de Yape (<strong>S/. 2,000</strong>). Te recomendamos seleccionar <strong>Tarjeta</strong> o <strong>PagoEfectivo</strong>.
+                          Tu compra supera el límite estándar por operación de
+                          Yape (<strong>S/. 2,000</strong>). Te recomendamos
+                          seleccionar <strong>Tarjeta</strong> o{" "}
+                          <strong>PagoEfectivo</strong>.
                         </span>
                       </div>
                     )}
@@ -1711,7 +2018,9 @@ export default function PurchaseFlowPageComponent() {
                   <div className="p-4 bg-surface-container-lowest rounded-2xl border border-surface-variant flex items-center justify-between gap-3 shadow-xs">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-electric-indigo/10 text-electric-indigo flex items-center justify-center font-bold text-sm shrink-0">
-                        <span className="material-symbols-outlined text-[20px]">person</span>
+                        <span className="material-symbols-outlined text-[20px]">
+                          person
+                        </span>
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1730,7 +2039,8 @@ export default function PurchaseFlowPageComponent() {
                             : "Usuario Invitado"}
                         </p>
                         <p className="text-xs text-on-surface-variant truncate">
-                          {currentUser?.email || "Las entradas se emitirán a tu cuenta"}
+                          {currentUser?.email ||
+                            "Las entradas se emitirán a tu cuenta"}
                         </p>
                       </div>
                     </div>
@@ -1740,7 +2050,10 @@ export default function PurchaseFlowPageComponent() {
                         onClick={() => setShowAuthModal(true)}
                         className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1 cursor-pointer shrink-0"
                       >
-                        Iniciar sesión <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                        Iniciar sesión{" "}
+                        <span className="material-symbols-outlined text-xs">
+                          arrow_forward
+                        </span>
                       </button>
                     )}
                   </div>
@@ -1754,16 +2067,26 @@ export default function PurchaseFlowPageComponent() {
                           type="checkbox"
                           id="acceptTermsStep2Main"
                           checked={acceptedLegalTerms}
-                          onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
+                          onChange={(e) =>
+                            setAcceptedLegalTerms(e.target.checked)
+                          }
                           className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
                         />
                         <span className="text-[11px] text-slate-700 leading-tight">
                           He leído y acepto los{" "}
-                          <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                          <Link
+                            href="/terminos-y-condiciones"
+                            target="_blank"
+                            className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                          >
                             Términos y Condiciones
                           </Link>{" "}
                           y las{" "}
-                          <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                          <Link
+                            href="/politicas-de-privacidad"
+                            target="_blank"
+                            className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                          >
                             Políticas de Privacidad
                           </Link>{" "}
                           de queplanhoy.
@@ -1774,7 +2097,12 @@ export default function PurchaseFlowPageComponent() {
                     <button
                       type="button"
                       onClick={handleSubmitPayment}
-                      disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
+                      disabled={
+                        isProcessing ||
+                        Boolean(pendingAsyncOrder) ||
+                        totalTickets === 0 ||
+                        !acceptedLegalTerms
+                      }
                       className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-electric-indigo/25 active:scale-[0.99] cursor-pointer"
                     >
                       {isProcessing ? (
@@ -1784,12 +2112,16 @@ export default function PurchaseFlowPageComponent() {
                         </>
                       ) : pendingAsyncOrder ? (
                         <>
-                          <span className="material-symbols-outlined text-[20px]">hourglass_top</span>
+                          <span className="material-symbols-outlined text-[20px]">
+                            hourglass_top
+                          </span>
                           <span>Orden pendiente de confirmación...</span>
                         </>
                       ) : (
                         <>
-                          <span className="material-symbols-outlined text-[20px]">lock</span>
+                          <span className="material-symbols-outlined text-[20px]">
+                            lock
+                          </span>
                           <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
                         </>
                       )}
@@ -1801,20 +2133,26 @@ export default function PurchaseFlowPageComponent() {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-y-2.5 gap-x-6">
                       <div className="flex items-center justify-center gap-4 sm:gap-6">
                         <div className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">lock</span>
+                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">
+                            lock
+                          </span>
                           <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
                             Cifrado SSL 256-bit
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">verified_user</span>
+                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">
+                            verified_user
+                          </span>
                           <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
                             Entradas Oficiales QPH
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center justify-center gap-1">
-                        <span className="material-symbols-outlined text-[15px] text-electric-indigo">shield</span>
+                        <span className="material-symbols-outlined text-[15px] text-electric-indigo">
+                          shield
+                        </span>
                         <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
                           Estándar PCI DSS
                         </span>
@@ -1829,307 +2167,363 @@ export default function PurchaseFlowPageComponent() {
                 COLUMNA DERECHA: STICKY ORDER SUMMARY
                ------------------------------------------------------------------- */}
             <div className="lg:col-span-4">
-            <div className="sticky top-28 space-y-6">
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-surface-variant">
-                {/* Mini Banner del Evento */}
-                <div className="relative h-32 overflow-hidden">
-                  <img
-                    alt={eventTitle}
-                    className="w-full h-full object-cover"
-                    src={eventBanner}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-deep-slate to-transparent opacity-80" />
-                  <div className="absolute bottom-3 left-4 right-4 text-white">
-                    <span className="inline-block bg-electric-indigo text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase mb-1">
-                      {event?.category || "Venta Oficial"}
-                    </span>
-                    <h3 className="text-base text-white font-bold leading-tight line-clamp-1">
-                      {eventTitle}
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="p-6">
-                  {/* Info del Show Seleccionado */}
-                  <div className="space-y-2 pb-5 border-b border-surface-variant text-xs">
-                    <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
-                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
-                        calendar_month
+              <div className="sticky top-28 space-y-6">
+                <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-surface-variant">
+                  {/* Mini Banner del Evento */}
+                  <div className="relative h-32 overflow-hidden">
+                    <img
+                      alt={eventTitle}
+                      className="w-full h-full object-cover"
+                      src={eventBanner}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-deep-slate to-transparent opacity-80" />
+                    <div className="absolute bottom-3 left-4 right-4 text-white">
+                      <span className="inline-block bg-electric-indigo text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase mb-1">
+                        {event?.category || "Venta Oficial"}
                       </span>
-                      <span className="capitalize">
-                        {selectedFunction.dateStr} • {selectedFunction.timeStr}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
-                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
-                        location_on
-                      </span>
-                      <span className="truncate">{eventVenue}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
-                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
-                        airline_seat_recline_extra
-                      </span>
-                      <span>
-                        Zona:{" "}
-                        {ticketTiers.find((t) => t.quantity > 0)?.name || "Ninguna zona seleccionada"}
-                      </span>
+                      <h3 className="text-base text-white font-bold leading-tight line-clamp-1">
+                        {eventTitle}
+                      </h3>
                     </div>
                   </div>
 
-                  {/* Desglose de Precios en Soles */}
-                  <div className="py-5 border-b border-surface-variant space-y-3">
-                    {ticketTiers
-                      .filter((t) => t.quantity > 0)
-                      .map((t) => (
-                        <div key={t.id} className="flex justify-between items-start text-sm">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-deep-slate">
-                              {t.quantity}x {t.name}
-                            </span>
-                            <span className="text-xs text-on-surface-variant">
-                              S/. {t.price.toFixed(2)} por entrada
-                            </span>
-                          </div>
-                          <span className="font-bold text-deep-slate">
-                            S/. {(t.price * t.quantity).toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
-
-                    {totalTickets === 0 && (
-                      <p className="text-xs text-platinum-silver italic">
-                        Aún no has añadido entradas a tu reserva.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Desglose de Descuento por Cupón (Si aplica) */}
-                  {appliedCoupon && effectiveDiscountAmount > 0 && (
-                    <div className="my-3 py-2.5 px-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center justify-between text-xs font-semibold text-emerald-800">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="material-symbols-outlined text-emerald-600 text-[18px]">
-                          local_offer
+                  <div className="p-6">
+                    {/* Info del Show Seleccionado */}
+                    <div className="space-y-2 pb-5 border-b border-surface-variant text-xs">
+                      <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
+                        <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                          calendar_month
                         </span>
-                        <span className="truncate">
-                          Cupón {appliedCoupon.code} ({appliedCoupon.discountType === 'percentage' ? `-${appliedCoupon.discountValue}%` : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`})
+                        <span className="capitalize">
+                          {selectedFunction.dateStr} •{" "}
+                          {selectedFunction.timeStr}
                         </span>
                       </div>
-                      <span className="text-emerald-700 font-bold shrink-0">
-                        -S/. {effectiveDiscountAmount.toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Bloque Interactivo de Cupón de Descuento (Stitch Design) */}
-                  <div className="py-4 border-b border-surface-variant space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="coupon-input" className="text-xs font-bold text-deep-slate flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">confirmation_number</span>
-                        <span>¿Tienes un cupón de descuento?</span>
-                      </label>
-                      {appliedCoupon && (
-                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-full">
-                          Activo
+                      <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
+                        <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                          location_on
                         </span>
+                        <span className="truncate">{eventVenue}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
+                        <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                          airline_seat_recline_extra
+                        </span>
+                        <span>
+                          Zona:{" "}
+                          {ticketTiers.find((t) => t.quantity > 0)?.name ||
+                            "Ninguna zona seleccionada"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Desglose de Precios en Soles */}
+                    <div className="py-5 border-b border-surface-variant space-y-3">
+                      {ticketTiers
+                        .filter((t) => t.quantity > 0)
+                        .map((t) => (
+                          <div
+                            key={t.id}
+                            className="flex justify-between items-start text-sm"
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-bold text-deep-slate">
+                                {t.quantity}x {t.name}
+                              </span>
+                              <span className="text-xs text-on-surface-variant">
+                                S/. {t.price.toFixed(2)} por entrada
+                              </span>
+                            </div>
+                            <span className="font-bold text-deep-slate">
+                              S/. {(t.price * t.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+
+                      {totalTickets === 0 && (
+                        <p className="text-xs text-platinum-silver italic">
+                          Aún no has añadido entradas a tu reserva.
+                        </p>
                       )}
                     </div>
 
-                    {appliedCoupon ? (
-                      <div className="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 shadow-xs">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[20px]">verified</span>
-                          </div>
-                          <div className="truncate">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-black text-emerald-950 tracking-wider font-mono uppercase">
-                                {appliedCoupon.code}
-                              </span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                                {appliedCoupon.discountType === 'percentage'
-                                  ? `-${appliedCoupon.discountValue}%`
-                                  : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`}
+                    {/* Desglose de Descuento por Cupón (Si aplica) */}
+                    {appliedCoupon && effectiveDiscountAmount > 0 && (
+                      <div className="my-3 py-2.5 px-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center justify-between text-xs font-semibold text-emerald-800">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="material-symbols-outlined text-emerald-600 text-[18px]">
+                            local_offer
+                          </span>
+                          <span className="truncate">
+                            Cupón {appliedCoupon.code} (
+                            {appliedCoupon.discountType === "percentage"
+                              ? `-${appliedCoupon.discountValue}%`
+                              : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`}
+                            )
+                          </span>
+                        </div>
+                        <span className="text-emerald-700 font-bold shrink-0">
+                          -S/. {effectiveDiscountAmount.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Bloque Interactivo de Cupón de Descuento (Stitch Design) */}
+                    <div className="py-4 border-b border-surface-variant space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <label
+                          htmlFor="coupon-input"
+                          className="text-xs font-bold text-deep-slate flex items-center gap-1.5"
+                        >
+                          <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                            confirmation_number
+                          </span>
+                          <span>¿Tienes un cupón de descuento?</span>
+                        </label>
+                        {appliedCoupon && (
+                          <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider bg-emerald-100 px-2 py-0.5 rounded-full">
+                            Activo
+                          </span>
+                        )}
+                      </div>
+
+                      {appliedCoupon ? (
+                        <div className="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 shadow-xs">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                              <span className="material-symbols-outlined text-[20px]">
+                                verified
                               </span>
                             </div>
-                            <p className="text-[11px] text-emerald-700 truncate">
-                              {appliedCoupon.message || "Descuento aplicado en el total"}
-                            </p>
+                            <div className="truncate">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-black text-emerald-950 tracking-wider font-mono uppercase">
+                                  {appliedCoupon.code}
+                                </span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                  {appliedCoupon.discountType === "percentage"
+                                    ? `-${appliedCoupon.discountValue}%`
+                                    : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-emerald-700 truncate">
+                                {appliedCoupon.message ||
+                                  "Descuento aplicado en el total"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleRemoveCoupon}
-                          title="Remover cupón"
-                          className="w-7 h-7 rounded-lg hover:bg-emerald-200/50 text-emerald-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-base">close</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex gap-2">
-                          <input
-                            id="coupon-input"
-                            type="text"
-                            value={couponCodeInput}
-                            onChange={(e) => {
-                              setCouponCodeInput(e.target.value.toUpperCase());
-                              if (couponError) setCouponError(null);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleApplyCoupon();
-                              }
-                            }}
-                            placeholder="EJ: PROMO2026"
-                            className="w-full px-3 py-2 text-xs uppercase font-mono tracking-wider bg-surface-container-low border border-surface-variant rounded-xl focus:outline-none focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo transition-all placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-platinum-silver text-deep-slate"
-                          />
                           <button
                             type="button"
-                            onClick={handleApplyCoupon}
-                            disabled={isCouponLoading || !couponCodeInput.trim() || subtotal <= 0}
-                            className="px-4 py-2 bg-electric-indigo/10 hover:bg-electric-indigo/20 text-electric-indigo disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-bold text-xs transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+                            onClick={handleRemoveCoupon}
+                            title="Remover cupón"
+                            className="w-7 h-7 rounded-lg hover:bg-emerald-200/50 text-emerald-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                           >
-                            {isCouponLoading ? (
-                              <div className="w-3.5 h-3.5 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin" />
+                            <span className="material-symbols-outlined text-base">
+                              close
+                            </span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <input
+                              id="coupon-input"
+                              type="text"
+                              value={couponCodeInput}
+                              onChange={(e) => {
+                                setCouponCodeInput(
+                                  e.target.value.toUpperCase(),
+                                );
+                                if (couponError) setCouponError(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleApplyCoupon();
+                                }
+                              }}
+                              placeholder="EJ: PROMO2026"
+                              className="w-full px-3 py-2 text-xs uppercase font-mono tracking-wider bg-surface-container-low border border-surface-variant rounded-xl focus:outline-none focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo transition-all placeholder:normal-case placeholder:font-sans placeholder:tracking-normal placeholder:text-platinum-silver text-deep-slate"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleApplyCoupon}
+                              disabled={
+                                isCouponLoading ||
+                                !couponCodeInput.trim() ||
+                                subtotal <= 0
+                              }
+                              className="px-4 py-2 bg-electric-indigo/10 hover:bg-electric-indigo/20 text-electric-indigo disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-bold text-xs transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+                            >
+                              {isCouponLoading ? (
+                                <div className="w-3.5 h-3.5 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <span>Aplicar</span>
+                              )}
+                            </button>
+                          </div>
+                          {couponError && (
+                            <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 animate-in fade-in duration-150">
+                              <span className="material-symbols-outlined text-[13px]">
+                                error
+                              </span>
+                              <span>{couponError}</span>
+                            </p>
+                          )}
+                          {couponSuccessMessage && (
+                            <p className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 animate-in fade-in duration-150">
+                              <span className="material-symbols-outlined text-[13px]">
+                                check_circle
+                              </span>
+                              <span>{couponSuccessMessage}</span>
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Total Final */}
+                    <div className="py-5 flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="text-deep-slate text-xl font-bold">
+                          Total
+                        </span>
+                        <span className="text-[11px] text-platinum-silver">
+                          IGV y emisión digital incluidos
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        {appliedCoupon && effectiveDiscountAmount > 0 && (
+                          <span className="block text-xs text-platinum-silver line-through font-semibold">
+                            S/. {subtotal.toFixed(2)}
+                          </span>
+                        )}
+                        <span className="text-3xl font-black text-electric-indigo">
+                          S/. {grandTotal.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Contenedor Observable del Botón de Acción del Resumen (Paso 1 y Paso 2) */}
+                    <div ref={summaryCtaContainerRef} className="w-full">
+                      {/* Botón CTA al Paso de Pago (En Paso 1) */}
+                      {currentStep === 1 && (
+                        <button
+                          type="button"
+                          onClick={handleProceedToStep2}
+                          disabled={
+                            totalTickets === 0 ||
+                            remainingUserQuotaForEvent <= 0
+                          }
+                          className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
+                        >
+                          <span>
+                            {remainingUserQuotaForEvent <= 0
+                              ? "Límite Oficial Alcanzado"
+                              : "Continuar al Paso de Pago"}
+                          </span>
+                          {remainingUserQuotaForEvent > 0 && (
+                            <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
+                              arrow_forward
+                            </span>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Botón CTA de Pago (En Paso 2 - Lado Derecho en Web) */}
+                      {currentStep === 2 && (
+                        <div className="space-y-3">
+                          {/* Checkbox Obligatorio Legal de Aceptación Expresa */}
+                          <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-left">
+                            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                id="acceptTermsStep2Web"
+                                checked={acceptedLegalTerms}
+                                onChange={(e) =>
+                                  setAcceptedLegalTerms(e.target.checked)
+                                }
+                                className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
+                              />
+                              <span className="text-[11px] text-slate-700 leading-tight">
+                                He leído y acepto los{" "}
+                                <Link
+                                  href="/terminos-y-condiciones"
+                                  target="_blank"
+                                  className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                                >
+                                  Términos y Condiciones
+                                </Link>{" "}
+                                y las{" "}
+                                <Link
+                                  href="/politicas-de-privacidad"
+                                  target="_blank"
+                                  className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                                >
+                                  Políticas de Privacidad
+                                </Link>{" "}
+                                de queplanhoy.
+                              </span>
+                            </label>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleSubmitPayment}
+                            disabled={
+                              isProcessing ||
+                              Boolean(pendingAsyncOrder) ||
+                              totalTickets === 0 ||
+                              !acceptedLegalTerms
+                            }
+                            className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
+                          >
+                            {isProcessing ? (
+                              <>
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                <span>{processingLabel}</span>
+                              </>
+                            ) : pendingAsyncOrder ? (
+                              <>
+                                <span className="material-symbols-outlined">
+                                  hourglass_top
+                                </span>
+                                <span>Esperando pago Culqi...</span>
+                              </>
                             ) : (
-                              <span>Aplicar</span>
+                              <>
+                                <span className="material-symbols-outlined">
+                                  lock
+                                </span>
+                                <span>
+                                  Confirmar y Pagar S/. {grandTotal.toFixed(2)}
+                                </span>
+                              </>
                             )}
                           </button>
                         </div>
-                        {couponError && (
-                          <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 animate-in fade-in duration-150">
-                            <span className="material-symbols-outlined text-[13px]">error</span>
-                            <span>{couponError}</span>
-                          </p>
-                        )}
-                        {couponSuccessMessage && (
-                          <p className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 animate-in fade-in duration-150">
-                            <span className="material-symbols-outlined text-[13px]">check_circle</span>
-                            <span>{couponSuccessMessage}</span>
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Total Final */}
-                  <div className="py-5 flex justify-between items-center">
-                    <div className="flex flex-col">
-                      <span className="text-deep-slate text-xl font-bold">Total</span>
-                      <span className="text-[11px] text-platinum-silver">
-                        IGV y emisión digital incluidos
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      {appliedCoupon && effectiveDiscountAmount > 0 && (
-                        <span className="block text-xs text-platinum-silver line-through font-semibold">
-                          S/. {subtotal.toFixed(2)}
-                        </span>
                       )}
-                      <span className="text-3xl font-black text-electric-indigo">
-                        S/. {grandTotal.toFixed(2)}
-                      </span>
                     </div>
-                  </div>
 
-                  {/* Contenedor Observable del Botón de Acción del Resumen (Paso 1 y Paso 2) */}
-                  <div ref={summaryCtaContainerRef} className="w-full">
-                    {/* Botón CTA al Paso de Pago (En Paso 1) */}
-                    {currentStep === 1 && (
-                      <button
-                        type="button"
-                        onClick={handleProceedToStep2}
-                        disabled={totalTickets === 0 || remainingUserQuotaForEvent <= 0}
-                        className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
-                      >
-                        <span>
-                          {remainingUserQuotaForEvent <= 0
-                            ? "Límite Oficial Alcanzado"
-                            : "Continuar al Paso de Pago"}
-                        </span>
-                        {remainingUserQuotaForEvent > 0 && (
-                          <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
-                            arrow_forward
-                          </span>
-                        )}
-                      </button>
-                    )}
-
-                    {/* Botón CTA de Pago (En Paso 2 - Lado Derecho en Web) */}
-                    {currentStep === 2 && (
-                      <div className="space-y-3">
-                        {/* Checkbox Obligatorio Legal de Aceptación Expresa */}
-                        <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-left">
-                          <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              id="acceptTermsStep2Web"
-                              checked={acceptedLegalTerms}
-                              onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
-                              className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
-                            />
-                            <span className="text-[11px] text-slate-700 leading-tight">
-                              He leído y acepto los{" "}
-                              <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
-                                Términos y Condiciones
-                              </Link>{" "}
-                              y las{" "}
-                              <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
-                                Políticas de Privacidad
-                              </Link>{" "}
-                              de queplanhoy.
-                            </span>
-                          </label>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleSubmitPayment}
-                          disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
-                          className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
-                        >
-                          {isProcessing ? (
-                            <>
-                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              <span>{processingLabel}</span>
-                            </>
-                          ) : pendingAsyncOrder ? (
-                            <>
-                              <span className="material-symbols-outlined">hourglass_top</span>
-                              <span>Esperando pago Culqi...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="material-symbols-outlined">lock</span>
-                              <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
-                            </>
-                          )}
-                        </button>
+                    {/* Métodos Aceptados */}
+                    <div className="mt-5 pt-4 border-t border-surface-variant">
+                      <div className="text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
+                        Métodos oficiales aceptados:
                       </div>
-                    )}
-                  </div>
-
-                  {/* Métodos Aceptados */}
-                  <div className="mt-5 pt-4 border-t border-surface-variant">
-                    <div className="text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
-                      Métodos oficiales aceptados:
-                    </div>
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      <span className="px-2 py-1 bg-purple-50 rounded text-[10px] font-bold text-purple-700 border border-purple-200/70">
-                        Yape / Plin QR
-                      </span>
-                      <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
-                        💳 Visa / Mastercard
-                      </span>
-                      <span className="px-2 py-1 bg-amber-50 rounded text-[10px] font-bold text-amber-800 border border-amber-200/70">
-                        PagoEfectivo CIP
-                      </span>
-                      <span className="px-2 py-1 bg-sky-50 rounded text-[10px] font-bold text-sky-800 border border-sky-200/70">
-                        Cuotéalo BCP
-                      </span>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <span className="px-2 py-1 bg-purple-50 rounded text-[10px] font-bold text-purple-700 border border-purple-200/70">
+                          Yape / Plin QR
+                        </span>
+                        <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
+                          💳 Visa / Mastercard
+                        </span>
+                        <span className="px-2 py-1 bg-amber-50 rounded text-[10px] font-bold text-amber-800 border border-amber-200/70">
+                          PagoEfectivo CIP
+                        </span>
+                        <span className="px-2 py-1 bg-sky-50 rounded text-[10px] font-bold text-sky-800 border border-sky-200/70">
+                          Cuotéalo BCP
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2137,8 +2531,7 @@ export default function PurchaseFlowPageComponent() {
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
 
       {/* =========================================================================
           FOOTER GLOBAL OFICIAL (Unificado con Home y toda la plataforma)
@@ -2149,49 +2542,56 @@ export default function PurchaseFlowPageComponent() {
 
       {/* MODAL: IDENTIFICACIÓN OBLIGATORIA PARA COMPRA Y EMISIÓN DE TICKETS */}
       {showAuthModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-surface-variant space-y-5 text-center">
-          <div className="w-16 h-16 bg-electric-indigo/10 text-electric-indigo rounded-2xl flex items-center justify-center mx-auto">
-            <span className="material-symbols-outlined text-3xl">badge</span>
-          </div>
-          <div>
-            <h3 className="text-xl font-black text-deep-slate tracking-tight mb-2">
-              Inicia sesión para emitir tus entradas 🎟️
-            </h3>
-            <p className="text-xs text-on-surface-variant leading-relaxed">
-              Por seguridad y para garantizar la validez legal de tus boletos con código QR único e intransferible, tus entradas deben asociarse directamente a tu cuenta oficial.
-            </p>
-          </div>
-          <div className="space-y-2.5 pt-2">
-            <Link
-              href={`/login?redirect=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.pathname + window.location.search : ''
-              )}`}
-              className="w-full qph-btn-primary py-3 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
-            >
-              <span className="material-symbols-outlined text-[18px]">login</span>
-              <span>Iniciar Sesión</span>
-            </Link>
-            <Link
-              href={`/register?redirect=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.pathname + window.location.search : ''
-              )}`}
-              className="w-full py-2.5 px-4 rounded-xl bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Crear Cuenta Nueva</span>
-            </Link>
-            <button
-              type="button"
-              onClick={() => setShowAuthModal(false)}
-              className="w-full py-2 text-xs font-semibold text-on-surface-variant hover:text-deep-slate transition-colors cursor-pointer"
-            >
-              Volver a la selección de entradas
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-surface-variant space-y-5 text-center">
+            <div className="w-16 h-16 bg-electric-indigo/10 text-electric-indigo rounded-2xl flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-3xl">badge</span>
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-deep-slate tracking-tight mb-2">
+                Inicia sesión para emitir tus entradas 🎟️
+              </h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Por seguridad y para garantizar la validez legal de tus boletos
+                con código QR único e intransferible, tus entradas deben
+                asociarse directamente a tu cuenta oficial.
+              </p>
+            </div>
+            <div className="space-y-2.5 pt-2">
+              <Link
+                href={`/login?redirect=${encodeURIComponent(
+                  typeof window !== "undefined"
+                    ? window.location.pathname + window.location.search
+                    : "",
+                )}`}
+                className="w-full qph-btn-primary py-3 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  login
+                </span>
+                <span>Iniciar Sesión</span>
+              </Link>
+              <Link
+                href={`/register?redirect=${encodeURIComponent(
+                  typeof window !== "undefined"
+                    ? window.location.pathname + window.location.search
+                    : "",
+                )}`}
+                className="w-full py-2.5 px-4 rounded-xl bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Crear Cuenta Nueva</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(false)}
+                className="w-full py-2 text-xs font-semibold text-on-surface-variant hover:text-deep-slate transition-colors cursor-pointer"
+              >
+                Volver a la selección de entradas
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )
-  }
+      )}
 
       {/* OVERLAY MODAL BLOQUEANTE: PROCESAMIENTO ACTIVO DEL PAGO */}
       {isProcessing && !isGatewayModalOpen && !isReservationExpired && (
@@ -2217,7 +2617,8 @@ export default function PurchaseFlowPageComponent() {
                 {processingLabel}
               </p>
               <p className="text-xs text-on-surface-variant leading-relaxed pt-1">
-                Por favor no cierres ni recargues esta ventana mientras confirmamos tu compra con la pasarela.
+                Por favor no cierres ni recargues esta ventana mientras
+                confirmamos tu compra con la pasarela.
               </p>
             </div>
           </div>
@@ -2234,7 +2635,9 @@ export default function PurchaseFlowPageComponent() {
         >
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-red-100 space-y-5 text-center">
             <div className="w-16 h-16 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-4xl">timer_off</span>
+              <span className="material-symbols-outlined text-4xl">
+                timer_off
+              </span>
             </div>
             <div className="space-y-2">
               <h3
@@ -2244,7 +2647,9 @@ export default function PurchaseFlowPageComponent() {
                 ¡Tu tiempo se acabó!
               </h3>
               <p className="text-sm text-on-surface-variant leading-relaxed">
-                El tiempo límite de reserva temporal en la pasarela ha finalizado y tus entradas fueron liberadas. Por favor, inicia nuevamente tu proceso de compra desde el inicio.
+                El tiempo límite de reserva temporal en la pasarela ha
+                finalizado y tus entradas fueron liberadas. Por favor, inicia
+                nuevamente tu proceso de compra desde el inicio.
               </p>
             </div>
             <div className="pt-2">
@@ -2256,7 +2661,9 @@ export default function PurchaseFlowPageComponent() {
                 }}
                 className="w-full qph-btn-primary py-3.5 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-electric-indigo/25"
               >
-                <span className="material-symbols-outlined text-[20px]">home</span>
+                <span className="material-symbols-outlined text-[20px]">
+                  home
+                </span>
                 <span>Volver al Inicio</span>
               </Link>
             </div>
@@ -2293,7 +2700,10 @@ export default function PurchaseFlowPageComponent() {
                   <span className="material-symbols-outlined text-[16px] text-electric-indigo">
                     receipt_long
                   </span>
-                  <span>Detalle de la orden ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})</span>
+                  <span>
+                    Detalle de la orden ({totalTickets}{" "}
+                    {totalTickets === 1 ? "entrada" : "entradas"})
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -2301,7 +2711,9 @@ export default function PurchaseFlowPageComponent() {
                   aria-label="Cerrar detalle"
                   className="w-6 h-6 rounded-full bg-white border border-surface-variant flex items-center justify-center text-on-surface-variant hover:text-deep-slate cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[14px]">close</span>
+                  <span className="material-symbols-outlined text-[14px]">
+                    close
+                  </span>
                 </button>
               </div>
 
@@ -2331,7 +2743,9 @@ export default function PurchaseFlowPageComponent() {
                 {appliedCoupon && effectiveDiscountAmount > 0 && (
                   <div className="flex items-center justify-between text-xs py-1 text-emerald-700 font-semibold border-t border-dashed border-surface-variant/80 pt-1.5">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">local_offer</span>
+                      <span className="material-symbols-outlined text-[14px]">
+                        local_offer
+                      </span>
                       <span>Cupón {appliedCoupon.code}</span>
                     </span>
                     <span className="font-bold tabular-nums">
@@ -2342,7 +2756,9 @@ export default function PurchaseFlowPageComponent() {
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-surface-variant/80 text-xs">
-                <span className="font-bold text-on-surface-variant">Total a pagar</span>
+                <span className="font-bold text-on-surface-variant">
+                  Total a pagar
+                </span>
                 <span className="font-black text-electric-indigo text-sm tabular-nums">
                   S/. {grandTotal.toFixed(2)}
                 </span>
@@ -2359,13 +2775,22 @@ export default function PurchaseFlowPageComponent() {
                     />
                     <span className="text-[10px] text-slate-600 leading-tight">
                       He leído y acepto los{" "}
-                      <Link href="/terminos-y-condiciones" target="_blank" className="font-bold underline text-electric-indigo">
+                      <Link
+                        href="/terminos-y-condiciones"
+                        target="_blank"
+                        className="font-bold underline text-electric-indigo"
+                      >
                         Términos y Condiciones
                       </Link>{" "}
                       y las{" "}
-                      <Link href="/politicas-de-privacidad" target="_blank" className="font-bold underline text-electric-indigo">
+                      <Link
+                        href="/politicas-de-privacidad"
+                        target="_blank"
+                        className="font-bold underline text-electric-indigo"
+                      >
                         Políticas de Privacidad
-                      </Link>.
+                      </Link>
+                      .
                     </span>
                   </label>
                 </div>
@@ -2393,7 +2818,8 @@ export default function PurchaseFlowPageComponent() {
                   </span>
                   <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5 whitespace-nowrap">
                     <span>
-                      ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
+                      ({totalTickets}{" "}
+                      {totalTickets === 1 ? "entrada" : "entradas"})
                     </span>
                     {appliedCoupon && (
                       <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
@@ -2406,7 +2832,10 @@ export default function PurchaseFlowPageComponent() {
             ) : (
               <button
                 type="button"
-                onClick={() => totalTickets > 0 && setIsMobileSummaryExpanded((prev) => !prev)}
+                onClick={() =>
+                  totalTickets > 0 &&
+                  setIsMobileSummaryExpanded((prev) => !prev)
+                }
                 aria-expanded={isMobileSummaryExpanded}
                 className="flex flex-col text-left cursor-pointer min-w-0"
               >
@@ -2433,7 +2862,8 @@ export default function PurchaseFlowPageComponent() {
                     </span>
                   )}
                   <span className="text-[11px] text-platinum-silver font-medium">
-                    ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
+                    ({totalTickets}{" "}
+                    {totalTickets === 1 ? "entrada" : "entradas"})
                   </span>
                 </div>
               </button>
@@ -2445,9 +2875,14 @@ export default function PurchaseFlowPageComponent() {
                 type="button"
                 onClick={() => {
                   if (totalTickets === 0) {
-                    const selector = document.getElementById("tickets-selector-section");
+                    const selector = document.getElementById(
+                      "tickets-selector-section",
+                    );
                     if (selector) {
-                      selector.scrollIntoView({ behavior: "smooth", block: "start" });
+                      selector.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
                     }
                     return;
                   }
@@ -2456,8 +2891,12 @@ export default function PurchaseFlowPageComponent() {
                 }}
                 className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
               >
-                <span>{totalTickets === 0 ? "Elegir entradas" : "Continuar"}</span>
-                <span className="material-symbols-outlined text-base">arrow_forward</span>
+                <span>
+                  {totalTickets === 0 ? "Elegir entradas" : "Continuar"}
+                </span>
+                <span className="material-symbols-outlined text-base">
+                  arrow_forward
+                </span>
               </button>
             ) : (
               <button
@@ -2470,7 +2909,12 @@ export default function PurchaseFlowPageComponent() {
                   setIsMobileSummaryExpanded(false);
                   handleSubmitPayment();
                 }}
-                disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
+                disabled={
+                  isProcessing ||
+                  Boolean(pendingAsyncOrder) ||
+                  totalTickets === 0 ||
+                  !acceptedLegalTerms
+                }
                 className="px-4 py-3 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
               >
                 {isProcessing ? (
@@ -2480,12 +2924,16 @@ export default function PurchaseFlowPageComponent() {
                   </>
                 ) : pendingAsyncOrder ? (
                   <>
-                    <span className="material-symbols-outlined text-[16px]">hourglass_top</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      hourglass_top
+                    </span>
                     <span>En espera...</span>
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[16px]">lock</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      lock
+                    </span>
                     <span>Pagar S/. {grandTotal.toFixed(2)}</span>
                   </>
                 )}

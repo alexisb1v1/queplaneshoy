@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import ImageUploader from './image-uploader';
-import { slugify } from '../../constants/eventConstants';
+import React, { useState, useEffect } from "react";
+import ImageUploader from "./image-uploader";
+import { slugify } from "../../constants/eventConstants";
 
 export interface LandingConfigData {
   header?: {
@@ -30,7 +30,7 @@ export interface LandingConfigData {
     primaryColor?: string;
     backgroundColor?: string;
     backgroundPatternUrl?: string;
-    backgroundType?: 'color' | 'pattern' | 'fixed';
+    backgroundType?: "color" | "pattern" | "fixed";
   };
 }
 
@@ -73,18 +73,18 @@ export function LandingConfigManager({
   onChangeConfig,
   slug,
   onChangeSlug,
-  eventTitle = 'Título del Evento',
+  eventTitle = "Título del Evento",
   promoVideoUrl,
   socialLinks,
   eventPreviewData,
   hideTopToggle = false,
 }: LandingConfigManagerProps) {
-  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+  const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
 
   const updateSection = (
-    section: 'header' | 'body' | 'footer' | 'theme',
+    section: "header" | "body" | "footer" | "theme",
     field: string,
-    value: any
+    value: any,
   ) => {
     onChangeConfig({
       ...config,
@@ -95,61 +95,69 @@ export function LandingConfigManager({
     });
   };
 
-  const ctaText = config.header?.ctaText || '¡Asegurar Mis Entradas!';
+  const ctaText = config.header?.ctaText || "¡Asegurar Mis Entradas!";
   const headerImg = config.header?.headerImageUrl;
   const bodyImg = config.body?.bodyImageUrl;
   const footerImg = config.footer?.footerImageUrl;
-  const h1 = config.body?.highlight1?.trim() || '';
-  const h2 = config.body?.highlight2?.trim() || '';
-  const h3 = config.body?.highlight3?.trim() || '';
+  const h1 = config.body?.highlight1?.trim() || "";
+  const h2 = config.body?.highlight2?.trim() || "";
+  const h3 = config.body?.highlight3?.trim() || "";
   const activeHighlights = [h1, h2, h3].filter(Boolean);
 
-  const bgType = config.theme?.backgroundType || (config.theme?.backgroundPatternUrl ? 'pattern' : 'color');
-  const bgColor = config.theme?.backgroundColor || '#0B0F19';
-  const bgPattern = config.theme?.backgroundPatternUrl || '';
+  const bgType =
+    config.theme?.backgroundType ||
+    (config.theme?.backgroundPatternUrl ? "pattern" : "color");
+  const bgColor = config.theme?.backgroundColor || "#0B0F19";
+  const bgPattern = config.theme?.backgroundPatternUrl || "";
 
   const PRESET_BG_COLORS = [
-    { label: 'Negro Carbón', hex: '#0B0F19' },
-    { label: 'Azul Marino', hex: '#1E3A8A' },
-    { label: 'Índigo Eléctrico', hex: '#3730A3' },
-    { label: 'Púrpura Neón', hex: '#581C87' },
-    { label: 'Borgoña / Vino', hex: '#7F1D1D' },
-    { label: 'Verde Bosque', hex: '#064E3B' },
-    { label: 'Gris Pizarra', hex: '#334155' },
+    { label: "Negro Carbón", hex: "#0B0F19" },
+    { label: "Azul Marino", hex: "#1E3A8A" },
+    { label: "Índigo Eléctrico", hex: "#3730A3" },
+    { label: "Púrpura Neón", hex: "#581C87" },
+    { label: "Borgoña / Vino", hex: "#7F1D1D" },
+    { label: "Verde Bosque", hex: "#064E3B" },
+    { label: "Gris Pizarra", hex: "#334155" },
   ];
 
   const buildPreviewPayload = () => {
-    const finalSlug = slug || 'evento-temporal';
+    const finalSlug = slug || "evento-temporal";
     return {
-      id: 'temp-preview',
-      publicUuid: 'temp-preview',
+      id: "temp-preview",
+      publicUuid: "temp-preview",
       slug: finalSlug,
-      name: eventTitle || 'Título del Evento',
-      category: 'CONCERTS',
-      venue: eventPreviewData?.venue || 'Recinto Oficial',
-      address: eventPreviewData?.address || 'Dirección Oficial',
-      city: eventPreviewData?.city || 'Ciudad Oficial',
+      name: eventTitle || "Título del Evento",
+      category: "CONCERTS",
+      venue: eventPreviewData?.venue || "Recinto Oficial",
+      address: eventPreviewData?.address || "Dirección Oficial",
+      city: eventPreviewData?.city || "Ciudad Oficial",
       hasLandingPage: true,
-      bannerUrl: config.header?.headerImageUrl || eventPreviewData?.bannerUrl || null,
+      bannerUrl:
+        config.header?.headerImageUrl || eventPreviewData?.bannerUrl || null,
       zoneMapUrl: eventPreviewData?.zoneMapUrl || null,
       termsAndConditionsUrl: eventPreviewData?.termsAndConditionsUrl || null,
-      ageRestriction: eventPreviewData?.ageRestriction || 'ALL_AGES',
+      ageRestriction: eventPreviewData?.ageRestriction || "ALL_AGES",
       landingConfig: {
         theme: {
-          primaryColor: config.theme?.primaryColor || '#6366F1',
+          primaryColor: config.theme?.primaryColor || "#6366F1",
           backgroundType: bgType,
           backgroundColor: bgColor,
           backgroundPatternUrl: bgPattern || null,
         },
         header: {
           title: config.header?.title || eventTitle,
-          subtitle: config.header?.subtitle || '',
-          ctaText: config.header?.ctaText || 'Comprar Entradas Oficiales',
-          headerImageUrl: config.header?.headerImageUrl || eventPreviewData?.bannerUrl || null,
-          videoTeaserUrl: promoVideoUrl || config.header?.videoTeaserUrl || null,
+          subtitle: config.header?.subtitle || "",
+          ctaText: config.header?.ctaText || "Comprar Entradas Oficiales",
+          headerImageUrl:
+            config.header?.headerImageUrl ||
+            eventPreviewData?.bannerUrl ||
+            null,
+          videoTeaserUrl:
+            promoVideoUrl || config.header?.videoTeaserUrl || null,
         },
         body: {
-          aboutText: config.body?.aboutText || eventPreviewData?.description || null,
+          aboutText:
+            config.body?.aboutText || eventPreviewData?.description || null,
           bodyImageUrl: config.body?.bodyImageUrl || null,
           highlight1: h1 || null,
           highlight2: h2 || null,
@@ -158,14 +166,16 @@ export function LandingConfigManager({
         footer: {
           footerImageUrl: config.footer?.footerImageUrl || null,
           tiktokUrl: socialLinks?.tiktokUrl || config.footer?.tiktokUrl || null,
-          facebookUrl: socialLinks?.facebookUrl || config.footer?.facebookUrl || null,
-          instagramUrl: socialLinks?.instagramUrl || config.footer?.instagramUrl || null,
+          facebookUrl:
+            socialLinks?.facebookUrl || config.footer?.facebookUrl || null,
+          instagramUrl:
+            socialLinks?.instagramUrl || config.footer?.instagramUrl || null,
         },
       },
       shows: (eventPreviewData?.shows || []).map((s, idx) => ({
         id: String(idx + 1),
         publicUuid: `show-${idx + 1}`,
-        name: s.name || 'Función Principal',
+        name: s.name || "Función Principal",
         startTime: s.startTime || new Date().toISOString(),
         durationHours: Number(s.durationHours) || 2,
       })),
@@ -174,11 +184,11 @@ export function LandingConfigManager({
         publicUuid: `zone-${idx + 1}`,
         name: z.name || `Zona ${idx + 1}`,
         title: z.title || null,
-        color: z.color || '#3B82F6',
+        color: z.color || "#3B82F6",
         benefits: z.benefits || null,
         regularPrice: Number(z.regularPrice) || 50,
         currentPrice: Number(z.regularPrice) || 50,
-        activeTierName: 'Venta Regular',
+        activeTierName: "Venta Regular",
         capacity: Number(z.capacity) || 100,
         remainingTickets: Number(z.capacity) || 100,
         isSoldOut: false,
@@ -190,12 +200,12 @@ export function LandingConfigManager({
 
   // Sincronización continua e instantánea en localStorage para evitar errores de 404 al previsualizar
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     try {
       const payload = buildPreviewPayload();
-      const finalSlug = slug || 'evento-temporal';
+      const finalSlug = slug || "evento-temporal";
       localStorage.setItem(`qph_preview_${finalSlug}`, JSON.stringify(payload));
-      localStorage.setItem('qph_preview_temp', JSON.stringify(payload));
+      localStorage.setItem("qph_preview_temp", JSON.stringify(payload));
     } catch {
       // noop
     }
@@ -216,15 +226,18 @@ export function LandingConfigManager({
 
   const handleOpenLivePreview = (e: React.MouseEvent) => {
     e.preventDefault();
-    const finalSlug = slug || 'evento-temporal';
+    const finalSlug = slug || "evento-temporal";
     try {
       const payload = buildPreviewPayload();
       localStorage.setItem(`qph_preview_${finalSlug}`, JSON.stringify(payload));
-      localStorage.setItem('qph_preview_temp', JSON.stringify(payload));
+      localStorage.setItem("qph_preview_temp", JSON.stringify(payload));
     } catch (err) {
-      console.warn('No se pudo guardar la previsualización en localStorage', err);
+      console.warn(
+        "No se pudo guardar la previsualización en localStorage",
+        err,
+      );
     }
-    window.open(`/e/${finalSlug}?previewTemp=true`, '_blank');
+    window.open(`/e/${finalSlug}?previewTemp=true`, "_blank");
   };
 
   return (
@@ -235,22 +248,28 @@ export function LandingConfigManager({
           <div className="w-12 h-12 rounded-2xl bg-electric-indigo/10 text-electric-indigo flex items-center justify-center mx-auto">
             <span className="material-symbols-outlined text-2xl">web</span>
           </div>
-          <h3 className="font-bold text-sm text-deep-slate">La Landing Page Dedicada está desactivada</h3>
+          <h3 className="font-bold text-sm text-deep-slate">
+            La Landing Page Dedicada está desactivada
+          </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Activa el interruptor en la esquina superior derecha del encabezado para configurar la URL exclusiva, paleta de colores, banner y croquis de tu evento.
+            Activa el interruptor en la esquina superior derecha del encabezado
+            para configurar la URL exclusiva, paleta de colores, banner y
+            croquis de tu evento.
           </p>
           <button
             type="button"
             onClick={() => {
               onToggleLanding(true);
-              if (!slug || slug.trim() === '') {
+              if (!slug || slug.trim() === "") {
                 const auto = slugify(eventTitle);
                 if (auto) onChangeSlug(auto);
               }
             }}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-electric-indigo text-white text-xs font-bold shadow-md hover:bg-electric-indigo/90 transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">toggle_on</span>
+            <span className="material-symbols-outlined text-[16px]">
+              toggle_on
+            </span>
             <span>Activar Landing Page Ahora</span>
           </button>
         </div>
@@ -263,27 +282,31 @@ export function LandingConfigManager({
             <div className="flex items-center gap-1.5 p-1 bg-surface-gray rounded-xl border border-surface-variant/60">
               <button
                 type="button"
-                onClick={() => setActiveTab('editor')}
+                onClick={() => setActiveTab("editor")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'editor'
-                    ? 'bg-white text-electric-indigo shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                  activeTab === "editor"
+                    ? "bg-white text-electric-indigo shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <span className="material-symbols-outlined text-[16px]">tune</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  tune
+                </span>
                 Editor de Secciones
               </button>
 
               <button
                 type="button"
-                onClick={() => setActiveTab('preview')}
+                onClick={() => setActiveTab("preview")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'preview'
-                    ? 'bg-white text-electric-indigo shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                  activeTab === "preview"
+                    ? "bg-white text-electric-indigo shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <span className="material-symbols-outlined text-[16px]">visibility</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  visibility
+                </span>
                 Vista Previa en Vivo
               </button>
             </div>
@@ -295,7 +318,9 @@ export function LandingConfigManager({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-electric-indigo/10 hover:bg-electric-indigo/20 text-electric-indigo text-xs font-bold transition-all border border-electric-indigo/20 cursor-pointer shadow-2xs"
                 title="Abrir vista previa en pestaña nueva"
               >
-                <span className="material-symbols-outlined text-[15px]">open_in_new</span>
+                <span className="material-symbols-outlined text-[15px]">
+                  open_in_new
+                </span>
                 <span>Probar en vivo (?previewTemp)</span>
               </button>
               <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
@@ -306,27 +331,30 @@ export function LandingConfigManager({
           </div>
 
           {/* VISTA 1: EDITOR DE SECCIONES (COMPACTO) */}
-          {activeTab === 'editor' && (
+          {activeTab === "editor" && (
             <div className="space-y-4 animate-in fade-in duration-150">
               {/* SLUG: Input y Botón a la misma altura */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-deep-slate block">
-                  Enlace Web Oficial (Slug del Landing)<span className="text-red-500 ml-0.5">*</span>
+                  Enlace Web Oficial (Slug del Landing)
+                  <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <div className="flex-1 h-11 flex items-center rounded-xl bg-surface-gray border border-surface-variant/60 px-3.5 shadow-xs focus-within:border-electric-indigo focus-within:ring-1 focus-within:ring-electric-indigo">
-                    <span className="text-xs text-slate-400 font-mono shrink-0">queplanhoy.com/e/</span>
+                    <span className="text-xs text-slate-400 font-mono shrink-0">
+                      queplanhoy.com/e/
+                    </span>
                     <input
                       type="text"
                       value={slug}
                       onChange={(e) => {
                         const sanitized = e.target.value
                           .toLowerCase()
-                          .normalize('NFD')
-                          .replace(/[\u0300-\u036f]/g, '')
-                          .replace(/ñ/g, 'n')
-                          .replace(/[^a-z0-9-]/g, '-')
-                          .replace(/-+/g, '-');
+                          .normalize("NFD")
+                          .replace(/[\u0300-\u036f]/g, "")
+                          .replace(/ñ/g, "n")
+                          .replace(/[^a-z0-9-]/g, "-")
+                          .replace(/-+/g, "-");
                         onChangeSlug(sanitized);
                       }}
                       placeholder="mi-evento-especial-2026"
@@ -334,20 +362,25 @@ export function LandingConfigManager({
                     />
                   </div>
 
-                  {eventTitle && eventTitle.trim() !== '' && eventTitle !== 'Título del Evento' && (
-                    <button
-                      type="button"
-                      onClick={() => onChangeSlug(slugify(eventTitle))}
-                      className="h-11 flex items-center justify-center gap-1.5 px-4 text-xs font-bold text-electric-indigo bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors border border-indigo-200 shrink-0 cursor-pointer shadow-2xs"
-                      title="Regenerar URL a partir del nombre del evento"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">sync</span>
-                      <span>Sincronizar con título</span>
-                    </button>
-                  )}
+                  {eventTitle &&
+                    eventTitle.trim() !== "" &&
+                    eventTitle !== "Título del Evento" && (
+                      <button
+                        type="button"
+                        onClick={() => onChangeSlug(slugify(eventTitle))}
+                        className="h-11 flex items-center justify-center gap-1.5 px-4 text-xs font-bold text-electric-indigo bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors border border-indigo-200 shrink-0 cursor-pointer shadow-2xs"
+                        title="Regenerar URL a partir del nombre del evento"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          sync
+                        </span>
+                        <span>Sincronizar con título</span>
+                      </button>
+                    )}
                 </div>
                 <p className="text-[11px] text-on-surface-variant">
-                  URL exclusiva sin espacios ni caracteres especiales para tus campañas de marketing y redes sociales.
+                  URL exclusiva sin espacios ni caracteres especiales para tus
+                  campañas de marketing y redes sociales.
                 </p>
               </div>
 
@@ -355,7 +388,9 @@ export function LandingConfigManager({
               <div className="p-4 rounded-xl bg-surface-gray/50 border border-surface-variant/60 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs uppercase tracking-wider text-deep-slate flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-electric-indigo text-[16px]">web</span>
+                    <span className="material-symbols-outlined text-electric-indigo text-[16px]">
+                      web
+                    </span>
                     1. Encabezado / Hero
                   </span>
                   <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
@@ -368,8 +403,10 @@ export function LandingConfigManager({
                     compact={true}
                     aspectRatio="banner"
                     folder="landings"
-                    value={headerImg || ''}
-                    onChange={(val) => updateSection('header', 'headerImageUrl', val)}
+                    value={headerImg || ""}
+                    onChange={(val) =>
+                      updateSection("header", "headerImageUrl", val)
+                    }
                     helpText="Resolución óptima: 1920x800 px o 1920x1080 px (Admite PNG con transparencia)"
                   />
 
@@ -379,11 +416,13 @@ export function LandingConfigManager({
                         videocam
                       </span>
                       <div>
-                        <span className="font-bold text-deep-slate block">Video Promocional vinculado</span>
+                        <span className="font-bold text-deep-slate block">
+                          Video Promocional vinculado
+                        </span>
                         <span className="text-[10px] text-slate-500 leading-relaxed block mt-0.5">
                           {promoVideoUrl?.trim()
-                            ? 'Se reproducirá automáticamente el video configurado en la fase Multimedia.'
-                            : 'Puedes vincular un video teaser oficial en la fase Multimedia & Portada.'}
+                            ? "Se reproducirá automáticamente el video configurado en la fase Multimedia."
+                            : "Puedes vincular un video teaser oficial en la fase Multimedia & Portada."}
                         </span>
                       </div>
                     </div>
@@ -395,7 +434,9 @@ export function LandingConfigManager({
               <div className="p-4 rounded-xl bg-surface-gray/50 border border-surface-variant/60 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs uppercase tracking-wider text-deep-slate flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-electric-indigo text-[16px]">photo_library</span>
+                    <span className="material-symbols-outlined text-electric-indigo text-[16px]">
+                      photo_library
+                    </span>
                     2. Cuerpo / Body
                   </span>
                   <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
@@ -408,8 +449,10 @@ export function LandingConfigManager({
                     compact={true}
                     aspectRatio="banner"
                     folder="landings"
-                    value={bodyImg || ''}
-                    onChange={(val) => updateSection('body', 'bodyImageUrl', val)}
+                    value={bodyImg || ""}
+                    onChange={(val) =>
+                      updateSection("body", "bodyImageUrl", val)
+                    }
                     helpText="Resolución óptima: 1920x800 px o 1400x600 px (Banner publicitario horizontal a pantalla completa)"
                   />
 
@@ -419,31 +462,43 @@ export function LandingConfigManager({
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <span className="text-[10px] font-bold text-slate-500 block mb-0.5">Atractivo 1</span>
+                        <span className="text-[10px] font-bold text-slate-500 block mb-0.5">
+                          Atractivo 1
+                        </span>
                         <input
                           type="text"
-                          value={config.body?.highlight1 || ''}
-                          onChange={(e) => updateSection('body', 'highlight1', e.target.value)}
+                          value={config.body?.highlight1 || ""}
+                          onChange={(e) =>
+                            updateSection("body", "highlight1", e.target.value)
+                          }
                           placeholder="Ej: 3 Escenarios en simultáneo"
                           className="w-full px-3 py-1.5 rounded-lg bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none focus:border-electric-indigo"
                         />
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold text-slate-500 block mb-0.5">Atractivo 2</span>
+                        <span className="text-[10px] font-bold text-slate-500 block mb-0.5">
+                          Atractivo 2
+                        </span>
                         <input
                           type="text"
-                          value={config.body?.highlight2 || ''}
-                          onChange={(e) => updateSection('body', 'highlight2', e.target.value)}
+                          value={config.body?.highlight2 || ""}
+                          onChange={(e) =>
+                            updateSection("body", "highlight2", e.target.value)
+                          }
                           placeholder="Ej: Patio gastronómico gourmet"
                           className="w-full px-3 py-1.5 rounded-lg bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none focus:border-electric-indigo"
                         />
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold text-slate-500 block mb-0.5">Atractivo 3</span>
+                        <span className="text-[10px] font-bold text-slate-500 block mb-0.5">
+                          Atractivo 3
+                        </span>
                         <input
                           type="text"
-                          value={config.body?.highlight3 || ''}
-                          onChange={(e) => updateSection('body', 'highlight3', e.target.value)}
+                          value={config.body?.highlight3 || ""}
+                          onChange={(e) =>
+                            updateSection("body", "highlight3", e.target.value)
+                          }
                           placeholder="Ej: Seguridad privada 360°"
                           className="w-full px-3 py-1.5 rounded-lg bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none focus:border-electric-indigo"
                         />
@@ -457,7 +512,9 @@ export function LandingConfigManager({
               <div className="p-4 rounded-xl bg-surface-gray/50 border border-surface-variant/60 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs uppercase tracking-wider text-deep-slate flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-electric-indigo text-[16px]">vertical_align_bottom</span>
+                    <span className="material-symbols-outlined text-electric-indigo text-[16px]">
+                      vertical_align_bottom
+                    </span>
                     3. Pie de Página / Footer
                   </span>
                   <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
@@ -470,21 +527,28 @@ export function LandingConfigManager({
                     compact={true}
                     aspectRatio="banner"
                     folder="landings"
-                    value={footerImg || ''}
-                    onChange={(val) => updateSection('footer', 'footerImageUrl', val)}
+                    value={footerImg || ""}
+                    onChange={(val) =>
+                      updateSection("footer", "footerImageUrl", val)
+                    }
                     helpText="Resolución óptima: 1400x400 px (Banners de sponsors, logos o marcas aliadas)"
                   />
 
                   <div className="p-3.5 rounded-xl bg-white border border-surface-variant/70 space-y-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-deep-slate">
-                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">share</span>
+                      <span className="material-symbols-outlined text-electric-indigo text-[18px]">
+                        share
+                      </span>
                       <span>Redes Sociales Oficiales</span>
                     </div>
                     <p className="text-[11px] text-slate-500 leading-relaxed">
-                      Instagram, TikTok y Facebook ahora se configuran en la fase <strong>2. Multimedia &amp; Portada</strong> y se muestran automáticamente en el pie de página del landing.
+                      Instagram, TikTok y Facebook ahora se configuran en la
+                      fase <strong>2. Multimedia &amp; Portada</strong> y se
+                      muestran automáticamente en el pie de página del landing.
                     </p>
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {(socialLinks?.instagramUrl || config.footer?.instagramUrl) && (
+                      {(socialLinks?.instagramUrl ||
+                        config.footer?.instagramUrl) && (
                         <span className="px-2 py-0.5 rounded-md bg-pink-50 text-pink-700 text-[10px] font-bold border border-pink-200">
                           Instagram activo
                         </span>
@@ -494,7 +558,8 @@ export function LandingConfigManager({
                           TikTok activo
                         </span>
                       )}
-                      {(socialLinks?.facebookUrl || config.footer?.facebookUrl) && (
+                      {(socialLinks?.facebookUrl ||
+                        config.footer?.facebookUrl) && (
                         <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
                           Facebook activo
                         </span>
@@ -507,7 +572,9 @@ export function LandingConfigManager({
                         config.footer?.tiktokUrl ||
                         config.footer?.facebookUrl
                       ) && (
-                        <span className="text-[10px] text-slate-400">Sin enlaces de redes registrados aún</span>
+                        <span className="text-[10px] text-slate-400">
+                          Sin enlaces de redes registrados aún
+                        </span>
                       )}
                     </div>
                   </div>
@@ -518,33 +585,47 @@ export function LandingConfigManager({
               <div className="p-4 rounded-xl bg-surface-gray/50 border border-surface-variant/60 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs uppercase tracking-wider text-deep-slate flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-electric-indigo text-[16px]">palette</span>
+                    <span className="material-symbols-outlined text-electric-indigo text-[16px]">
+                      palette
+                    </span>
                     4. Fondo y Estilo Visual del Landing
                   </span>
                   <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-surface-variant/60 text-[11px] font-bold">
                     <button
                       type="button"
-                      onClick={() => updateSection('theme', 'backgroundType', 'color')}
+                      onClick={() =>
+                        updateSection("theme", "backgroundType", "color")
+                      }
                       className={`px-2.5 py-1 rounded-md transition-colors ${
-                        bgType === 'color' ? 'bg-electric-indigo text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        bgType === "color"
+                          ? "bg-electric-indigo text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       Color Sólido
                     </button>
                     <button
                       type="button"
-                      onClick={() => updateSection('theme', 'backgroundType', 'fixed')}
+                      onClick={() =>
+                        updateSection("theme", "backgroundType", "fixed")
+                      }
                       className={`px-2.5 py-1 rounded-md transition-colors ${
-                        bgType === 'fixed' ? 'bg-electric-indigo text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        bgType === "fixed"
+                          ? "bg-electric-indigo text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       Imagen Fija (Full Screen)
                     </button>
                     <button
                       type="button"
-                      onClick={() => updateSection('theme', 'backgroundType', 'pattern')}
+                      onClick={() =>
+                        updateSection("theme", "backgroundType", "pattern")
+                      }
                       className={`px-2.5 py-1 rounded-md transition-colors ${
-                        bgType === 'pattern' ? 'bg-electric-indigo text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        bgType === "pattern"
+                          ? "bg-electric-indigo text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       Patrón Repetido (Tile)
@@ -552,19 +633,27 @@ export function LandingConfigManager({
                   </div>
                 </div>
 
-                {bgType === 'color' ? (
+                {bgType === "color" ? (
                   <div className="space-y-3 pt-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-bold text-slate-600">Paleta rápida:</span>
+                      <span className="text-[11px] font-bold text-slate-600">
+                        Paleta rápida:
+                      </span>
                       {PRESET_BG_COLORS.map((preset) => (
                         <button
                           key={preset.hex}
                           type="button"
-                          onClick={() => updateSection('theme', 'backgroundColor', preset.hex)}
+                          onClick={() =>
+                            updateSection(
+                              "theme",
+                              "backgroundColor",
+                              preset.hex,
+                            )
+                          }
                           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
                             bgColor === preset.hex
-                              ? 'border-electric-indigo bg-indigo-50 text-electric-indigo ring-1 ring-electric-indigo'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                              ? "border-electric-indigo bg-indigo-50 text-electric-indigo ring-1 ring-electric-indigo"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                           }`}
                         >
                           <span
@@ -581,24 +670,35 @@ export function LandingConfigManager({
                         <input
                           type="color"
                           value={bgColor}
-                          onChange={(e) => updateSection('theme', 'backgroundColor', e.target.value)}
+                          onChange={(e) =>
+                            updateSection(
+                              "theme",
+                              "backgroundColor",
+                              e.target.value,
+                            )
+                          }
                           className="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent"
                         />
-                        <span className="text-xs font-mono font-bold text-deep-slate pr-2">{bgColor}</span>
+                        <span className="text-xs font-mono font-bold text-deep-slate pr-2">
+                          {bgColor}
+                        </span>
                       </div>
                       <p className="text-[11px] text-slate-500">
-                        Color de fondo oscuro recomendado para resaltar las luces y colores de los shows.
+                        Color de fondo oscuro recomendado para resaltar las
+                        luces y colores de los shows.
                       </p>
                     </div>
                   </div>
-                ) : bgType === 'fixed' ? (
+                ) : bgType === "fixed" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pt-1">
                     <ImageUploader
                       compact={true}
                       aspectRatio="banner"
                       folder="landings"
                       value={bgPattern}
-                      onChange={(val) => updateSection('theme', 'backgroundPatternUrl', val)}
+                      onChange={(val) =>
+                        updateSection("theme", "backgroundPatternUrl", val)
+                      }
                       helpText="Resolución óptima: 1920x1080 px (Full HD). Imagen panorámica que permanecerá fija en el fondo al hacer scroll"
                     />
 
@@ -611,12 +711,19 @@ export function LandingConfigManager({
                           className="w-full h-24 rounded-lg border border-slate-200 shadow-inner bg-cover bg-center"
                           style={{
                             backgroundColor: bgColor,
-                            backgroundImage: bgPattern ? `url(${bgPattern})` : undefined,
+                            backgroundImage: bgPattern
+                              ? `url(${bgPattern})`
+                              : undefined,
                           }}
                         />
                       </div>
                       <p className="text-[10px] text-slate-500">
-                        La imagen se mantendrá inmóvil en el fondo ocupando el 100% de la ventana (<code className="font-mono text-electric-indigo">background-attachment: fixed; background-size: cover</code>), mientras el contenido se desliza por encima.
+                        La imagen se mantendrá inmóvil en el fondo ocupando el
+                        100% de la ventana (
+                        <code className="font-mono text-electric-indigo">
+                          background-attachment: fixed; background-size: cover
+                        </code>
+                        ), mientras el contenido se desliza por encima.
                       </p>
                     </div>
                   </div>
@@ -627,7 +734,9 @@ export function LandingConfigManager({
                       aspectRatio="square"
                       folder="landings"
                       value={bgPattern}
-                      onChange={(val) => updateSection('theme', 'backgroundPatternUrl', val)}
+                      onChange={(val) =>
+                        updateSection("theme", "backgroundPatternUrl", val)
+                      }
                       helpText="Resolución óptima: 300x300 px a 600x600 px (Mosaico cuadrado con textura sutil que se repetirá en patrón)"
                     />
 
@@ -640,14 +749,20 @@ export function LandingConfigManager({
                           className="w-full h-20 rounded-lg border border-slate-200 shadow-inner"
                           style={{
                             backgroundColor: bgColor,
-                            backgroundImage: bgPattern ? `url(${bgPattern})` : undefined,
-                            backgroundRepeat: 'repeat',
-                            backgroundSize: '64px 64px',
+                            backgroundImage: bgPattern
+                              ? `url(${bgPattern})`
+                              : undefined,
+                            backgroundRepeat: "repeat",
+                            backgroundSize: "64px 64px",
                           }}
                         />
                       </div>
                       <p className="text-[10px] text-slate-500">
-                        La textura se repetirá automáticamente (<code className="font-mono text-electric-indigo">background-repeat: repeat</code>) creando un fondo inmersivo.
+                        La textura se repetirá automáticamente (
+                        <code className="font-mono text-electric-indigo">
+                          background-repeat: repeat
+                        </code>
+                        ) creando un fondo inmersivo.
                       </p>
                     </div>
                   </div>
@@ -657,7 +772,7 @@ export function LandingConfigManager({
           )}
 
           {/* VISTA 2: LIVE MINI-PREVIEW (MOCKUP INTERACTIVO) */}
-          {activeTab === 'preview' && (
+          {activeTab === "preview" && (
             <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4 animate-in fade-in duration-200">
               <div className="flex items-center justify-between px-2 pb-2 border-b border-slate-800 text-xs text-slate-400">
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -665,7 +780,7 @@ export function LandingConfigManager({
                   <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
                   <span className="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
                   <span className="ml-2 font-mono text-[11px] text-slate-300 truncate">
-                    https://queplanhoy.com/e/{slug || 'evento-2026'}
+                    https://queplanhoy.com/e/{slug || "evento-2026"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -675,11 +790,13 @@ export function LandingConfigManager({
                     className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-electric-indigo hover:bg-electric-indigo/80 text-white font-bold text-[10px] transition-colors cursor-pointer"
                     title="Abrir en pestaña nueva con datos en tiempo real de este borrador"
                   >
-                    <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                    <span className="material-symbols-outlined text-[13px]">
+                      open_in_new
+                    </span>
                     <span>Probar en vivo (?previewTemp)</span>
                   </button>
                   <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded hidden sm:inline-block">
-                    {bgType === 'pattern' ? 'Patrón Tile' : `Fondo ${bgColor}`}
+                    {bgType === "pattern" ? "Patrón Tile" : `Fondo ${bgColor}`}
                   </span>
                 </div>
               </div>
@@ -690,23 +807,38 @@ export function LandingConfigManager({
                 style={{
                   backgroundColor: bgColor,
                   backgroundImage: bgPattern ? `url(${bgPattern})` : undefined,
-                  backgroundSize: bgType === 'fixed' ? 'cover' : bgType === 'pattern' ? '64px 64px' : undefined,
-                  backgroundPosition: 'center',
-                  backgroundRepeat: bgType === 'pattern' ? 'repeat' : 'no-repeat',
+                  backgroundSize:
+                    bgType === "fixed"
+                      ? "cover"
+                      : bgType === "pattern"
+                        ? "64px 64px"
+                        : undefined,
+                  backgroundPosition: "center",
+                  backgroundRepeat:
+                    bgType === "pattern" ? "repeat" : "no-repeat",
                 }}
               >
                 {/* 0. MINI HEADER NAVBAR FLOTANTE */}
                 <div className="h-10 px-3 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between text-[10px]">
                   <div className="flex items-center gap-1.5 font-black text-white">
-                    <span className="w-4 h-4 rounded bg-electric-indigo flex items-center justify-center text-[9px] font-bold">Q</span>
-                    <span>queplan<span className="text-electric-indigo">hoy</span></span>
+                    <span className="w-4 h-4 rounded bg-electric-indigo flex items-center justify-center text-[9px] font-bold">
+                      Q
+                    </span>
+                    <span>
+                      queplan<span className="text-electric-indigo">hoy</span>
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-slate-300 text-[9px]">
                     <span className="text-white">Inicio</span>
                     <span>Entradas</span>
                     <span>Legales</span>
-                    <span className="w-5 h-5 rounded-full bg-white/10 text-white flex items-center justify-center" title="Compartir">
-                      <span className="material-symbols-outlined text-[11px]">share</span>
+                    <span
+                      className="w-5 h-5 rounded-full bg-white/10 text-white flex items-center justify-center"
+                      title="Compartir"
+                    >
+                      <span className="material-symbols-outlined text-[11px]">
+                        share
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -722,7 +854,9 @@ export function LandingConfigManager({
                     />
                   ) : (
                     <div className="w-full h-full bg-white/5 border border-dashed border-white/20 flex flex-col items-center justify-center p-4 text-center">
-                      <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">image</span>
+                      <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">
+                        image
+                      </span>
                       <span className="text-[11px] font-bold text-slate-400">
                         Banner Principal / Hero (1920x800 px)
                       </span>
@@ -730,9 +864,12 @@ export function LandingConfigManager({
                   )}
 
                   {/* Botón flotante para teaser si está configurado */}
-                  {(promoVideoUrl?.trim() || config.header?.videoTeaserUrl?.trim()) && (
+                  {(promoVideoUrl?.trim() ||
+                    config.header?.videoTeaserUrl?.trim()) && (
                     <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/80 text-white text-[9px] font-bold backdrop-blur-md border border-white/20">
-                      <span className="material-symbols-outlined text-[12px] text-amber-400">play_circle</span>
+                      <span className="material-symbols-outlined text-[12px] text-amber-400">
+                        play_circle
+                      </span>
                       <span>Video Teaser</span>
                     </div>
                   )}
@@ -743,31 +880,49 @@ export function LandingConfigManager({
                   <div className="rounded-xl bg-zinc-900/95 border border-white/10 shadow-xl overflow-hidden divide-y divide-white/10">
                     <div className="p-2 grid grid-cols-4 gap-1 text-center">
                       <div className="p-1">
-                        <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">Fecha</span>
-                        <span className="text-[9px] font-black text-white block truncate">Próximo Show</span>
+                        <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">
+                          Fecha
+                        </span>
+                        <span className="text-[9px] font-black text-white block truncate">
+                          Próximo Show
+                        </span>
                       </div>
                       <div className="p-1 border-l border-white/5">
-                        <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">Recinto</span>
-                        <span className="text-[9px] font-black text-white block truncate">Local Oficial</span>
+                        <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">
+                          Recinto
+                        </span>
+                        <span className="text-[9px] font-black text-white block truncate">
+                          Local Oficial
+                        </span>
                       </div>
                       <div className="p-1 border-l border-white/5">
-                        <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">Acceso</span>
-                        <span className="text-[9px] font-black text-emerald-400 block truncate">Público</span>
+                        <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">
+                          Acceso
+                        </span>
+                        <span className="text-[9px] font-black text-emerald-400 block truncate">
+                          Público
+                        </span>
                       </div>
                       <div className="p-1 border-l border-white/5">
-                        <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">Desde</span>
-                        <span className="text-[9px] font-black text-electric-indigo block truncate">S/. 50.00</span>
+                        <span className="text-[8px] uppercase font-bold text-slate-400 block truncate">
+                          Desde
+                        </span>
+                        <span className="text-[9px] font-black text-electric-indigo block truncate">
+                          S/. 50.00
+                        </span>
                       </div>
                     </div>
 
                     {/* Detalle del show integrado abajo con el mismo ancho y color */}
-                    {(config.body?.aboutText || eventPreviewData?.description) && (
+                    {(config.body?.aboutText ||
+                      eventPreviewData?.description) && (
                       <div className="p-2.5 space-y-1 text-white">
                         <span className="text-[8px] font-black uppercase tracking-wider text-electric-indigo block">
                           Detalles del Show
                         </span>
                         <p className="text-[9px] text-slate-300 leading-relaxed line-clamp-3">
-                          {config.body?.aboutText || eventPreviewData?.description}
+                          {config.body?.aboutText ||
+                            eventPreviewData?.description}
                         </p>
                       </div>
                     )}
@@ -779,11 +934,17 @@ export function LandingConfigManager({
                   {bodyImg ? (
                     <div className="w-full overflow-hidden shadow-lg border-y border-white/10">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={bodyImg} alt="Body Banner Full Width" className="w-full h-auto object-cover max-h-44" />
+                      <img
+                        src={bodyImg}
+                        alt="Body Banner Full Width"
+                        className="w-full h-auto object-cover max-h-44"
+                      />
                     </div>
                   ) : (
                     <div className="mx-3 p-3 rounded-xl bg-zinc-900/60 border border-white/10 text-center">
-                      <span className="text-[9px] text-slate-400 font-medium">Banner Publicitario del Body (Opcional)</span>
+                      <span className="text-[9px] text-slate-400 font-medium">
+                        Banner Publicitario del Body (Opcional)
+                      </span>
                     </div>
                   )}
 
@@ -793,10 +954,10 @@ export function LandingConfigManager({
                       <div
                         className={`grid gap-1.5 text-[9px] ${
                           activeHighlights.length === 1
-                            ? 'grid-cols-1'
+                            ? "grid-cols-1"
                             : activeHighlights.length === 2
-                            ? 'grid-cols-2'
-                            : 'grid-cols-3'
+                              ? "grid-cols-2"
+                              : "grid-cols-3"
                         }`}
                       >
                         {activeHighlights.map((highlight, idx) => (
@@ -807,7 +968,9 @@ export function LandingConfigManager({
                             <span className="material-symbols-outlined text-electric-indigo text-[11px] shrink-0">
                               check_circle
                             </span>
-                            <span className="font-semibold truncate">{highlight}</span>
+                            <span className="font-semibold truncate">
+                              {highlight}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -822,7 +985,9 @@ export function LandingConfigManager({
                       Distribución Oficial
                     </span>
                     <h4 className="text-xs font-black uppercase text-white flex items-center justify-center gap-1">
-                      <span className="material-symbols-outlined text-[13px] text-electric-indigo">stadium</span>
+                      <span className="material-symbols-outlined text-[13px] text-electric-indigo">
+                        stadium
+                      </span>
                       <span>Plano del Escenario y Zonas</span>
                     </h4>
                     <div className="w-full h-20 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center text-[10px] text-slate-400 font-semibold">
@@ -838,7 +1003,9 @@ export function LandingConfigManager({
                       <span className="text-[8px] font-black uppercase tracking-widest text-electric-indigo block">
                         Venta Oficial en Línea
                       </span>
-                      <h4 className="text-xs font-black uppercase text-white">Selecciona tu Entrada</h4>
+                      <h4 className="text-xs font-black uppercase text-white">
+                        Selecciona tu Entrada
+                      </h4>
                     </div>
 
                     <div className="space-y-1.5 text-[10px]">
@@ -846,13 +1013,21 @@ export function LandingConfigManager({
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-6 rounded-full bg-blue-500 shrink-0"></span>
                           <div>
-                            <span className="font-bold text-white block">ZONA VIP</span>
-                            <span className="text-[9px] text-slate-400">Acceso Preferencial</span>
+                            <span className="font-bold text-white block">
+                              ZONA VIP
+                            </span>
+                            <span className="text-[9px] text-slate-400">
+                              Acceso Preferencial
+                            </span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="font-black text-white block">S/. 120.00</span>
-                          <span className="px-2 py-0.5 rounded bg-electric-indigo text-white font-bold text-[8px] uppercase inline-block">Comprar</span>
+                          <span className="font-black text-white block">
+                            S/. 120.00
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-electric-indigo text-white font-bold text-[8px] uppercase inline-block">
+                            Comprar
+                          </span>
                         </div>
                       </div>
 
@@ -860,13 +1035,21 @@ export function LandingConfigManager({
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-6 rounded-full bg-emerald-500 shrink-0"></span>
                           <div>
-                            <span className="font-bold text-white block">ZONA GENERAL</span>
-                            <span className="text-[9px] text-slate-400">Ingreso Regular</span>
+                            <span className="font-bold text-white block">
+                              ZONA GENERAL
+                            </span>
+                            <span className="text-[9px] text-slate-400">
+                              Ingreso Regular
+                            </span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className="font-black text-white block">S/. 60.00</span>
-                          <span className="px-2 py-0.5 rounded bg-electric-indigo text-white font-bold text-[8px] uppercase inline-block">Comprar</span>
+                          <span className="font-black text-white block">
+                            S/. 60.00
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-electric-indigo text-white font-bold text-[8px] uppercase inline-block">
+                            Comprar
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -878,8 +1061,12 @@ export function LandingConfigManager({
                   <div className="p-3 rounded-xl bg-zinc-950/95 border border-white/15 shadow-xl space-y-2 text-white">
                     <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[13px] text-electric-indigo">gavel</span>
-                        <span className="text-[10px] font-black uppercase text-white">Términos y Normativa</span>
+                        <span className="material-symbols-outlined text-[13px] text-electric-indigo">
+                          gavel
+                        </span>
+                        <span className="text-[10px] font-black uppercase text-white">
+                          Términos y Normativa
+                        </span>
                       </div>
                       <span className="text-[8px] px-1.5 py-0.5 rounded bg-electric-indigo/20 text-electric-indigo font-bold">
                         Bases Oficiales
@@ -888,32 +1075,46 @@ export function LandingConfigManager({
 
                     <div className="space-y-1 text-[9px] text-slate-300">
                       <div className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[11px] text-emerald-400">verified_user</span>
+                        <span className="material-symbols-outlined text-[11px] text-emerald-400">
+                          verified_user
+                        </span>
                         <span>Boletería Digital con Código QR Único</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[11px] text-amber-400">info</span>
+                        <span className="material-symbols-outlined text-[11px] text-amber-400">
+                          info
+                        </span>
                         <span>Validación criptográfica en puerta</span>
                       </div>
                     </div>
 
                     {/* FAQs Preview */}
-                    {(eventPreviewData?.faqs && eventPreviewData.faqs.length > 0) ? (
+                    {eventPreviewData?.faqs &&
+                    eventPreviewData.faqs.length > 0 ? (
                       <div className="pt-1.5 border-t border-white/10 space-y-1">
                         <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block">
                           Preguntas Frecuentes ({eventPreviewData.faqs.length})
                         </span>
                         {eventPreviewData.faqs.slice(0, 2).map((faq, fIdx) => (
-                          <div key={fIdx} className="p-1 rounded bg-white/5 border border-white/5 text-[8px]">
-                            <span className="font-bold text-slate-200 block truncate">Q: {faq.question}</span>
-                            <span className="text-slate-400 block truncate">A: {faq.answer}</span>
+                          <div
+                            key={fIdx}
+                            className="p-1 rounded bg-white/5 border border-white/5 text-[8px]"
+                          >
+                            <span className="font-bold text-slate-200 block truncate">
+                              Q: {faq.question}
+                            </span>
+                            <span className="text-slate-400 block truncate">
+                              A: {faq.answer}
+                            </span>
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className="pt-1 border-t border-white/10 flex items-center justify-between text-[8px] text-slate-400">
                         <span>Preguntas Frecuentes (FAQs)</span>
-                        <span className="text-electric-indigo font-bold">4 Preguntas Oficiales</span>
+                        <span className="text-electric-indigo font-bold">
+                          4 Preguntas Oficiales
+                        </span>
                       </div>
                     )}
                   </div>
@@ -924,21 +1125,35 @@ export function LandingConfigManager({
                   {footerImg && (
                     <div className="rounded-lg overflow-hidden border border-white/10 p-1 bg-black/40 mb-1">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={footerImg} alt="Footer Banner" className="w-full h-auto max-h-16 object-contain mx-auto" />
+                      <img
+                        src={footerImg}
+                        alt="Footer Banner"
+                        className="w-full h-auto max-h-16 object-contain mx-auto"
+                      />
                     </div>
                   )}
 
                   <div className="flex items-center justify-center gap-3 text-slate-400 text-xs">
-                    {(socialLinks?.instagramUrl || config.footer?.instagramUrl) && (
-                      <span className="material-symbols-outlined text-[14px] text-pink-400">photo_camera</span>
+                    {(socialLinks?.instagramUrl ||
+                      config.footer?.instagramUrl) && (
+                      <span className="material-symbols-outlined text-[14px] text-pink-400">
+                        photo_camera
+                      </span>
                     )}
-                    {(socialLinks?.facebookUrl || config.footer?.facebookUrl) && (
-                      <span className="material-symbols-outlined text-[14px] text-blue-400">public</span>
+                    {(socialLinks?.facebookUrl ||
+                      config.footer?.facebookUrl) && (
+                      <span className="material-symbols-outlined text-[14px] text-blue-400">
+                        public
+                      </span>
                     )}
                     {(socialLinks?.tiktokUrl || config.footer?.tiktokUrl) && (
-                      <span className="material-symbols-outlined text-[14px] text-white">music_video</span>
+                      <span className="material-symbols-outlined text-[14px] text-white">
+                        music_video
+                      </span>
                     )}
-                    <span className="text-[9px] font-mono text-slate-500">@queplanhoy</span>
+                    <span className="text-[9px] font-mono text-slate-500">
+                      @queplanhoy
+                    </span>
                   </div>
                 </div>
               </div>

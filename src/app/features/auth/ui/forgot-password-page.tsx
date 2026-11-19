@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { requestPasswordResetUseCase } from '../index';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { requestPasswordResetUseCase } from "../index";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -20,7 +20,9 @@ export default function ForgotPasswordPage() {
     const trimmedEmail = email.trim().toLowerCase();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmedEmail || !emailPattern.test(trimmedEmail)) {
-      setErrorMessage('Por favor, ingresa una dirección de correo electrónico válida.');
+      setErrorMessage(
+        "Por favor, ingresa una dirección de correo electrónico válida.",
+      );
       return;
     }
 
@@ -35,12 +37,20 @@ export default function ForgotPasswordPage() {
       },
       (error) => {
         setIsLoading(false);
-        if (error.code === 'RATE_LIMIT_EXCEEDED' || error.code === 'TOO_MANY_REQUESTS') {
-          setErrorMessage('Has realizado demasiadas solicitudes en poco tiempo. Por favor espera unos minutos antes de volver a intentar.');
+        if (
+          error.code === "RATE_LIMIT_EXCEEDED" ||
+          error.code === "TOO_MANY_REQUESTS"
+        ) {
+          setErrorMessage(
+            "Has realizado demasiadas solicitudes en poco tiempo. Por favor espera unos minutos antes de volver a intentar.",
+          );
         } else {
-          setErrorMessage(error.message || 'No se pudo enviar el enlace en este momento. Inténtalo de nuevo en unos minutos.');
+          setErrorMessage(
+            error.message ||
+              "No se pudo enviar el enlace en este momento. Inténtalo de nuevo en unos minutos.",
+          );
         }
-      }
+      },
     );
   };
 
@@ -60,15 +70,25 @@ export default function ForgotPasswordPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-deep-slate/50 via-deep-slate/75 to-deep-slate/95 z-10" />
         <div className="relative z-20 flex flex-col justify-between p-16 w-full text-white">
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity">
-              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplanhoy logo" />
+            <Link
+              href="/"
+              className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity"
+            >
+              <img
+                src="/logo-qph.svg"
+                className="w-10 h-10 rounded-md object-contain"
+                alt="queplanhoy logo"
+              />
               <span className="font-extrabold text-2xl tracking-tight text-white">
                 queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
-            <h1 className="text-4xl font-extrabold leading-tight mb-6">Tus mejores planes, a un clic.</h1>
+            <h1 className="text-4xl font-extrabold leading-tight mb-6">
+              Tus mejores planes, a un clic.
+            </h1>
             <p className="text-lg text-platinum-silver max-w-md leading-relaxed">
-              Descubre y reserva las mejores experiencias en tu ciudad. Desde conciertos épicos hasta el teatro más íntimo.
+              Descubre y reserva las mejores experiencias en tu ciudad. Desde
+              conciertos épicos hasta el teatro más íntimo.
             </p>
           </div>
 
@@ -105,7 +125,11 @@ export default function ForgotPasswordPage() {
           {/* Logo Móvil */}
           <div className="lg:hidden mb-8 flex justify-start">
             <Link href="/" className="flex items-center gap-2 cursor-pointer">
-              <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
+              <img
+                src="/logo-qph.svg"
+                className="w-8 h-8 rounded-md object-contain"
+                alt="queplanhoy logo"
+              />
               <span className="font-extrabold text-xl tracking-tight text-deep-slate">
                 queplan<span className="text-electric-indigo">hoy</span>
               </span>
@@ -114,9 +138,12 @@ export default function ForgotPasswordPage() {
 
           {/* Encabezado */}
           <div className="mb-8 text-left">
-            <h2 className="text-3xl font-extrabold text-deep-slate mb-2">Recuperar contraseña</h2>
+            <h2 className="text-3xl font-extrabold text-deep-slate mb-2">
+              Recuperar contraseña
+            </h2>
             <p className="text-on-surface-variant text-sm">
-              Ingresa el correo electrónico asociado a tu cuenta y te enviaremos un enlace seguro para restablecerla.
+              Ingresa el correo electrónico asociado a tu cuenta y te enviaremos
+              un enlace seguro para restablecerla.
             </p>
           </div>
 
@@ -126,7 +153,9 @@ export default function ForgotPasswordPage() {
               <span className="material-symbols-outlined text-rose-600 text-xl flex-shrink-0 mt-0.5">
                 error
               </span>
-              <p className="font-semibold text-xs leading-relaxed">{errorMessage}</p>
+              <p className="font-semibold text-xs leading-relaxed">
+                {errorMessage}
+              </p>
             </div>
           )}
 
@@ -135,28 +164,39 @@ export default function ForgotPasswordPage() {
             <div className="p-6 rounded-2xl bg-secondary-container text-on-secondary-container flex flex-col gap-3 shadow-xs border border-electric-indigo/20 animate-in fade-in">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-electric-indigo flex items-center justify-center text-white shrink-0">
-                  <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span
+                    className="material-symbols-outlined text-xl"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
                     mark_email_read
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-deep-slate text-base">¡Enlace enviado con éxito!</h3>
-                  <p className="text-xs text-on-surface-variant mt-0.5">Revisa tu bandeja de entrada o spam</p>
+                  <h3 className="font-bold text-deep-slate text-base">
+                    ¡Enlace enviado con éxito!
+                  </h3>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Revisa tu bandeja de entrada o spam
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-deep-slate leading-relaxed pt-1">
-                Si <strong>{email}</strong> está registrado en queplanhoy, recibirás un correo con el botón seguro para crear tu nueva contraseña. El enlace es válido durante 15 minutos.
+                Si <strong>{email}</strong> está registrado en queplanhoy,
+                recibirás un correo con el botón seguro para crear tu nueva
+                contraseña. El enlace es válido durante 15 minutos.
               </p>
               <div className="pt-3 flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setIsSuccess(false);
-                    setEmail('');
+                    setEmail("");
                   }}
                   className="text-xs font-semibold text-electric-indigo hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-sm">refresh</span>
+                  <span className="material-symbols-outlined text-sm">
+                    refresh
+                  </span>
                   Enviar a otro correo
                 </button>
                 <Link
@@ -164,7 +204,9 @@ export default function ForgotPasswordPage() {
                   className="text-xs font-semibold text-on-surface-variant hover:text-deep-slate flex items-center gap-1 sm:ml-auto cursor-pointer"
                 >
                   Ir al inicio de sesión
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  <span className="material-symbols-outlined text-sm">
+                    arrow_forward
+                  </span>
                 </Link>
               </div>
             </div>
@@ -173,7 +215,10 @@ export default function ForgotPasswordPage() {
             <form className="space-y-4" onSubmit={handleSubmit}>
               {/* Campo Correo Electrónico */}
               <div className="space-y-1">
-                <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="recovery-email">
+                <label
+                  className="block text-xs font-semibold text-on-surface-variant"
+                  htmlFor="recovery-email"
+                >
                   Correo electrónico
                 </label>
                 <div className="relative group">
@@ -197,11 +242,13 @@ export default function ForgotPasswordPage() {
                   {email.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setEmail('')}
+                      onClick={() => setEmail("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-platinum-silver hover:text-deep-slate transition-colors cursor-pointer"
                       aria-label="Limpiar campo"
                     >
-                      <span className="material-symbols-outlined text-lg">cancel</span>
+                      <span className="material-symbols-outlined text-lg">
+                        cancel
+                      </span>
                     </button>
                   )}
                 </div>
@@ -218,13 +265,17 @@ export default function ForgotPasswordPage() {
               >
                 {isLoading ? (
                   <>
-                    <span className="material-symbols-outlined animate-spin text-[20px]">refresh</span>
+                    <span className="material-symbols-outlined animate-spin text-[20px]">
+                      refresh
+                    </span>
                     <span>Enviando enlace seguro...</span>
                   </>
                 ) : (
                   <>
                     <span>Enviar enlace de recuperación</span>
-                    <span className="material-symbols-outlined text-[20px]">send</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      send
+                    </span>
                   </>
                 )}
               </button>
@@ -237,9 +288,14 @@ export default function ForgotPasswordPage() {
               help
             </span>
             <div className="text-xs leading-relaxed text-on-surface-variant">
-              <span className="font-semibold text-deep-slate block mb-0.5">¿Necesitas ayuda adicional?</span>
-              ¿No recuerdas con qué correo te registraste? Escríbenos a{' '}
-              <a href="mailto:soporte@queplanhoy.com" className="text-electric-indigo font-semibold hover:underline">
+              <span className="font-semibold text-deep-slate block mb-0.5">
+                ¿Necesitas ayuda adicional?
+              </span>
+              ¿No recuerdas con qué correo te registraste? Escríbenos a{" "}
+              <a
+                href="mailto:soporte@queplanhoy.com"
+                className="text-electric-indigo font-semibold hover:underline"
+              >
                 soporte@queplanhoy.com
               </a>
             </div>
@@ -248,7 +304,7 @@ export default function ForgotPasswordPage() {
           {/* Enlace Volver a Login */}
           <div className="mt-8 text-center">
             <p className="text-sm text-on-surface-variant font-medium">
-              ¿Te acordaste de tu contraseña?{' '}
+              ¿Te acordaste de tu contraseña?{" "}
               <Link
                 href="/login"
                 className="font-bold text-electric-indigo hover:underline ml-1 cursor-pointer"

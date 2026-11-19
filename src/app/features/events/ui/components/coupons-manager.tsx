@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 export interface CouponFormItem {
   id: string;
   code: string;
-  discountType: 'percentage' | 'fixed';
+  discountType: "percentage" | "fixed";
   discountValue: number;
-  usageType: 'reusable' | 'single_use';
+  usageType: "reusable" | "single_use";
   maxUses?: number;
   expiresAt?: string;
   status?: string;
@@ -20,25 +20,29 @@ interface CouponsManagerProps {
 
 export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [code, setCode] = useState('');
-  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
-  const [discountValue, setDiscountValue] = useState<number | ''>(15);
-  const [usageType, setUsageType] = useState<'reusable' | 'single_use'>('reusable');
-  const [maxUses, setMaxUses] = useState<number | ''>(100);
+  const [code, setCode] = useState("");
+  const [discountType, setDiscountType] = useState<"percentage" | "fixed">(
+    "percentage",
+  );
+  const [discountValue, setDiscountValue] = useState<number | "">(15);
+  const [usageType, setUsageType] = useState<"reusable" | "single_use">(
+    "reusable",
+  );
+  const [maxUses, setMaxUses] = useState<number | "">(100);
   const [hasExpiry, setHasExpiry] = useState(false);
-  const [expiryDate, setExpiryDate] = useState('');
-  const [expiryTime, setExpiryTime] = useState('23:59');
+  const [expiryDate, setExpiryDate] = useState("");
+  const [expiryTime, setExpiryTime] = useState("23:59");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const openDrawer = () => {
-    setCode('');
-    setDiscountType('percentage');
+    setCode("");
+    setDiscountType("percentage");
     setDiscountValue(15);
-    setUsageType('reusable');
+    setUsageType("reusable");
     setMaxUses(100);
     setHasExpiry(false);
-    setExpiryDate('');
-    setExpiryTime('23:59');
+    setExpiryDate("");
+    setExpiryTime("23:59");
     setErrorMsg(null);
     setIsDrawerOpen(true);
   };
@@ -49,35 +53,39 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
 
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) {
-      setErrorMsg('Por favor ingresa un código para el cupón.');
+      setErrorMsg("Por favor ingresa un código para el cupón.");
       return;
     }
     if (coupons.some((c) => c.code === cleanCode)) {
       setErrorMsg(`El código "${cleanCode}" ya existe en este evento.`);
       return;
     }
-    if (discountValue === '' || Number(discountValue) <= 0) {
-      setErrorMsg('El valor del descuento debe ser mayor a 0.');
+    if (discountValue === "" || Number(discountValue) <= 0) {
+      setErrorMsg("El valor del descuento debe ser mayor a 0.");
       return;
     }
 
     if (hasExpiry && !expiryDate) {
-      setErrorMsg('Selecciona una fecha límite o desactiva la vigencia programada.');
+      setErrorMsg(
+        "Selecciona una fecha límite o desactiva la vigencia programada.",
+      );
       return;
     }
 
     const combinedExpiresAt =
-      hasExpiry && expiryDate ? `${expiryDate}T${expiryTime || '23:59'}:00` : undefined;
+      hasExpiry && expiryDate
+        ? `${expiryDate}T${expiryTime || "23:59"}:00`
+        : undefined;
 
     const newCoupon: CouponFormItem = {
-      id: 'coupon-' + Date.now(),
+      id: "coupon-" + Date.now(),
       code: cleanCode,
       discountType,
       discountValue: Number(discountValue),
       usageType,
-      maxUses: maxUses !== '' ? Number(maxUses) : undefined,
+      maxUses: maxUses !== "" ? Number(maxUses) : undefined,
       expiresAt: combinedExpiresAt,
-      status: 'Activo',
+      status: "Activo",
     };
 
     onChange([newCoupon, ...coupons]);
@@ -89,14 +97,14 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
   };
 
   const formatExpiry = (isoString?: string) => {
-    if (!isoString) return 'Sin fecha límite';
-    const parts = isoString.split('T');
+    if (!isoString) return "Sin fecha límite";
+    const parts = isoString.split("T");
     if (parts.length >= 1) {
-      const dateParts = parts[0].split('-');
+      const dateParts = parts[0].split("-");
       if (dateParts.length === 3) {
         const [year, monthNum, day] = dateParts;
-        const time = parts[1] ? parts[1].substring(0, 5) : '23:59';
-        return `${day.padStart(2, '0')}/${monthNum.padStart(2, '0')}/${year} ${time} hrs`;
+        const time = parts[1] ? parts[1].substring(0, 5) : "23:59";
+        return `${day.padStart(2, "0")}/${monthNum.padStart(2, "0")}/${year} ${time} hrs`;
       }
     }
     return isoString;
@@ -108,11 +116,14 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-surface-variant/40">
         <div>
           <h3 className="font-bold text-base text-deep-slate flex items-center gap-2">
-            <span className="material-symbols-outlined text-electric-indigo text-[22px]">sell</span>
+            <span className="material-symbols-outlined text-electric-indigo text-[22px]">
+              sell
+            </span>
             Cupones y Descuentos Promocionales
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Crea códigos de descuento para influencers, campañas de difusión o cortesías.
+            Crea códigos de descuento para influencers, campañas de difusión o
+            cortesías.
           </p>
         </div>
         <button
@@ -120,7 +131,9 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
           onClick={openDrawer}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-deep-slate text-xs font-bold transition-colors cursor-pointer self-start sm:self-auto shadow-xs"
         >
-          <span className="material-symbols-outlined text-[18px]">add_circle</span>
+          <span className="material-symbols-outlined text-[18px]">
+            add_circle
+          </span>
           Añadir Nuevo Cupón
         </button>
       </div>
@@ -132,9 +145,12 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
             <span className="material-symbols-outlined text-[30px]">sell</span>
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-sm text-deep-slate">No hay cupones configurados para este evento</h4>
+            <h4 className="font-bold text-sm text-deep-slate">
+              No hay cupones configurados para este evento
+            </h4>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Los cupones son opcionales. Si no creas cupones, los compradores pagarán las tarifas oficiales establecidas en las zonas.
+              Los cupones son opcionales. Si no creas cupones, los compradores
+              pagarán las tarifas oficiales establecidas en las zonas.
             </p>
           </div>
           <button
@@ -142,7 +158,9 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
             onClick={openDrawer}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-electric-indigo/90 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            <span className="material-symbols-outlined text-[18px]">
+              add_circle
+            </span>
             Añadir Primer Cupón
           </button>
         </div>
@@ -166,23 +184,30 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                     {c.code}
                   </td>
                   <td className="py-3 px-4 font-bold text-slate-900">
-                    {c.discountType === 'percentage'
+                    {c.discountType === "percentage"
                       ? `${c.discountValue}% OFF`
                       : `S/ ${c.discountValue.toFixed(2)} OFF`}
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                      c.usageType === 'single_use'
-                        ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                        : 'bg-blue-50 text-blue-700 border border-blue-200'
-                    }`}>
-                      {c.usageType === 'single_use' ? 'Un solo uso' : 'Reutilizable'}
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                        c.usageType === "single_use"
+                          ? "bg-purple-50 text-purple-700 border border-purple-200"
+                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                      }`}
+                    >
+                      {c.usageType === "single_use"
+                        ? "Un solo uso"
+                        : "Reutilizable"}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-slate-600 font-medium">
-                    {c.maxUses ? `${c.maxUses} canjes` : 'Ilimitado'}
+                    {c.maxUses ? `${c.maxUses} canjes` : "Ilimitado"}
                   </td>
-                  <td className="py-3 px-4 text-slate-600 font-medium" suppressHydrationWarning>
+                  <td
+                    className="py-3 px-4 text-slate-600 font-medium"
+                    suppressHydrationWarning
+                  >
                     {formatExpiry(c.expiresAt)}
                   </td>
                   <td className="py-3 px-4 text-right">
@@ -192,7 +217,9 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                       className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                       title="Eliminar cupón"
                     >
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      <span className="material-symbols-outlined text-[18px]">
+                        delete
+                      </span>
                     </button>
                   </td>
                 </tr>
@@ -217,30 +244,42 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
               {/* Header */}
               <div className="p-5 border-b border-surface-variant/60 flex items-center justify-between bg-slate-50/80">
                 <div>
-                  <h3 className="font-bold text-base text-deep-slate">Nuevo Cupón de Descuento</h3>
-                  <p className="text-xs text-slate-500">Configura el código, beneficio y vigencia límite.</p>
+                  <h3 className="font-bold text-base text-deep-slate">
+                    Nuevo Cupón de Descuento
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Configura el código, beneficio y vigencia límite.
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsDrawerOpen(false)}
                   className="p-1.5 rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
+                  <span className="material-symbols-outlined text-[20px]">
+                    close
+                  </span>
                 </button>
               </div>
 
               {/* Formulario */}
-              <form onSubmit={handleAddCoupon} className="flex-1 overflow-y-auto p-6 space-y-5">
+              <form
+                onSubmit={handleAddCoupon}
+                className="flex-1 overflow-y-auto p-6 space-y-5"
+              >
                 {errorMsg && (
                   <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px]">error</span>
+                    <span className="material-symbols-outlined text-[18px]">
+                      error
+                    </span>
                     <span>{errorMsg}</span>
                   </div>
                 )}
 
                 <div className="space-y-1">
                   <label className="font-bold text-xs text-deep-slate block">
-                    Código del Cupón<span className="text-red-500 ml-0.5">*</span>
+                    Código del Cupón
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
                     type="text"
@@ -250,12 +289,15 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                     placeholder="Ej: INFLUENCER20, PREVENTAVIP"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/70 text-xs font-mono font-bold uppercase text-deep-slate outline-none focus:border-electric-indigo"
                   />
-                  <p className="text-[10px] text-slate-400">En mayúsculas, sin espacios.</p>
+                  <p className="text-[10px] text-slate-400">
+                    En mayúsculas, sin espacios.
+                  </p>
                 </div>
 
                 <div className="space-y-1">
                   <label className="font-bold text-xs text-deep-slate block">
-                    Beneficio de Descuento<span className="text-red-500 ml-0.5">*</span>
+                    Beneficio de Descuento
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <div className="flex rounded-xl bg-surface-gray border border-surface-variant/70 overflow-hidden">
                     <input
@@ -264,12 +306,20 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                       step="0.5"
                       required
                       value={discountValue}
-                      onChange={(e) => setDiscountValue(e.target.value === '' ? '' : Number(e.target.value))}
+                      onChange={(e) =>
+                        setDiscountValue(
+                          e.target.value === "" ? "" : Number(e.target.value),
+                        )
+                      }
                       className="w-full px-3 py-2 text-xs font-bold text-deep-slate outline-none bg-transparent"
                     />
                     <select
                       value={discountType}
-                      onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'fixed')}
+                      onChange={(e) =>
+                        setDiscountType(
+                          e.target.value as "percentage" | "fixed",
+                        )
+                      }
                       className="bg-slate-200/60 px-3 text-xs font-bold text-deep-slate outline-none border-l border-surface-variant/70"
                     >
                       <option value="percentage">% Porcentaje</option>
@@ -280,29 +330,44 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
 
                 <div className="space-y-1">
                   <label className="font-bold text-xs text-deep-slate block">
-                    Modalidad de Uso<span className="text-red-500 ml-0.5">*</span>
+                    Modalidad de Uso
+                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <select
                     value={usageType}
-                    onChange={(e) => setUsageType(e.target.value as 'reusable' | 'single_use')}
+                    onChange={(e) =>
+                      setUsageType(e.target.value as "reusable" | "single_use")
+                    }
                     className="w-full px-3.5 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/70 text-xs font-semibold text-deep-slate outline-none"
                   >
-                    <option value="reusable">Reutilizable (Para campañas masivas e influencers)</option>
-                    <option value="single_use">Un solo uso (Para sorteos o clientes únicos)</option>
+                    <option value="reusable">
+                      Reutilizable (Para campañas masivas e influencers)
+                    </option>
+                    <option value="single_use">
+                      Un solo uso (Para sorteos o clientes únicos)
+                    </option>
                   </select>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-xs text-deep-slate block">Límite Total de Canjes</label>
+                  <label className="font-bold text-xs text-deep-slate block">
+                    Límite Total de Canjes
+                  </label>
                   <input
                     type="number"
                     min="1"
                     value={maxUses}
-                    onChange={(e) => setMaxUses(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) =>
+                      setMaxUses(
+                        e.target.value === "" ? "" : Number(e.target.value),
+                      )
+                    }
                     placeholder="Dejar vacío para ilimitado"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/70 text-xs font-semibold text-deep-slate outline-none"
                   />
-                  <p className="text-[10px] text-slate-400">Tope máximo de órdenes que podrán canjearlo.</p>
+                  <p className="text-[10px] text-slate-400">
+                    Tope máximo de órdenes que podrán canjearlo.
+                  </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
@@ -313,8 +378,8 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                       </span>
                       <span className="text-[10px] text-slate-500">
                         {hasExpiry
-                          ? 'El cupón vencerá automáticamente en la fecha indicada.'
-                          : 'Desactivado: vigente hasta que finalice el evento.'}
+                          ? "El cupón vencerá automáticamente en la fecha indicada."
+                          : "Desactivado: vigente hasta que finalice el evento."}
                       </span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -325,7 +390,7 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                           const enabled = e.target.checked;
                           setHasExpiry(enabled);
                           if (!enabled) {
-                            setExpiryDate('');
+                            setExpiryDate("");
                           }
                         }}
                         className="sr-only peer"
@@ -339,7 +404,8 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <span className="text-[10px] text-slate-500 font-medium block mb-1">
-                            Día/Mes/Año<span className="text-red-500 ml-0.5">*</span>
+                            Día/Mes/Año
+                            <span className="text-red-500 ml-0.5">*</span>
                           </span>
                           <input
                             type="date"
@@ -363,7 +429,8 @@ export function CouponsManager({ coupons, onChange }: CouponsManagerProps) {
                       </div>
                       {expiryDate && (
                         <p className="text-[10px] font-semibold text-electric-indigo">
-                          Expira el {expiryDate.split('-').reverse().join('/')} a las {expiryTime || '23:59'} hrs.
+                          Expira el {expiryDate.split("-").reverse().join("/")}{" "}
+                          a las {expiryTime || "23:59"} hrs.
                         </p>
                       )}
                     </div>

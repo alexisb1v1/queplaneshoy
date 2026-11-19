@@ -19,7 +19,11 @@ export default function MainLayout({
       {/* Header (TopNavBar) - Mobile (Stitch Style) */}
       <header className="qph-mobile-header md:hidden bg-white sticky top-0 z-50 h-16 flex items-center px-4 justify-between transition-all duration-300 shadow-sm border-b border-outline-variant/5">
         <Link href="/" className="flex items-center gap-3 cursor-pointer">
-          <img alt="queplanhoy logo" className="w-8 h-8 rounded-md object-contain" src="/logo-qph.svg"/>
+          <img
+            alt="queplanhoy logo"
+            className="w-8 h-8 rounded-md object-contain"
+            src="/logo-qph.svg"
+          />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
             queplan<span className="text-electric-indigo">hoy</span>
           </span>
@@ -30,9 +34,14 @@ export default function MainLayout({
             aria-label="Mis Favoritos"
             className="flex items-center justify-center w-9 h-9 text-on-surface-variant hover:text-rose-600 hover:bg-surface-container-high/50 rounded-full transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[22px]">favorite</span>
+            <span className="material-symbols-outlined text-[22px]">
+              favorite
+            </span>
           </Link>
-          <Link href="/profile" className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/30 cursor-pointer block">
+          <Link
+            href="/profile"
+            className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant/30 cursor-pointer block"
+          >
             <img
               alt="Avatar de usuario"
               className="w-full h-full object-cover"

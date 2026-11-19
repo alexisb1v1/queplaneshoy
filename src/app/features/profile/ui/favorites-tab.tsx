@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   getUserFavoritesUseCase,
   removeFavoriteUseCase,
   FavoriteEventModel,
-} from '../index';
-import { ERROR_CODES } from '../../../common/errors/error-codes';
+} from "../index";
+import { ERROR_CODES } from "../../../common/errors/error-codes";
 
 export default function FavoritesTab() {
   const router = useRouter();
   const [favorites, setFavorites] = useState<FavoriteEventModel[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('TODOS');
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("TODOS");
   const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({});
 
   const loadFavorites = useCallback(async () => {
@@ -28,10 +28,15 @@ export default function FavoritesTab() {
       },
       (error) => {
         setIsLoading(false);
-        if (error.code === ERROR_CODES.UNAUTHORIZED.code && typeof window !== 'undefined') {
-          router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+        if (
+          error.code === ERROR_CODES.UNAUTHORIZED.code &&
+          typeof window !== "undefined"
+        ) {
+          router.push(
+            `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+          );
         }
-      }
+      },
     );
   }, [router]);
 
@@ -42,13 +47,16 @@ export default function FavoritesTab() {
     const handleSync = () => {
       loadFavorites();
     };
-    window.addEventListener('qph:favorites-updated', handleSync);
+    window.addEventListener("qph:favorites-updated", handleSync);
     return () => {
-      window.removeEventListener('qph:favorites-updated', handleSync);
+      window.removeEventListener("qph:favorites-updated", handleSync);
     };
   }, [loadFavorites]);
 
-  const handleRemoveFavorite = async (event: FavoriteEventModel, e: React.MouseEvent) => {
+  const handleRemoveFavorite = async (
+    event: FavoriteEventModel,
+    e: React.MouseEvent,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -61,11 +69,15 @@ export default function FavoritesTab() {
     result.match(
       () => {
         // Notificar a otros componentes
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           window.dispatchEvent(
-            new CustomEvent('qph:favorites-updated', {
-              detail: { eventId: event.id, publicUuid: event.publicUuid, isFavorite: false },
-            })
+            new CustomEvent("qph:favorites-updated", {
+              detail: {
+                eventId: event.id,
+                publicUuid: event.publicUuid,
+                isFavorite: false,
+              },
+            }),
           );
         }
         // Remover de la lista local
@@ -85,10 +97,15 @@ export default function FavoritesTab() {
           delete next[event.id];
           return next;
         });
-        if (error.code === ERROR_CODES.UNAUTHORIZED.code && typeof window !== 'undefined') {
-          router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+        if (
+          error.code === ERROR_CODES.UNAUTHORIZED.code &&
+          typeof window !== "undefined"
+        ) {
+          router.push(
+            `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+          );
         }
-      }
+      },
     );
   };
 
@@ -98,7 +115,7 @@ export default function FavoritesTab() {
     favorites.forEach((fav) => {
       if (fav.category) set.add(fav.category.toUpperCase());
     });
-    return ['TODOS', ...Array.from(set)];
+    return ["TODOS", ...Array.from(set)];
   }, [favorites]);
 
   // Filtrado de eventos en memoria
@@ -112,7 +129,7 @@ export default function FavoritesTab() {
         (event.city && event.city.toLowerCase().includes(q));
 
       const matchesCat =
-        selectedCategory === 'TODOS' ||
+        selectedCategory === "TODOS" ||
         (event.category && event.category.toUpperCase() === selectedCategory);
 
       return matchesSearch && matchesCat;
@@ -120,14 +137,14 @@ export default function FavoritesTab() {
   }, [favorites, searchQuery, selectedCategory]);
 
   const formatEventDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Fecha por confirmar';
+    if (!dateStr) return "Fecha por confirmar";
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return dateStr;
-      const formatted = new Intl.DateTimeFormat('es-PE', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
+      const formatted = new Intl.DateTimeFormat("es-PE", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
       }).format(d);
       return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     } catch {
@@ -136,16 +153,18 @@ export default function FavoritesTab() {
   };
 
   const fallbackImage =
-    'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80';
+    "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80";
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      
       {/* Header */}
       <div className="border-b border-surface-variant/40 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[11px] font-bold mb-1.5">
-            <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <span
+              className="material-symbols-outlined text-[14px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
               favorite
             </span>
             <span>Tu Colección Personal</span>
@@ -160,7 +179,7 @@ export default function FavoritesTab() {
 
         <div className="self-start sm:self-auto">
           <span className="text-xs font-bold text-on-surface-variant bg-surface-gray px-3.5 py-1.5 rounded-xl border border-surface-variant">
-            {isLoading ? 'Cargando...' : `${favorites.length} guardados`}
+            {isLoading ? "Cargando..." : `${favorites.length} guardados`}
           </span>
         </div>
       </div>
@@ -189,11 +208,11 @@ export default function FavoritesTab() {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-4 py-2 rounded-xl font-bold text-xs transition-all whitespace-nowrap active:scale-95 border cursor-pointer ${
                     selectedCategory === cat
-                      ? 'bg-electric-indigo text-white border-electric-indigo shadow-xs'
-                      : 'bg-white text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate border-surface-variant/70 shadow-xs'
+                      ? "bg-electric-indigo text-white border-electric-indigo shadow-xs"
+                      : "bg-white text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate border-surface-variant/70 shadow-xs"
                   }`}
                 >
-                  {cat === 'TODOS' ? 'Todas las categorías' : cat}
+                  {cat === "TODOS" ? "Todas las categorías" : cat}
                 </button>
               ))}
             </div>
@@ -220,25 +239,32 @@ export default function FavoritesTab() {
         /* Estado Vacío */
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-6 bg-white border border-surface-variant rounded-2xl p-8 shadow-xs">
           <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center border border-rose-100 shadow-inner">
-            <span className="material-symbols-outlined text-[42px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <span
+              className="material-symbols-outlined text-[42px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
               favorite_border
             </span>
           </div>
           <div className="max-w-md">
             <h3 className="text-xl font-bold text-deep-slate">
-              {favorites.length === 0 ? 'Aún no tienes favoritos guardados' : 'No se encontraron resultados'}
+              {favorites.length === 0
+                ? "Aún no tienes favoritos guardados"
+                : "No se encontraron resultados"}
             </h3>
             <p className="text-on-surface-variant text-sm mt-2">
               {favorites.length === 0
-                ? 'Explora la cartelera oficial y pulsa en el corazón de cualquier concierto, festival o evento que te interese para guardarlo aquí.'
-                : 'Intenta con otro término de búsqueda o selecciona otra categoría.'}
+                ? "Explora la cartelera oficial y pulsa en el corazón de cualquier concierto, festival o evento que te interese para guardarlo aquí."
+                : "Intenta con otro término de búsqueda o selecciona otra categoría."}
             </p>
           </div>
           <Link
             href="/events"
             className="inline-flex items-center gap-2 bg-electric-indigo text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-primary active:scale-95 transition-all shadow-md shadow-electric-indigo/20 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">explore</span>
+            <span className="material-symbols-outlined text-[18px]">
+              explore
+            </span>
             <span>Explorar cartelera</span>
           </Link>
         </div>
@@ -255,8 +281,8 @@ export default function FavoritesTab() {
                 key={event.id}
                 style={{
                   opacity: isRemoving ? 0.3 : 1,
-                  transform: isRemoving ? 'scale(0.95)' : 'scale(1)',
-                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: isRemoving ? "scale(0.95)" : "scale(1)",
+                  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
                 className="bg-white rounded-2xl overflow-hidden border border-surface-variant shadow-xs hover:shadow-md group flex flex-col hover:-translate-y-1 transition-all duration-300"
               >
@@ -316,7 +342,8 @@ export default function FavoritesTab() {
                       location_on
                     </span>
                     <span className="truncate">
-                      {event.venue ? `${event.venue}, ` : ''}{event.city || 'Perú'}
+                      {event.venue ? `${event.venue}, ` : ""}
+                      {event.city || "Perú"}
                     </span>
                   </div>
 
@@ -326,7 +353,9 @@ export default function FavoritesTab() {
                         Precio
                       </span>
                       <span className="text-sm font-extrabold text-electric-indigo mt-0.5">
-                        {event.minPrice > 0 ? `Desde S/ ${event.minPrice.toFixed(2)}` : 'Entrada Libre'}
+                        {event.minPrice > 0
+                          ? `Desde S/ ${event.minPrice.toFixed(2)}`
+                          : "Entrada Libre"}
                       </span>
                     </div>
 
@@ -335,7 +364,9 @@ export default function FavoritesTab() {
                       className="bg-electric-indigo text-white font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-primary transition-all shadow-xs active:scale-95 cursor-pointer inline-flex items-center gap-1"
                     >
                       <span>Ver Evento</span>
-                      <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                      <span className="material-symbols-outlined text-[14px]">
+                        arrow_forward
+                      </span>
                     </Link>
                   </div>
                 </div>
@@ -344,7 +375,6 @@ export default function FavoritesTab() {
           })}
         </div>
       )}
-
     </div>
   );
 }

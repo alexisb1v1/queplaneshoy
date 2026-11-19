@@ -20,7 +20,8 @@ export interface SimulateCheckoutParams {
   eventId: string;
   showId: string;
   items: SimulateCheckoutItem[];
-  paymentMethod: 'card' | 'yape' | 'transfer' | 'cuotealo' | 'apple_pay' | 'google_pay';
+  paymentMethod:
+    "card" | "yape" | "transfer" | "cuotealo" | "apple_pay" | "google_pay";
   couponCode?: string;
   customerEmail?: string;
   customerName?: string;
@@ -54,7 +55,7 @@ export interface SimulateCheckoutResponseModel {
   tickets: IssuedTicketModel[];
 }
 
-export type CheckoutPaymentMethod = 'card' | 'yape' | 'transfer' | 'cuotealo';
+export type CheckoutPaymentMethod = "card" | "yape" | "transfer" | "cuotealo";
 
 export interface PrepareCulqiCheckoutParams {
   eventId: string;
@@ -74,7 +75,7 @@ export interface PrepareCulqiCheckoutModel {
   culqiOrderId: string;
   amountInCents: number;
   totalAmount: number;
-  currency: 'PEN';
+  currency: "PEN";
   title: string;
   description: string;
   expiresAt: string;
@@ -108,7 +109,7 @@ export interface ConfirmCulqiChargeParams {
 }
 
 export interface ConfirmCulqiChargeModel {
-  status: 'PAID' | 'REQUIRES_3DS';
+  status: "PAID" | "REQUIRES_3DS";
   requires3DS: boolean;
   orderPublicUuid: string;
   tokenId: string;
@@ -117,7 +118,7 @@ export interface ConfirmCulqiChargeModel {
 
 export interface CulqiOrderStatusModel {
   orderPublicUuid: string;
-  status: 'pending' | 'paid' | 'expired' | 'cancelled' | string;
+  status: "pending" | "paid" | "expired" | "cancelled" | string;
   culqiState?: string | null;
   paymentCode?: string | null;
   expiresAt?: string | null;
@@ -137,7 +138,7 @@ export interface ValidateCouponParams {
 
 export interface ValidateCouponResponseModel {
   code: string;
-  discountType: 'percentage' | 'fixed';
+  discountType: "percentage" | "fixed";
   discountValue: number;
   discountAmount: number;
   newTotal: number;
@@ -172,6 +173,7 @@ export interface UserOrderModel {
   category: string;
   venueName: string;
   venueAddress: string;
+  googleMapsUrl?: string | null;
   city: string;
   bannerImageUrl: string | null;
   eventDateFormatted: string;

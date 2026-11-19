@@ -1,6 +1,6 @@
-import { ResultAsync } from 'neverthrow';
-import { FavoritesRepository } from '../repositories/favorites.repository';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { FavoritesRepository } from "../repositories/favorites.repository";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class RemoveFavoriteUseCase {
   constructor(private readonly repository: FavoritesRepository) {}
@@ -9,4 +9,3 @@ export class RemoveFavoriteUseCase {
     return this.repository.removeFavorite(eventId);
   }
 }
-

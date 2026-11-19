@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useTransition } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { searchEventsUseCase } from '../../index';
-import { SearchEventItem } from '../../models/search-event.model';
-import { EVENT_CATEGORIES } from '../../constants/eventConstants';
+import React, { useState, useEffect, useRef, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { searchEventsUseCase } from "../../index";
+import { SearchEventItem } from "../../models/search-event.model";
+import { EVENT_CATEGORIES } from "../../constants/eventConstants";
 
 interface SearchInstantDropdownProps {
   initialQuery?: string;
@@ -16,10 +16,10 @@ interface SearchInstantDropdownProps {
 }
 
 export function SearchInstantDropdown({
-  initialQuery = '',
-  initialCategory = 'Todas',
-  placeholder = 'Buscar eventos, artistas o locales...',
-  className = '',
+  initialQuery = "",
+  initialCategory = "Todas",
+  placeholder = "Buscar eventos, artistas o locales...",
+  className = "",
   compact = false,
 }: SearchInstantDropdownProps) {
   const router = useRouter();
@@ -35,20 +35,23 @@ export function SearchInstantDropdown({
   // Cerrar al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -65,13 +68,15 @@ export function SearchInstantDropdown({
     setIsLoading(true);
     const timer = setTimeout(async () => {
       const categoryParam =
-        category && category !== 'Todas' && category !== 'Todos' ? category : undefined;
+        category && category !== "Todas" && category !== "Todos"
+          ? category
+          : undefined;
 
       const res = await searchEventsUseCase.execute({
         q: trimmed,
         category: categoryParam,
         limit: 6,
-        status: 'published',
+        status: "published",
       });
 
       res.match(
@@ -85,7 +90,7 @@ export function SearchInstantDropdown({
           setResults([]);
           setIsOpen(false);
           setIsLoading(false);
-        }
+        },
       );
     }, 220);
 
@@ -96,22 +101,22 @@ export function SearchInstantDropdown({
     e.preventDefault();
     setIsOpen(false);
     const params = new URLSearchParams();
-    if (query.trim()) params.set('search', query.trim());
-    if (category && category !== 'Todas' && category !== 'Todos') {
-      params.set('category', category.toLowerCase());
+    if (query.trim()) params.set("search", query.trim());
+    if (category && category !== "Todas" && category !== "Todos") {
+      params.set("category", category.toLowerCase());
     }
     const queryStr = params.toString();
-    router.push(`/events${queryStr ? `?${queryStr}` : ''}`);
+    router.push(`/events${queryStr ? `?${queryStr}` : ""}`);
   };
 
   const formatDate = (dateStr?: string | null) => {
-    if (!dateStr) return 'Próximamente';
+    if (!dateStr) return "Próximamente";
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString('es-PE', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
+      return d.toLocaleDateString("es-PE", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
       });
     } catch {
       return dateStr;
@@ -120,7 +125,7 @@ export function SearchInstantDropdown({
 
   const getCategoryBadge = (catId?: string) => {
     const found = EVENT_CATEGORIES.find((c) => c.id === catId);
-    return found ? found.label : (catId || 'Evento');
+    return found ? found.label : catId || "Evento";
   };
 
   return (
@@ -156,7 +161,7 @@ export function SearchInstantDropdown({
           <button
             type="button"
             onClick={() => {
-              setQuery('');
+              setQuery("");
               setResults([]);
               setIsOpen(false);
             }}
@@ -187,7 +192,9 @@ export function SearchInstantDropdown({
           aria-label="Buscar eventos"
           className="w-8 h-8 rounded-full bg-electric-indigo hover:bg-electric-indigo/90 text-white flex items-center justify-center transition-colors shadow-xs shrink-0 cursor-pointer"
         >
-          <span className="material-symbols-outlined text-sm font-bold">arrow_forward</span>
+          <span className="material-symbols-outlined text-sm font-bold">
+            arrow_forward
+          </span>
         </button>
       </form>
 
@@ -197,7 +204,9 @@ export function SearchInstantDropdown({
           {/* Header del Dropdown */}
           <div className="px-5 py-2.5 bg-slate-50 border-b border-surface-variant/60 flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-electric-indigo text-[16px]">bolt</span>
+              <span className="material-symbols-outlined text-electric-indigo text-[16px]">
+                bolt
+              </span>
               Sugerencias en tiempo real
             </span>
             <span className="text-[11px] font-semibold text-slate-400">
@@ -210,9 +219,10 @@ export function SearchInstantDropdown({
             <div className="divide-y divide-surface-variant/40 max-h-80 overflow-y-auto">
               {results.map((item) => {
                 const secureId = item.publicUuid || item.slug || item.id;
-                const targetUrl = item.hasLandingPage && item.slug
-                  ? `/e/${item.slug}`
-                  : `/events/${secureId}`;
+                const targetUrl =
+                  item.hasLandingPage && item.slug
+                    ? `/e/${item.slug}`
+                    : `/events/${secureId}`;
 
                 return (
                   <Link
@@ -232,7 +242,9 @@ export function SearchInstantDropdown({
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
-                          <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
+                          <span className="material-symbols-outlined text-[20px]">
+                            confirmation_number
+                          </span>
                         </div>
                       )}
                     </div>
@@ -244,7 +256,7 @@ export function SearchInstantDropdown({
                           {getCategoryBadge(item.category)}
                         </span>
                         <span className="text-xs text-slate-400 truncate">
-                          {item.venue || 'Recinto Principal'}
+                          {item.venue || "Recinto Principal"}
                         </span>
                       </div>
 
@@ -259,7 +271,9 @@ export function SearchInstantDropdown({
                             Desde S/. {item.minPrice.toFixed(2)}
                           </span>
                         ) : (
-                          <span className="font-bold text-slate-400">Entrada Libre</span>
+                          <span className="font-bold text-slate-400">
+                            Entrada Libre
+                          </span>
                         )}
                       </div>
                     </div>
@@ -297,7 +311,9 @@ export function SearchInstantDropdown({
               className="text-xs font-bold text-electric-indigo hover:text-primary transition-colors flex items-center gap-1"
             >
               Ver todos los resultados
-              <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+              <span className="material-symbols-outlined text-[15px]">
+                arrow_forward
+              </span>
             </button>
           </div>
         </div>
@@ -305,4 +321,3 @@ export function SearchInstantDropdown({
     </div>
   );
 }
-
