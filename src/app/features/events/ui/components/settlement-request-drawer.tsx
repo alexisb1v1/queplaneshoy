@@ -182,7 +182,9 @@ export function SettlementRequestDrawer({
 
   if (!isOpen) return null;
 
-  const isAlreadyRequested = Boolean(settlementData?.isSettlementRequested);
+  const isRejected = settlementData?.status === 'rejected';
+  const isPaid = settlementData?.status === 'paid';
+  const isAlreadyRequested = Boolean(settlementData?.isSettlementRequested) && !isRejected;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -212,12 +214,15 @@ export function SettlementRequestDrawer({
                   </h2>
                   {settlementData && (
                     <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${isAlreadyRequested
-                          ? settlementData.status === 'paid'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                            : 'bg-amber-100 text-amber-800 border border-amber-300'
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        isPaid
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : isRejected
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : isAlreadyRequested
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
                           : 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                        }`}
+                      }`}
                     >
                       {settlementData.statusLabel}
                     </span>
@@ -270,22 +275,43 @@ export function SettlementRequestDrawer({
                   </div>
                 )}
 
+                {/* ALERTA DE RECHAZO / OBSERVACIÓN (SI FUE RECHAZADA) */}
+                {isRejected && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 space-y-2.5">
+                    <div className="flex items-center gap-2 font-bold text-sm text-rose-800">
+                      <span className="material-symbols-outlined text-[22px] text-rose-600">cancel</span>
+                      Solicitud Observada / Rechazada
+                    </div>
+                    <p className="text-xs text-rose-700 leading-relaxed">
+                      Tu solicitud previa fue observada por el área de finanzas. Puedes corregir los datos bancarios en el formulario a continuación y volver a solicitar la liquidación.
+                    </p>
+                    {settlementData?.notes && (
+                      <div className="bg-white/80 p-3 rounded-xl border border-rose-200 text-xs text-rose-900">
+                        <strong className="block text-rose-800 font-semibold mb-0.5">Motivo de la observación:</strong>
+                        <span>{settlementData.notes}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* AVISO IMPORTANTE DE 24H A 72H */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-950 flex items-start gap-3.5">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="material-symbols-outlined text-[22px]">schedule</span>
+                {!isPaid && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-950 flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="material-symbols-outlined text-[22px]">schedule</span>
+                    </div>
+                    <div className="text-xs sm:text-sm leading-relaxed">
+                      <strong className="font-bold text-amber-900 block mb-1">
+                        Plazo estimado de procesamiento bancario:
+                      </strong>
+                      La transferencia y liquidación definitiva demora aproximadamente de{' '}
+                      <span className="font-extrabold text-amber-950 underline decoration-amber-400">
+                        24h a 72 horas hábiles
+                      </span>{' '}
+                      tras la auditoría contable de taquilla y verificación de los datos bancarios ingresados.
+                    </div>
                   </div>
-                  <div className="text-xs sm:text-sm leading-relaxed">
-                    <strong className="font-bold text-amber-900 block mb-1">
-                      Plazo estimado de procesamiento bancario:
-                    </strong>
-                    La transferencia y liquidación definitiva demora aproximadamente de{' '}
-                    <span className="font-extrabold text-amber-950 underline decoration-amber-400">
-                      24h a 72 horas hábiles
-                    </span>{' '}
-                    tras la auditoría contable de taquilla y verificación de los datos bancarios ingresados.
-                  </div>
-                </div>
+                )}
 
                 {/* RESUMEN FINANCIERO DEL EVENTO */}
                 <div className="bg-surface-gray/60 border border-surface-border rounded-2xl p-5 sm:p-6 space-y-4">
@@ -353,32 +379,102 @@ export function SettlementRequestDrawer({
                   </div>
                 </div>
 
-                {/* SI YA FUE SOLICITADA: MUESTRA ESTADO CONGELADO */}
+                {/* SI YA FUE SOLICITADA Y NO ESTÁ RECHAZADA: MUESTRA ESTADO CONGELADO */}
                 {isAlreadyRequested ? (
-                  <div className="p-5 sm:p-6 rounded-2xl bg-white border border-emerald-200/80 shadow-sm space-y-4">
-                    <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
-                      <span className="material-symbols-outlined text-[20px] text-emerald-600">verified</span>
-                      Solicitud en Proceso de Pago
+                  <div
+                    className={`p-5 sm:p-6 rounded-2xl bg-white shadow-sm space-y-4 border ${
+                      isPaid ? 'border-emerald-200' : 'border-amber-200'
+                    }`}
+                  >
+                    <div
+                      className={`flex items-center gap-2 font-bold text-sm ${
+                        isPaid ? 'text-emerald-800' : 'text-amber-800'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        {isPaid ? 'verified' : 'hourglass_top'}
+                      </span>
+                      <span>
+                        {isPaid
+                          ? 'Liquidación Pagada y Transferida con Éxito'
+                          : 'Solicitud en Proceso de Pago / Auditoría'}
+                      </span>
                     </div>
 
                     <p className="text-xs text-on-surface-variant leading-relaxed">
-                      Esta liquidación fue registrada el{' '}
-                      <span className="font-semibold text-deep-slate">
-                        {settlementData?.requestedAt
-                          ? new Date(settlementData.requestedAt).toLocaleString('es-PE')
-                          : 'recientemente'}
-                      </span>
-                      . Los fondos se encuentran reservados y en proceso de transferencia hacia tu cuenta bancaria.
+                      {isPaid ? (
+                        <>
+                          La transferencia bancaria fue ejecutada el{' '}
+                          <span className="font-semibold text-deep-slate">
+                            {settlementData?.paidAt
+                              ? new Date(settlementData.paidAt).toLocaleString('es-PE')
+                              : 'recientemente'}
+                          </span>
+                          . A continuación puedes consultar los datos de la transferencia y descargar el voucher de comprobante oficial.
+                        </>
+                      ) : (
+                        <>
+                          Esta liquidación fue registrada el{' '}
+                          <span className="font-semibold text-deep-slate">
+                            {settlementData?.requestedAt
+                              ? new Date(settlementData.requestedAt).toLocaleString('es-PE')
+                              : 'recientemente'}
+                          </span>
+                          . Los fondos se encuentran reservados y en proceso de auditoría y transferencia hacia tu cuenta bancaria.
+                        </>
+                      )}
                     </p>
+
+                    {/* VOUCHER / COMPROBANTE OFICIAL (CUANDO ESTÁ PAGADO) */}
+                    {isPaid && settlementData?.transferVoucherUrl && (
+                      <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[18px] text-emerald-700">receipt_long</span>
+                            Comprobante de Transferencia Bancaria (Voucher)
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                            Oficial
+                          </span>
+                        </div>
+
+                        <div className="relative group overflow-hidden rounded-xl border border-emerald-200 bg-black/5 flex items-center justify-center p-2">
+                          <img
+                            src={settlementData.transferVoucherUrl}
+                            alt="Comprobante oficial de liquidación"
+                            className="max-h-60 w-auto object-contain rounded-lg shadow-sm"
+                          />
+                        </div>
+
+                        <a
+                          href={settlementData.transferVoucherUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-black text-emerald-900 bg-emerald-100 hover:bg-emerald-200 rounded-xl border border-emerald-300 transition shadow-sm"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                          Ver Comprobante Oficial en Tamaño Completo
+                        </a>
+                      </div>
+                    )}
+
+                    {settlementData?.transferReference && (
+                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+                        <span className="font-medium">Nro de Operación Bancaria:</span>
+                        <code className="font-mono font-bold text-sm bg-white px-2 py-0.5 rounded border border-emerald-300">
+                          {settlementData.transferReference}
+                        </code>
+                      </div>
+                    )}
 
                     <div className="bg-surface-gray/50 rounded-xl p-4 space-y-2 text-xs border border-surface-border">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <span className="text-[11px] text-on-surface-variant block">Banco:</span>
+                          <span className="text-[11px] text-on-surface-variant block">Banco de Destino:</span>
                           <strong className="text-deep-slate">{settlementData?.bankName}</strong>
                         </div>
                         <div>
-                          <span className="text-[11px] text-on-surface-variant block">Tipo:</span>
+                          <span className="text-[11px] text-on-surface-variant block">Tipo de Cuenta:</span>
                           <strong className="text-deep-slate">{settlementData?.accountType || 'Ahorros Soles'}</strong>
                         </div>
                       </div>
@@ -394,20 +490,13 @@ export function SettlementRequestDrawer({
                           </code>
                         </div>
                         <div>
-                          <span className="text-[11px] text-on-surface-variant block">CCI (20 dígitos):</span>
+                          <span className="text-[11px] text-on-surface-variant block">CCI:</span>
                           <code className="text-xs font-mono font-semibold text-deep-slate">
-                            {settlementData?.bankAccountCci}
+                            {settlementData?.bankAccountCci || '-'}
                           </code>
                         </div>
                       </div>
                     </div>
-
-                    {settlementData?.transferReference && (
-                      <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
-                        <span>Nro de Operación Bancaria:</span>
-                        <code className="font-bold">{settlementData.transferReference}</code>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   /* FORMULARIO DE CAPTURA BANCARIA SI AÚN NO SE HA SOLICITADO */
@@ -622,8 +711,14 @@ export function SettlementRequestDrawer({
                           </>
                         ) : (
                           <>
-                            <span className="material-symbols-outlined text-[20px]">send</span>
-                            <span>Confirmar y Solicitar Liquidación</span>
+                            <span className="material-symbols-outlined text-[20px]">
+                              {isRejected ? 'refresh' : 'send'}
+                            </span>
+                            <span>
+                              {isRejected
+                                ? 'Corregir y Reenviar Solicitud de Liquidación'
+                                : 'Confirmar y Solicitar Liquidación'}
+                            </span>
                           </>
                         )}
                       </button>
