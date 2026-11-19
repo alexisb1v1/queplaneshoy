@@ -1,4 +1,4 @@
-declare module 'ubigeo-peru' {
+declare module "ubigeo-peru" {
   export interface UbigeoItem {
     departamento: string;
     provincia: string;
@@ -14,4 +14,3 @@ declare module 'ubigeo-peru' {
   const ubigeoPeru: UbigeoPeru;
   export default ubigeoPeru;
 }
-

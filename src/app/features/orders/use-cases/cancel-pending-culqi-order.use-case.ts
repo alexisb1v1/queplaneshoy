@@ -1,7 +1,7 @@
-import { ResultAsync } from 'neverthrow';
-import { OrderRepository } from '../repositories/order.repository';
-import { CancelPendingCulqiOrderModel } from '../models/order.model';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { OrderRepository } from "../repositories/order.repository";
+import { CancelPendingCulqiOrderModel } from "../models/order.model";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class CancelPendingCulqiOrderUseCase {
   constructor(private readonly repository: OrderRepository) {}
@@ -12,8 +12,9 @@ export class CancelPendingCulqiOrderUseCase {
    * @param orderPublicUuid - UUID público de la orden pendiente
    * @returns Resultado indicando si la reserva fue liberada
    */
-  execute(orderPublicUuid: string): ResultAsync<CancelPendingCulqiOrderModel, DomainError> {
+  execute(
+    orderPublicUuid: string,
+  ): ResultAsync<CancelPendingCulqiOrderModel, DomainError> {
     return this.repository.cancelPendingCulqiOrder(orderPublicUuid);
   }
 }
-

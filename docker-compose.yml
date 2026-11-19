@@ -6,8 +6,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"   # Tamaño máximo de cada archivo de log (10 Megabytes)
-        max-file: "3"     # Mantener máximo 3 archivos históricos
+        max-size: "10m" # Tamaño máximo de cada archivo de log (10 Megabytes)
+        max-file: "3" # Mantener máximo 3 archivos históricos
     environment:
       PORT: 3000
       NODE_ENV: production

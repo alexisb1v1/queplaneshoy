@@ -54,4 +54,3 @@ export interface EventDetailModel {
   shows: EventShowModel[];
   zones: EventZoneModel[];
 }
-

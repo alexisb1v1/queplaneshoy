@@ -1,19 +1,23 @@
-'use client';
+"use client";
 
-import React, { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import TicketPrintScreen, { TicketPrintScreenProps } from '../../features/orders/ui/ticket-print-screen';
+import React, { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import TicketPrintScreen, {
+  TicketPrintScreenProps,
+} from "../../features/orders/ui/ticket-print-screen";
 
 function CheckoutTicketsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [printProps, setPrintProps] = useState<TicketPrintScreenProps | null>(null);
+  const [printProps, setPrintProps] = useState<TicketPrintScreenProps | null>(
+    null,
+  );
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     // 1. Intentar cargar desde sessionStorage (enviado desde Mis Entradas o Checkout)
-    const stored = sessionStorage.getItem('current_print_ticket');
+    const stored = sessionStorage.getItem("current_print_ticket");
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -33,7 +37,11 @@ function CheckoutTicketsContent() {
           totalAmount: parsed.totalAmount,
           holderName: parsed.holderName,
           holderDni: parsed.holderDni,
-          backLabel: parsed.backLabel || (parsed.from === '/profile/tickets' ? 'Volver a Mis Entradas' : 'Volver a la Confirmación'),
+          backLabel:
+            parsed.backLabel ||
+            (parsed.from === "/profile/tickets"
+              ? "Volver a Mis Entradas"
+              : "Volver a la Confirmación"),
           onBack: () => {
             if (parsed.from) {
               router.push(parsed.from);
@@ -44,25 +52,25 @@ function CheckoutTicketsContent() {
         });
         return;
       } catch (e) {
-        console.error('Error parseando current_print_ticket', e);
+        console.error("Error parseando current_print_ticket", e);
       }
     }
 
     // 2. Si hay query params
-    const eventName = searchParams.get('eventName');
-    const fromParam = searchParams.get('from');
+    const eventName = searchParams.get("eventName");
+    const fromParam = searchParams.get("from");
     if (eventName) {
       setPrintProps({
         eventName,
-        eventVenue: searchParams.get('venue') || undefined,
-        tierZone: searchParams.get('zone') || undefined,
-        eventDate: searchParams.get('date') || undefined,
-        ticketCount: Number(searchParams.get('qty')) || 1,
-        orderNumber: searchParams.get('orderId') || undefined,
-        backLabel: fromParam === 'profile' ? 'Volver a Mis Entradas' : 'Volver',
+        eventVenue: searchParams.get("venue") || undefined,
+        tierZone: searchParams.get("zone") || undefined,
+        eventDate: searchParams.get("date") || undefined,
+        ticketCount: Number(searchParams.get("qty")) || 1,
+        orderNumber: searchParams.get("orderId") || undefined,
+        backLabel: fromParam === "profile" ? "Volver a Mis Entradas" : "Volver",
         onBack: () => {
-          if (fromParam === 'profile') {
-            router.push('/profile/tickets');
+          if (fromParam === "profile") {
+            router.push("/profile/tickets");
           } else {
             router.back();
           }
@@ -73,16 +81,24 @@ function CheckoutTicketsContent() {
 
     // 3. Fallback: usar los valores por defecto del ticket
     setPrintProps({
-      backLabel: fromParam === 'profile' ? 'Volver a Mis Entradas' : 'Volver a la Confirmación',
-      backHref: fromParam === 'profile' ? '/profile/tickets' : '/checkout/success',
+      backLabel:
+        fromParam === "profile"
+          ? "Volver a Mis Entradas"
+          : "Volver a la Confirmación",
+      backHref:
+        fromParam === "profile" ? "/profile/tickets" : "/checkout/success",
     });
   }, [router, searchParams]);
 
   if (!printProps) {
     return (
       <div className="min-h-screen bg-surface flex flex-col items-center justify-center gap-3">
-        <span className="material-symbols-outlined animate-spin text-[36px] text-electric-indigo">refresh</span>
-        <p className="text-sm font-semibold text-on-surface-variant">Generando documento oficial de impresión...</p>
+        <span className="material-symbols-outlined animate-spin text-[36px] text-electric-indigo">
+          refresh
+        </span>
+        <p className="text-sm font-semibold text-on-surface-variant">
+          Generando documento oficial de impresión...
+        </p>
       </div>
     );
   }
@@ -95,8 +111,12 @@ export default function CheckoutTicketsPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-surface flex flex-col items-center justify-center gap-3">
-          <span className="material-symbols-outlined animate-spin text-[36px] text-electric-indigo">refresh</span>
-          <p className="text-sm font-semibold text-on-surface-variant">Cargando...</p>
+          <span className="material-symbols-outlined animate-spin text-[36px] text-electric-indigo">
+            refresh
+          </span>
+          <p className="text-sm font-semibold text-on-surface-variant">
+            Cargando...
+          </p>
         </div>
       }
     >

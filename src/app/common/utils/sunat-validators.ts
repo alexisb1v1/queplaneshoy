@@ -15,7 +15,7 @@ export function isValidRuc(ruc: string | null | undefined): boolean {
   }
 
   // 2. Prefijos oficiales de SUNAT
-  const validPrefixes = ['10', '15', '17', '20'];
+  const validPrefixes = ["10", "15", "17", "20"];
   const prefix = cleanRuc.substring(0, 2);
   if (!validPrefixes.includes(prefix)) {
     return false;

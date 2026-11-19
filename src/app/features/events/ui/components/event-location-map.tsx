@@ -42,13 +42,17 @@ const CITY_FALLBACK_COORDINATES: Record<string, [number, number]> = {
 export function parseAndNormalizeCoordinates(
   rawCoordinates?: string | null,
   rawGoogleMapsUrl?: string | null,
-  city = "LIMA"
+  city = "LIMA",
 ): [number, number] {
   let val1: number | null = null;
   let val2: number | null = null;
 
   // Intento 1: Parsear el campo de coordenadas
-  if (rawCoordinates && typeof rawCoordinates === "string" && rawCoordinates.trim().length > 0) {
+  if (
+    rawCoordinates &&
+    typeof rawCoordinates === "string" &&
+    rawCoordinates.trim().length > 0
+  ) {
     const trimmed = rawCoordinates.trim();
 
     // Caso A: Objeto JSON en string
@@ -129,7 +133,11 @@ export function EventLocationMap({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
 
-  const [lat, lng] = parseAndNormalizeCoordinates(coordinates, googleMapsUrl, city);
+  const [lat, lng] = parseAndNormalizeCoordinates(
+    coordinates,
+    googleMapsUrl,
+    city,
+  );
 
   const externalMapUrl =
     googleMapsUrl && googleMapsUrl.trim().length > 0
@@ -250,7 +258,9 @@ export function EventLocationMap({
         <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-surface-variant flex items-center justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-electric-indigo/10 border border-electric-indigo/20 flex items-center justify-center text-electric-indigo shrink-0">
-              <span className="material-symbols-outlined text-[22px]">location_on</span>
+              <span className="material-symbols-outlined text-[22px]">
+                location_on
+              </span>
             </div>
             <div className="min-w-0">
               <p className="qph-label-bold text-deep-slate font-extrabold text-xs sm:text-sm truncate">
@@ -277,7 +287,9 @@ export function EventLocationMap({
             className="px-3.5 py-2 rounded-xl bg-electric-indigo hover:bg-primary text-white text-xs font-bold shrink-0 transition-all shadow-sm active:scale-95 flex items-center gap-1.5"
           >
             <span>Ruta</span>
-            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+            <span className="material-symbols-outlined text-[14px]">
+              open_in_new
+            </span>
           </a>
         </div>
       </div>

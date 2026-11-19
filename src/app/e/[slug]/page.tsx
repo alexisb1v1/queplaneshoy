@@ -7,7 +7,9 @@ interface PageProps {
   searchParams: Promise<{ previewTemp?: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const formattedTitle = slug
     .split("-")
@@ -20,9 +22,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function EventLandingRoute({ params, searchParams }: PageProps) {
+export default async function EventLandingRoute({
+  params,
+  searchParams,
+}: PageProps) {
   const { slug } = await params;
   const { previewTemp } = await searchParams;
   return <LandingPageContainer slug={slug} previewTemp={previewTemp} />;
 }
-

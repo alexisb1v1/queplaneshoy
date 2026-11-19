@@ -1,12 +1,12 @@
-import { ResultAsync, ok, err } from 'neverthrow';
-import { DomainError } from '../errors/domain-error';
-import { ERROR_CODES } from '../errors/error-codes';
+import { ResultAsync, ok, err } from "neverthrow";
+import { DomainError } from "../errors/domain-error";
+import { ERROR_CODES } from "../errors/error-codes";
 
 /**
  * Claves de almacenamiento en localStorage para los tokens de sesión
  */
-export const AUTH_TOKEN_KEY = 'qph_auth_token';
-export const REFRESH_TOKEN_KEY = 'qph_refresh_token';
+export const AUTH_TOKEN_KEY = "qph_auth_token";
+export const REFRESH_TOKEN_KEY = "qph_refresh_token";
 
 /**
  * Resuelve la URL base del API de manera dinámica e infalible:
@@ -17,42 +17,48 @@ export const REFRESH_TOKEN_KEY = 'qph_refresh_token';
  * - En SSR (servidor Node): utiliza INTERNAL_API_URL o NEXT_PUBLIC_API_URL con fallback seguro.
  */
 function resolveApiBaseUrl(): string {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
     // Si estamos en un dominio real (despliegue dev/staging/producción en VPS con Caddy)
-    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return '/api';
+    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return "/api";
     }
 
     // Si estamos en desarrollo local en el navegador
-    if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.includes('undefined')) {
-      return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
+    if (
+      process.env.NEXT_PUBLIC_API_URL &&
+      !process.env.NEXT_PUBLIC_API_URL.includes("undefined")
+    ) {
+      return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
     }
 
-    return 'http://localhost:3001/api';
+    return "http://localhost:3001/api";
   }
 
   // Ejecución en Servidor (SSR)
   if (process.env.INTERNAL_API_URL) {
-    return process.env.INTERNAL_API_URL.replace(/\/+$/, '');
+    return process.env.INTERNAL_API_URL.replace(/\/+$/, "");
   }
 
-  if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.includes('undefined')) {
-    const configured = process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
-    if (configured.startsWith('http://') || configured.startsWith('https://')) {
+  if (
+    process.env.NEXT_PUBLIC_API_URL &&
+    !process.env.NEXT_PUBLIC_API_URL.includes("undefined")
+  ) {
+    const configured = process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
+    if (configured.startsWith("http://") || configured.startsWith("https://")) {
       return configured;
     }
   }
 
-  return process.env.NODE_ENV === 'production'
-    ? 'http://apiqueplaneshoy-dev:3001/api'
-    : 'http://localhost:3001/api';
+  return process.env.NODE_ENV === "production"
+    ? "http://apiqueplaneshoy-dev:3001/api"
+    : "http://localhost:3001/api";
 }
 
 /**
  * Opciones avanzadas de petición para ApiClient
  */
-export interface ApiRequestOptions extends Omit<RequestInit, 'body'> {
+export interface ApiRequestOptions extends Omit<RequestInit, "body"> {
   /**
    * Tiempo límite en milisegundos antes de abortar la petición (por defecto 15000ms)
    */
@@ -92,18 +98,21 @@ export class ApiClientError extends Error {
     let resolvedMessage = message;
     let errors: string[] | undefined = undefined;
 
-    if (!resolvedMessage && body && typeof body === 'object') {
+    if (!resolvedMessage && body && typeof body === "object") {
       const nestError = body as NestErrorResponse;
       if (Array.isArray(nestError.message)) {
         errors = nestError.message;
-        resolvedMessage = nestError.message.join('. ');
-      } else if (typeof nestError.message === 'string') {
+        resolvedMessage = nestError.message.join(". ");
+      } else if (typeof nestError.message === "string") {
         resolvedMessage = nestError.message;
       }
     }
 
-    super(resolvedMessage || `Error ${status}: ${statusText || 'Error en la petición'}`);
-    this.name = 'ApiClientError';
+    super(
+      resolvedMessage ||
+        `Error ${status}: ${statusText || "Error en la petición"}`,
+    );
+    this.name = "ApiClientError";
     this.validationErrors = errors;
   }
 }
@@ -119,13 +128,13 @@ export function mapApiErrorToDomainError(error: unknown): DomainError {
     else if (error.status === 403) code = ERROR_CODES.FORBIDDEN.code;
     else if (error.status === 404) code = ERROR_CODES.NOT_FOUND.code;
     else if (error.status === 409) code = ERROR_CODES.ALREADY_EXISTS.code;
-    else if (error.status === 429) code = 'TOO_MANY_REQUESTS';
+    else if (error.status === 429) code = "TOO_MANY_REQUESTS";
     else if (error.status >= 500) code = ERROR_CODES.INTERNAL_ERROR.code;
 
     return new DomainError(error.message, code, error);
   }
 
-  if (error instanceof Error && error.name === 'AbortError') {
+  if (error instanceof Error && error.name === "AbortError") {
     return new DomainError(
       ERROR_CODES.TIMEOUT_ERROR.message,
       ERROR_CODES.TIMEOUT_ERROR.code,
@@ -143,9 +152,12 @@ export function mapApiErrorToDomainError(error: unknown): DomainError {
 /**
  * Resuelve la URL completa agregando query params, con soporte para rutas relativas y absolutas
  */
-function buildFullUrl(path: string, params?: Record<string, string | number | boolean | undefined | null>): string {
+function buildFullUrl(
+  path: string,
+  params?: Record<string, string | number | boolean | undefined | null>,
+): string {
   const baseUrl = resolveApiBaseUrl();
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
   const combined = `${baseUrl}${cleanPath}`;
 
   let fullUrl: URL;
@@ -153,15 +165,16 @@ function buildFullUrl(path: string, params?: Record<string, string | number | bo
     fullUrl = new URL(combined);
   } else {
     // Si la URL es relativa (ej. /api/events/featured), usamos el origen del navegador
-    const base = typeof window !== 'undefined' && window.location?.origin
-      ? window.location.origin
-      : 'http://localhost:3000';
+    const base =
+      typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : "http://localhost:3000";
     fullUrl = new URL(combined, base);
   }
 
   if (params) {
     Object.entries(params).forEach(([key, val]) => {
-      if (val !== undefined && val !== null && val !== '') {
+      if (val !== undefined && val !== null && val !== "") {
         fullUrl.searchParams.append(key, String(val));
       }
     });
@@ -210,13 +223,13 @@ async function performRefreshToken(): Promise<string | null> {
 
   refreshPromise = (async () => {
     try {
-      const url = buildFullUrl('/auth/refresh-token');
+      const url = buildFullUrl("/auth/refresh-token");
       const response = await fetch(url, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
       });
 
@@ -252,7 +265,7 @@ export const apiClient = {
    * Obtiene el token de autenticación (Access Token) guardado
    */
   getToken(): string | null {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     return localStorage.getItem(AUTH_TOKEN_KEY);
   },
 
@@ -260,7 +273,7 @@ export const apiClient = {
    * Guarda el token de autenticación (Access Token)
    */
   setToken(token: string): void {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.setItem(AUTH_TOKEN_KEY, token);
     }
   },
@@ -269,7 +282,7 @@ export const apiClient = {
    * Obtiene el Refresh Token (en modo Cookie HttpOnly es administrado por el navegador)
    */
   getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     return localStorage.getItem(REFRESH_TOKEN_KEY);
   },
 
@@ -277,7 +290,7 @@ export const apiClient = {
    * Guarda el Refresh Token (mantenido por retrocompatibilidad)
    */
   setRefreshToken(refreshToken: string): void {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     }
   },
@@ -286,16 +299,16 @@ export const apiClient = {
    * Elimina todos los tokens de autenticación de la sesión e invalida la cookie HttpOnly en el servidor
    */
   clearTokens(): void {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
-      localStorage.removeItem('qph_user');
+      localStorage.removeItem("qph_user");
       try {
-        fetch(buildFullUrl('/auth/logout'), {
-          method: 'POST',
-          credentials: 'include',
-        }).catch(() => { });
-      } catch { }
+        fetch(buildFullUrl("/auth/logout"), {
+          method: "POST",
+          credentials: "include",
+        }).catch(() => {});
+      } catch {}
     }
   },
 
@@ -309,16 +322,26 @@ export const apiClient = {
   /**
    * Ejecuta una petición HTTP genérica con timeout, headers, token automático y reintento con refresh token
    */
-  async request<T>(path: string, options: ApiRequestOptions = {}, isRetry = false): Promise<T> {
-    const { timeoutMs = 15000, params, skipAuth, headers, ...fetchOptions } = options;
+  async request<T>(
+    path: string,
+    options: ApiRequestOptions = {},
+    isRetry = false,
+  ): Promise<T> {
+    const {
+      timeoutMs = 15000,
+      params,
+      skipAuth,
+      headers,
+      ...fetchOptions
+    } = options;
     const url = buildFullUrl(path, params);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const requestHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
+      "Content-Type": "application/json",
+      Accept: "application/json",
     };
 
     if (!skipAuth) {
@@ -331,7 +354,7 @@ export const apiClient = {
     try {
       const response = await fetch(url, {
         ...fetchOptions,
-        credentials: fetchOptions.credentials || 'include',
+        credentials: fetchOptions.credentials || "include",
         headers: {
           ...requestHeaders,
           ...((headers as Record<string, string>) || {}),
@@ -344,9 +367,9 @@ export const apiClient = {
         response.status === 401 &&
         !isRetry &&
         !skipAuth &&
-        !path.includes('/auth/login') &&
-        !path.includes('/auth/register') &&
-        !path.includes('/auth/refresh-token')
+        !path.includes("/auth/login") &&
+        !path.includes("/auth/register") &&
+        !path.includes("/auth/refresh-token")
       ) {
         const refreshedToken = await performRefreshToken();
         if (refreshedToken) {
@@ -366,16 +389,20 @@ export const apiClient = {
    * Petición GET
    */
   get<T>(path: string, options?: ApiRequestOptions): Promise<T> {
-    return this.request<T>(path, { ...options, method: 'GET' });
+    return this.request<T>(path, { ...options, method: "GET" });
   },
 
   /**
    * Petición POST
    */
-  post<T>(path: string, body?: unknown, options?: ApiRequestOptions): Promise<T> {
+  post<T>(
+    path: string,
+    body?: unknown,
+    options?: ApiRequestOptions,
+  ): Promise<T> {
     return this.request<T>(path, {
       ...options,
-      method: 'POST',
+      method: "POST",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     } as ApiRequestOptions & { body?: string });
   },
@@ -383,10 +410,14 @@ export const apiClient = {
   /**
    * Petición PUT
    */
-  put<T>(path: string, body?: unknown, options?: ApiRequestOptions): Promise<T> {
+  put<T>(
+    path: string,
+    body?: unknown,
+    options?: ApiRequestOptions,
+  ): Promise<T> {
     return this.request<T>(path, {
       ...options,
-      method: 'PUT',
+      method: "PUT",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     } as ApiRequestOptions & { body?: string });
   },
@@ -394,10 +425,14 @@ export const apiClient = {
   /**
    * Petición PATCH
    */
-  patch<T>(path: string, body?: unknown, options?: ApiRequestOptions): Promise<T> {
+  patch<T>(
+    path: string,
+    body?: unknown,
+    options?: ApiRequestOptions,
+  ): Promise<T> {
     return this.request<T>(path, {
       ...options,
-      method: 'PATCH',
+      method: "PATCH",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     } as ApiRequestOptions & { body?: string });
   },
@@ -406,7 +441,7 @@ export const apiClient = {
    * Petición DELETE
    */
   delete<T>(path: string, options?: ApiRequestOptions): Promise<T> {
-    return this.request<T>(path, { ...options, method: 'DELETE' });
+    return this.request<T>(path, { ...options, method: "DELETE" });
   },
 
   /**

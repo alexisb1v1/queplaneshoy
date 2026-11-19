@@ -1,17 +1,19 @@
-import React, { Suspense } from 'react';
-import type { Metadata } from 'next';
-import CreateEventScreen from '@/app/features/events/ui/create-event-screen';
+import React, { Suspense } from "react";
+import type { Metadata } from "next";
+import CreateEventScreen from "@/app/features/events/ui/create-event-screen";
 
 export const metadata: Metadata = {
-  title: 'Editar Borrador - Organizador | queplanhoy',
-  description: 'Modifica y actualiza los detalles de tu evento en borrador.',
+  title: "Editar Borrador - Organizador | queplanhoy",
+  description: "Modifica y actualiza los detalles de tu evento en borrador.",
 };
 
 interface EditEventPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function OrganizerEditEventPage({ params }: EditEventPageProps) {
+export default async function OrganizerEditEventPage({
+  params,
+}: EditEventPageProps) {
   const resolvedParams = await params;
 
   return (
@@ -26,4 +28,3 @@ export default async function OrganizerEditEventPage({ params }: EditEventPagePr
     </Suspense>
   );
 }
-

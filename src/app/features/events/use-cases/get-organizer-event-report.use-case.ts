@@ -1,7 +1,7 @@
-import { ResultAsync } from 'neverthrow';
-import { EventRepository } from '../repositories/event.repository';
-import { OrganizerEventReportModel } from '../models/organizer-event-report.model';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { EventRepository } from "../repositories/event.repository";
+import { OrganizerEventReportModel } from "../models/organizer-event-report.model";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class GetOrganizerEventReportUseCase {
   constructor(private readonly eventRepository: EventRepository) {}
@@ -13,7 +13,9 @@ export class GetOrganizerEventReportUseCase {
    * @param identifier - UUID público, ID o Slug del evento
    * @returns `ResultAsync` con `OrganizerEventReportModel` o `DomainError`
    */
-  execute(identifier: string): ResultAsync<OrganizerEventReportModel, DomainError> {
+  execute(
+    identifier: string,
+  ): ResultAsync<OrganizerEventReportModel, DomainError> {
     return this.eventRepository.getOrganizerEventReport(identifier);
   }
 }

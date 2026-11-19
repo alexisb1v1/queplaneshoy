@@ -35,7 +35,8 @@ const AVAILABLE_ZONES: ZoneOption[] = [
     priceDiscount: 180,
     tierName: "Preventa Fase 1",
     availableTickets: 34,
-    description: "Acceso preferencial frente al escenario, barra exclusiva y sin colas en puerta.",
+    description:
+      "Acceso preferencial frente al escenario, barra exclusiva y sin colas en puerta.",
     gate: "Puerta 01 - Acceso Preferencial",
   },
   {
@@ -47,7 +48,8 @@ const AVAILABLE_ZONES: ZoneOption[] = [
     priceDiscount: 85,
     tierName: "Preventa Fase 2",
     availableTickets: 120,
-    description: "Pista central, excelente sonido surround y amplia zona de bebidas y comidas.",
+    description:
+      "Pista central, excelente sonido surround y amplia zona de bebidas y comidas.",
     gate: "Puerta 02 - Acceso Sur",
   },
   {
@@ -59,13 +61,17 @@ const AVAILABLE_ZONES: ZoneOption[] = [
     priceDiscount: 1450,
     tierName: "Venta Exclusiva",
     availableTickets: 4,
-    description: "Lounge privado elevado con atención personalizada, catering y 2 botellas de cortesía.",
+    description:
+      "Lounge privado elevado con atención personalizada, catering y 2 botellas de cortesía.",
     gate: "Puerta 04 - Acceso Exclusivo Boxes",
   },
 ];
 
 // Cupones de prueba válidos
-const VALID_COUPONS: Record<string, { discountPercent?: number; discountFixed?: number; label: string }> = {
+const VALID_COUPONS: Record<
+  string,
+  { discountPercent?: number; discountFixed?: number; label: string }
+> = {
   FESTIVAL10: { discountPercent: 10, label: "10% de Descuento de Temporada" },
   QPH25: { discountFixed: 25, label: "S/ 25.00 de Descuento de Bienvenida" },
   CORAZON2026: { discountPercent: 15, label: "15% Fans de Corazón Serrano" },
@@ -74,7 +80,9 @@ const VALID_COUPONS: Record<string, { discountPercent?: number; discountFixed?: 
 export default function SandboxPrototipoPage() {
   // --- MODO ACTIVO EN EL SANDBOX ---
   // Permite alternar entre el Flujo de Compra y el Validador QR de Puerta
-  const [activeModule, setActiveModule] = useState<"checkout" | "scanner">("checkout");
+  const [activeModule, setActiveModule] = useState<"checkout" | "scanner">(
+    "checkout",
+  );
 
   // =========================================================================
   // ESTADOS DEL FLUJO DE COMPRA (CHECKOUT EXPERIENCE)
@@ -88,28 +96,47 @@ export default function SandboxPrototipoPage() {
 
   // Lista de Asistentes
   const [attendees, setAttendees] = useState<Attendee[]>([
-    { fullName: "Alexis Baldeón", docType: "DNI", docNumber: "73849102", email: "alexis@ejemplo.com" },
-    { fullName: "Camila Navarro Rios", docType: "DNI", docNumber: "47129845", email: "camila@ejemplo.com" },
+    {
+      fullName: "Alexis Baldeón",
+      docType: "DNI",
+      docNumber: "73849102",
+      email: "alexis@ejemplo.com",
+    },
+    {
+      fullName: "Camila Navarro Rios",
+      docType: "DNI",
+      docNumber: "47129845",
+      email: "camila@ejemplo.com",
+    },
   ]);
 
   // Cupones
   const [couponInput, setCouponInput] = useState<string>("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; label: string; amount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    label: string;
+    amount: number;
+  } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
 
   // Métodos de Pago
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "yape" | "pagoefectivo">("card");
+  const [paymentMethod, setPaymentMethod] = useState<
+    "card" | "yape" | "pagoefectivo"
+  >("card");
   const [cardNumber, setCardNumber] = useState<string>("4557 •••• •••• 9012");
   const [cardHolder, setCardHolder] = useState<string>("ALEXIS BALDEON");
   const [cardExpiry, setCardExpiry] = useState<string>("12/28");
   const [cardCvc, setCardCvc] = useState<string>("342");
   const [acceptTerms, setAcceptTerms] = useState<boolean>(true);
-  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  const [isProcessingPayment, setIsProcessingPayment] =
+    useState<boolean>(false);
 
   // =========================================================================
   // ESTADOS DEL VALIDADOR QR DE PUERTA (SCANNER PRO)
   // =========================================================================
-  const [scannerStatus, setScannerStatus] = useState<"idle" | "scanning" | "success" | "already_used" | "invalid" | "wrong_gate">("idle");
+  const [scannerStatus, setScannerStatus] = useState<
+    "idle" | "scanning" | "success" | "already_used" | "invalid" | "wrong_gate"
+  >("idle");
   const [scannedTicket, setScannedTicket] = useState<{
     code: string;
     attendee: string;
@@ -168,7 +195,8 @@ export default function SandboxPrototipoPage() {
   };
 
   // Cálculos Financieros
-  const currentZone = AVAILABLE_ZONES.find((z) => z.id === selectedZoneId) || AVAILABLE_ZONES[0];
+  const currentZone =
+    AVAILABLE_ZONES.find((z) => z.id === selectedZoneId) || AVAILABLE_ZONES[0];
   const unitPrice = currentZone.priceDiscount;
   const subtotal = unitPrice * ticketQuantity;
   const ticketingFee = Math.round(subtotal * 0.08 * 10) / 10; // 8% fee
@@ -197,7 +225,9 @@ export default function SandboxPrototipoPage() {
       });
       setCouponInput("");
     } else {
-      setCouponError("Código inválido o expirado. Prueba con FESTIVAL10 o QPH25.");
+      setCouponError(
+        "Código inválido o expirado. Prueba con FESTIVAL10 o QPH25.",
+      );
     }
   };
 
@@ -219,7 +249,10 @@ export default function SandboxPrototipoPage() {
   const playFeedbackSound = (type: "success" | "error" | "warning") => {
     if (!isSoundEnabled) return;
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
       if (!AudioCtx) return;
       if (!audioCtxRef.current) audioCtxRef.current = new AudioCtx();
       const ctx = audioCtxRef.current;
@@ -261,10 +294,13 @@ export default function SandboxPrototipoPage() {
     }
   };
 
-  const handleSimulateScan = (scenario: "vip" | "general" | "used" | "invalid" | "wrongGate") => {
+  const handleSimulateScan = (
+    scenario: "vip" | "general" | "used" | "invalid" | "wrongGate",
+  ) => {
     setScannerStatus("scanning");
     if (timerRef.current) clearTimeout(timerRef.current);
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    if (countdownIntervalRef.current)
+      clearInterval(countdownIntervalRef.current);
 
     setTimeout(() => {
       startTransition(() => {
@@ -344,7 +380,9 @@ export default function SandboxPrototipoPage() {
           {/* Logo y Marca */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-              <span className="material-symbols-outlined text-xl">confirmation_number</span>
+              <span className="material-symbols-outlined text-xl">
+                confirmation_number
+              </span>
             </div>
             <div>
               <span className="font-extrabold text-base tracking-tight text-white block">
@@ -369,7 +407,9 @@ export default function SandboxPrototipoPage() {
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <span className="material-symbols-outlined text-base">shopping_cart_checkout</span>
+              <span className="material-symbols-outlined text-base">
+                shopping_cart_checkout
+              </span>
               <span>1. Flujo de Compra</span>
             </button>
 
@@ -381,7 +421,9 @@ export default function SandboxPrototipoPage() {
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+              <span className="material-symbols-outlined text-base">
+                qr_code_scanner
+              </span>
               <span>2. Validador QR (Puerta)</span>
             </button>
           </div>
@@ -393,12 +435,13 @@ export default function SandboxPrototipoPage() {
          ========================================================================= */}
       {activeModule === "checkout" && (
         <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
-          
           {/* BANNER TEMPORIZADOR DE RESERVA GARANTIZADA (URGENCIA POSITIVA) */}
           <div className="bg-gradient-to-r from-indigo-950/80 via-slate-900 to-indigo-950/80 border border-indigo-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
-                <span className="material-symbols-outlined text-2xl animate-pulse">timer</span>
+                <span className="material-symbols-outlined text-2xl animate-pulse">
+                  timer
+                </span>
               </div>
               <div>
                 <h2 className="text-sm font-bold text-white flex items-center gap-2">
@@ -408,13 +451,16 @@ export default function SandboxPrototipoPage() {
                   </span>
                 </h2>
                 <p className="text-xs text-slate-400">
-                  Completa tu compra antes de que expire el tiempo para no perder tus ubicaciones seleccionadas.
+                  Completa tu compra antes de que expire el tiempo para no
+                  perder tus ubicaciones seleccionadas.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
-              <span className="text-xs text-slate-400 font-medium">Tiempo restante:</span>
+              <span className="text-xs text-slate-400 font-medium">
+                Tiempo restante:
+              </span>
               <span className="font-mono text-base font-extrabold text-amber-400 tracking-wider">
                 {formatTimer(secondsRemaining)} min
               </span>
@@ -441,8 +487,8 @@ export default function SandboxPrototipoPage() {
                     isCurrent
                       ? "bg-indigo-950/60 border-indigo-500 text-white shadow-md shadow-indigo-500/20"
                       : isPassed
-                      ? "bg-slate-900 border-slate-700 text-emerald-400"
-                      : "bg-slate-900/40 border-slate-800/60 text-slate-500"
+                        ? "bg-slate-900 border-slate-700 text-emerald-400"
+                        : "bg-slate-900/40 border-slate-800/60 text-slate-500"
                   }`}
                 >
                   <div
@@ -450,13 +496,21 @@ export default function SandboxPrototipoPage() {
                       isCurrent
                         ? "bg-indigo-600 text-white"
                         : isPassed
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                        : "bg-slate-800 text-slate-500"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                          : "bg-slate-800 text-slate-500"
                     }`}
                   >
-                    {isPassed ? <span className="material-symbols-outlined text-sm">check</span> : s.num}
+                    {isPassed ? (
+                      <span className="material-symbols-outlined text-sm">
+                        check
+                      </span>
+                    ) : (
+                      s.num
+                    )}
                   </div>
-                  <span className="text-xs font-bold hidden sm:inline truncate">{s.title}</span>
+                  <span className="text-xs font-bold hidden sm:inline truncate">
+                    {s.title}
+                  </span>
                 </div>
               );
             })}
@@ -464,12 +518,10 @@ export default function SandboxPrototipoPage() {
 
           {/* CONTENEDOR PRINCIPAL: FORMULARIO Y RESUMEN LATERAL */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
             {/* -------------------------------------------------------------------
                 COLUMNA IZQUIERDA (PASOS 1, 2, 3 O CONFIRMACIÓN)
                ------------------------------------------------------------------- */}
             <div className="lg:col-span-8 flex flex-col gap-6">
-
               {/* =================================================================
                   PASO 1: SELECCIÓN DE ENTRADAS Y ZONAS
                  ================================================================= */}
@@ -477,11 +529,14 @@ export default function SandboxPrototipoPage() {
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-6">
                   <div>
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <span className="material-symbols-outlined text-indigo-400">place</span>
+                      <span className="material-symbols-outlined text-indigo-400">
+                        place
+                      </span>
                       <span>Selecciona tu Zona y Entradas</span>
                     </h3>
                     <p className="text-xs text-slate-400 mt-1">
-                      Elige la localidad deseada y la cantidad de boletos que deseas reservar (máximo 4 por compra).
+                      Elige la localidad deseada y la cantidad de boletos que
+                      deseas reservar (máximo 4 por compra).
                     </p>
                   </div>
 
@@ -506,17 +561,25 @@ export default function SandboxPrototipoPage() {
                             />
                             <div>
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-bold text-sm text-white">{zone.name}</span>
+                                <span className="font-bold text-sm text-white">
+                                  {zone.name}
+                                </span>
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/60 text-amber-300 border border-amber-800">
                                   {zone.badge}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-400 mt-1">{zone.description}</p>
+                              <p className="text-xs text-slate-400 mt-1">
+                                {zone.description}
+                              </p>
                               <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-1.5 font-medium">
-                                <span className="material-symbols-outlined text-xs text-indigo-400">door_front</span>
+                                <span className="material-symbols-outlined text-xs text-indigo-400">
+                                  door_front
+                                </span>
                                 <span>{zone.gate}</span>
                                 <span>•</span>
-                                <span className="text-emerald-400">🔥 Solo {zone.availableTickets} disponibles</span>
+                                <span className="text-emerald-400">
+                                  🔥 Solo {zone.availableTickets} disponibles
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -529,7 +592,9 @@ export default function SandboxPrototipoPage() {
                             <span className="text-lg font-black text-white">
                               S/ {zone.priceDiscount.toFixed(2)}
                             </span>
-                            <span className="text-[10px] text-slate-400">por entrada</span>
+                            <span className="text-[10px] text-slate-400">
+                              por entrada
+                            </span>
                           </div>
                         </div>
                       );
@@ -539,13 +604,19 @@ export default function SandboxPrototipoPage() {
                   {/* Selector de Cantidad */}
                   <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-slate-200 block">Cantidad de Entradas:</span>
-                      <span className="text-[11px] text-slate-500">Máximo 4 boletos por usuario</span>
+                      <span className="text-xs font-bold text-slate-200 block">
+                        Cantidad de Entradas:
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        Máximo 4 boletos por usuario
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => setTicketQuantity((q) => Math.max(1, q - 1))}
+                        onClick={() =>
+                          setTicketQuantity((q) => Math.max(1, q - 1))
+                        }
                         disabled={ticketQuantity <= 1}
                         className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white flex items-center justify-center font-bold text-base cursor-pointer"
                       >
@@ -555,7 +626,9 @@ export default function SandboxPrototipoPage() {
                         {ticketQuantity}
                       </span>
                       <button
-                        onClick={() => setTicketQuantity((q) => Math.min(4, q + 1))}
+                        onClick={() =>
+                          setTicketQuantity((q) => Math.min(4, q + 1))
+                        }
                         disabled={ticketQuantity >= 4}
                         className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white flex items-center justify-center font-bold text-base cursor-pointer"
                       >
@@ -570,7 +643,9 @@ export default function SandboxPrototipoPage() {
                     className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer transition active:scale-98"
                   >
                     <span>Continuar con Datos de Asistentes</span>
-                    <span className="material-symbols-outlined text-base">arrow_forward</span>
+                    <span className="material-symbols-outlined text-base">
+                      arrow_forward
+                    </span>
                   </button>
                 </div>
               )}
@@ -583,11 +658,14 @@ export default function SandboxPrototipoPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <span className="material-symbols-outlined text-indigo-400">badge</span>
+                        <span className="material-symbols-outlined text-indigo-400">
+                          badge
+                        </span>
                         <span>Nominación Obligatoria de Entradas</span>
                       </h3>
                       <p className="text-xs text-slate-400 mt-1">
-                        Por normativa de seguridad en espectáculos masivos, cada boleto se vincula al DNI del asistente.
+                        Por normativa de seguridad en espectáculos masivos, cada
+                        boleto se vincula al DNI del asistente.
                       </p>
                     </div>
 
@@ -596,9 +674,14 @@ export default function SandboxPrototipoPage() {
                         setAttendees((prev) =>
                           prev.map((a, i) =>
                             i === 0
-                              ? { fullName: "Alexis Baldeón", docType: "DNI", docNumber: "73849102", email: "alexis@ejemplo.com" }
-                              : a
-                          )
+                              ? {
+                                  fullName: "Alexis Baldeón",
+                                  docType: "DNI",
+                                  docNumber: "73849102",
+                                  email: "alexis@ejemplo.com",
+                                }
+                              : a,
+                          ),
                         );
                       }}
                       className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-800/80 cursor-pointer shrink-0"
@@ -619,7 +702,9 @@ export default function SandboxPrototipoPage() {
                             <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-extrabold">
                               {index + 1}
                             </span>
-                            <span>Entrada {index + 1} — {currentZone.name}</span>
+                            <span>
+                              Entrada {index + 1} — {currentZone.name}
+                            </span>
                           </span>
                           <span className="text-[11px] text-slate-500 font-mono">
                             {index === 0 ? "Titular de Compra" : "Acompañante"}
@@ -638,7 +723,11 @@ export default function SandboxPrototipoPage() {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 setAttendees((arr) =>
-                                  arr.map((item, idx) => (idx === index ? { ...item, fullName: val } : item))
+                                  arr.map((item, idx) =>
+                                    idx === index
+                                      ? { ...item, fullName: val }
+                                      : item,
+                                  ),
                                 );
                               }}
                               placeholder="Ej: Alexis Baldeón"
@@ -654,9 +743,14 @@ export default function SandboxPrototipoPage() {
                             <select
                               value={attendee.docType}
                               onChange={(e) => {
-                                const val = e.target.value as Attendee["docType"];
+                                const val = e.target
+                                  .value as Attendee["docType"];
                                 setAttendees((arr) =>
-                                  arr.map((item, idx) => (idx === index ? { ...item, docType: val } : item))
+                                  arr.map((item, idx) =>
+                                    idx === index
+                                      ? { ...item, docType: val }
+                                      : item,
+                                  ),
                                 );
                               }}
                               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
@@ -678,7 +772,11 @@ export default function SandboxPrototipoPage() {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 setAttendees((arr) =>
-                                  arr.map((item, idx) => (idx === index ? { ...item, docNumber: val } : item))
+                                  arr.map((item, idx) =>
+                                    idx === index
+                                      ? { ...item, docNumber: val }
+                                      : item,
+                                  ),
                                 );
                               }}
                               placeholder="73849102"
@@ -696,7 +794,9 @@ export default function SandboxPrototipoPage() {
                       onClick={() => setStep(1)}
                       className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-base">arrow_back</span>
+                      <span className="material-symbols-outlined text-base">
+                        arrow_back
+                      </span>
                       <span>Volver a Entradas</span>
                     </button>
 
@@ -705,7 +805,9 @@ export default function SandboxPrototipoPage() {
                       className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer transition active:scale-98"
                     >
                       <span>Continuar al Pago</span>
-                      <span className="material-symbols-outlined text-base">arrow_forward</span>
+                      <span className="material-symbols-outlined text-base">
+                        arrow_forward
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -716,20 +818,28 @@ export default function SandboxPrototipoPage() {
                  ================================================================= */}
               {step === 3 && (
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-6">
-                  
                   {/* SECCIÓN CUPÓN DE DESCUENTO */}
                   <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="material-symbols-outlined text-amber-400 text-lg">local_activity</span>
-                      <span className="text-xs font-bold text-white">¿Tienes un cupón de descuento?</span>
+                      <span className="material-symbols-outlined text-amber-400 text-lg">
+                        local_activity
+                      </span>
+                      <span className="text-xs font-bold text-white">
+                        ¿Tienes un cupón de descuento?
+                      </span>
                     </div>
 
                     {appliedCoupon ? (
                       <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-base">check_circle</span>
+                          <span className="material-symbols-outlined text-base">
+                            check_circle
+                          </span>
                           <div>
-                            <strong className="font-mono">{appliedCoupon.code}</strong>: {appliedCoupon.label}
+                            <strong className="font-mono">
+                              {appliedCoupon.code}
+                            </strong>
+                            : {appliedCoupon.label}
                           </div>
                         </div>
                         <button
@@ -757,35 +867,59 @@ export default function SandboxPrototipoPage() {
                       </form>
                     )}
 
-                    {couponError && <p className="text-[11px] text-rose-400 mt-1.5">{couponError}</p>}
+                    {couponError && (
+                      <p className="text-[11px] text-rose-400 mt-1.5">
+                        {couponError}
+                      </p>
+                    )}
                   </div>
 
                   {/* SECCIÓN MÉTODOS DE PAGO */}
                   <div>
                     <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                      <span className="material-symbols-outlined text-indigo-400">payments</span>
+                      <span className="material-symbols-outlined text-indigo-400">
+                        payments
+                      </span>
                       <span>Selecciona tu Medio de Pago Seguro</span>
                     </h3>
 
                     {/* Tabs de Medio de Pago */}
                     <div className="grid grid-cols-3 gap-2.5 mb-4">
                       {[
-                        { id: "card", title: "Tarjeta Crédito/Débito", icon: "credit_card" },
-                        { id: "yape", title: "Yape / Plin (QR)", icon: "qr_code_2" },
-                        { id: "pagoefectivo", title: "PagoEfectivo / CIP", icon: "account_balance" },
+                        {
+                          id: "card",
+                          title: "Tarjeta Crédito/Débito",
+                          icon: "credit_card",
+                        },
+                        {
+                          id: "yape",
+                          title: "Yape / Plin (QR)",
+                          icon: "qr_code_2",
+                        },
+                        {
+                          id: "pagoefectivo",
+                          title: "PagoEfectivo / CIP",
+                          icon: "account_balance",
+                        },
                       ].map((m) => (
                         <button
                           key={m.id}
                           type="button"
-                          onClick={() => setPaymentMethod(m.id as typeof paymentMethod)}
+                          onClick={() =>
+                            setPaymentMethod(m.id as typeof paymentMethod)
+                          }
                           className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center gap-1.5 transition cursor-pointer ${
                             paymentMethod === m.id
                               ? "bg-indigo-950/60 border-indigo-500 text-white shadow-md shadow-indigo-500/20"
                               : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
                           }`}
                         >
-                          <span className="material-symbols-outlined text-2xl">{m.icon}</span>
-                          <span className="text-xs font-semibold">{m.title}</span>
+                          <span className="material-symbols-outlined text-2xl">
+                            {m.icon}
+                          </span>
+                          <span className="text-xs font-semibold">
+                            {m.title}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -799,19 +933,27 @@ export default function SandboxPrototipoPage() {
                             <span className="font-extrabold text-xs tracking-wider uppercase text-indigo-200">
                               Boleto Seguro QPH
                             </span>
-                            <span className="material-symbols-outlined text-2xl">contactless</span>
+                            <span className="material-symbols-outlined text-2xl">
+                              contactless
+                            </span>
                           </div>
                           <div className="font-mono text-base tracking-widest font-bold drop-shadow">
                             {cardNumber}
                           </div>
                           <div className="flex justify-between items-end text-xs">
                             <div>
-                              <span className="text-[9px] text-indigo-300 block">Titular:</span>
+                              <span className="text-[9px] text-indigo-300 block">
+                                Titular:
+                              </span>
                               <span className="font-bold">{cardHolder}</span>
                             </div>
                             <div>
-                              <span className="text-[9px] text-indigo-300 block">Vence:</span>
-                              <span className="font-mono font-bold">{cardExpiry}</span>
+                              <span className="text-[9px] text-indigo-300 block">
+                                Vence:
+                              </span>
+                              <span className="font-mono font-bold">
+                                {cardExpiry}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -876,10 +1018,16 @@ export default function SandboxPrototipoPage() {
                             qr_code_2
                           </span>
                         </div>
-                        <h4 className="text-sm font-bold text-purple-400">Escanea desde tu app Yape o Plin</h4>
+                        <h4 className="text-sm font-bold text-purple-400">
+                          Escanea desde tu app Yape o Plin
+                        </h4>
                         <p className="text-xs text-slate-400 max-w-sm mt-1">
-                          Abre tu billetera móvil, selecciona escanear y confirma el monto exacto de{" "}
-                          <strong className="text-white">S/ {totalToPay.toFixed(2)}</strong>.
+                          Abre tu billetera móvil, selecciona escanear y
+                          confirma el monto exacto de{" "}
+                          <strong className="text-white">
+                            S/ {totalToPay.toFixed(2)}
+                          </strong>
+                          .
                         </p>
                       </div>
                     )}
@@ -887,12 +1035,17 @@ export default function SandboxPrototipoPage() {
                     {paymentMethod === "pagoefectivo" && (
                       <div className="bg-slate-950/80 p-5 rounded-xl border border-slate-800 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-400">Código de Pago CIP:</span>
-                          <strong className="font-mono text-amber-400 text-sm">4910-2814-99</strong>
+                          <span className="text-xs text-slate-400">
+                            Código de Pago CIP:
+                          </span>
+                          <strong className="font-mono text-amber-400 text-sm">
+                            4910-2814-99
+                          </strong>
                         </div>
                         <p className="text-xs text-slate-400">
-                          Puedes pagar desde la app de tu banco (BCP, BBVA, Interbank, Scotiabank) en la sección
-                          &quot;Pago de Servicios &gt; PagoEfectivo&quot;.
+                          Puedes pagar desde la app de tu banco (BCP, BBVA,
+                          Interbank, Scotiabank) en la sección &quot;Pago de
+                          Servicios &gt; PagoEfectivo&quot;.
                         </p>
                       </div>
                     )}
@@ -908,8 +1061,9 @@ export default function SandboxPrototipoPage() {
                         className="mt-0.5 rounded border-slate-700 text-indigo-600 focus:ring-indigo-500"
                       />
                       <span className="text-xs text-slate-300">
-                        Acepto los Términos y Condiciones del Concierto, la Política de Privacidad de Qué Planes Hoy y
-                        certifico que todos los asistentes son mayores de 18 años (+18).
+                        Acepto los Términos y Condiciones del Concierto, la
+                        Política de Privacidad de Qué Planes Hoy y certifico que
+                        todos los asistentes son mayores de 18 años (+18).
                       </span>
                     </label>
                   </div>
@@ -920,7 +1074,9 @@ export default function SandboxPrototipoPage() {
                       onClick={() => setStep(2)}
                       className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-base">arrow_back</span>
+                      <span className="material-symbols-outlined text-base">
+                        arrow_back
+                      </span>
                       <span>Volver a Asistentes</span>
                     </button>
 
@@ -936,8 +1092,12 @@ export default function SandboxPrototipoPage() {
                         </>
                       ) : (
                         <>
-                          <span className="material-symbols-outlined text-base">lock</span>
-                          <span>Pagar S/ {totalToPay.toFixed(2)} y Emitir Entradas</span>
+                          <span className="material-symbols-outlined text-base">
+                            lock
+                          </span>
+                          <span>
+                            Pagar S/ {totalToPay.toFixed(2)} y Emitir Entradas
+                          </span>
                         </>
                       )}
                     </button>
@@ -953,12 +1113,18 @@ export default function SandboxPrototipoPage() {
                   {/* Header de Éxito */}
                   <div className="flex flex-col items-center">
                     <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border-2 border-emerald-500/50 shadow-lg shadow-emerald-500/20 mb-3">
-                      <span className="material-symbols-outlined text-4xl font-black">check_circle</span>
+                      <span className="material-symbols-outlined text-4xl font-black">
+                        check_circle
+                      </span>
                     </div>
-                    <h2 className="text-2xl font-black text-white">¡Compra Exitosa! 🎉</h2>
+                    <h2 className="text-2xl font-black text-white">
+                      ¡Compra Exitosa! 🎉
+                    </h2>
                     <p className="text-xs text-slate-300 max-w-md mt-1">
-                      Tus entradas han sido emitidas y firmadas digitalmente con criptografía Ed25519. Te hemos
-                      enviado un respaldo a <strong className="text-white">alexis@ejemplo.com</strong>.
+                      Tus entradas han sido emitidas y firmadas digitalmente con
+                      criptografía Ed25519. Te hemos enviado un respaldo a{" "}
+                      <strong className="text-white">alexis@ejemplo.com</strong>
+                      .
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="text-[11px] font-mono text-indigo-300 bg-indigo-950 px-2.5 py-1 rounded-full border border-indigo-800">
@@ -993,22 +1159,37 @@ export default function SandboxPrototipoPage() {
 
                     <div className="grid grid-cols-2 gap-3 py-3 border-y border-dashed border-slate-800 text-xs">
                       <div>
-                        <span className="text-slate-400 block text-[11px]">Titular:</span>
-                        <strong className="text-white font-bold">{attendees[0]?.fullName || "Alexis Baldeón"}</strong>
+                        <span className="text-slate-400 block text-[11px]">
+                          Titular:
+                        </span>
+                        <strong className="text-white font-bold">
+                          {attendees[0]?.fullName || "Alexis Baldeón"}
+                        </strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[11px]">Documento:</span>
+                        <span className="text-slate-400 block text-[11px]">
+                          Documento:
+                        </span>
                         <span className="font-mono text-slate-200">
-                          {attendees[0]?.docType} {attendees[0]?.docNumber || "73849102"}
+                          {attendees[0]?.docType}{" "}
+                          {attendees[0]?.docNumber || "73849102"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[11px]">Acceso / Puerta:</span>
-                        <span className="text-amber-300 font-semibold">{currentZone.gate}</span>
+                        <span className="text-slate-400 block text-[11px]">
+                          Acceso / Puerta:
+                        </span>
+                        <span className="text-amber-300 font-semibold">
+                          {currentZone.gate}
+                        </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[11px]">Código Boleto:</span>
-                        <span className="font-mono text-indigo-300 font-bold">QPH-2026-VIP-9821</span>
+                        <span className="text-slate-400 block text-[11px]">
+                          Código Boleto:
+                        </span>
+                        <span className="font-mono text-indigo-300 font-bold">
+                          QPH-2026-VIP-9821
+                        </span>
                       </div>
                     </div>
 
@@ -1021,11 +1202,14 @@ export default function SandboxPrototipoPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold mb-1">
-                          <span className="material-symbols-outlined text-base">verified</span>
+                          <span className="material-symbols-outlined text-base">
+                            verified
+                          </span>
                           <span>Firma Digital Ed25519 Válida</span>
                         </div>
                         <p className="text-[11px] text-slate-400 leading-relaxed">
-                          Presenta este código QR desde tu celular al llegar a la puerta. No necesitas imprimirlo.
+                          Presenta este código QR desde tu celular al llegar a
+                          la puerta. No necesitas imprimirlo.
                         </p>
                         <span className="text-[10px] text-slate-500 font-mono mt-1 block">
                           Hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4
@@ -1036,18 +1220,30 @@ export default function SandboxPrototipoPage() {
                     {/* Acciones de Boleto */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                       <button
-                        onClick={() => alert("Descargando PDF oficial de entradas nominadas...")}
+                        onClick={() =>
+                          alert(
+                            "Descargando PDF oficial de entradas nominadas...",
+                          )
+                        }
                         className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white flex items-center justify-center gap-2 border border-slate-700 cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-base">download</span>
+                        <span className="material-symbols-outlined text-base">
+                          download
+                        </span>
                         <span>Descargar PDF</span>
                       </button>
 
                       <button
-                        onClick={() => alert("Entrada sincronizada con Apple / Google Wallet.")}
+                        onClick={() =>
+                          alert(
+                            "Entrada sincronizada con Apple / Google Wallet.",
+                          )
+                        }
                         className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white flex items-center justify-center gap-2 border border-slate-700 cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-base">wallet</span>
+                        <span className="material-symbols-outlined text-base">
+                          wallet
+                        </span>
                         <span>Añadir a Wallet</span>
                       </button>
                     </div>
@@ -1062,7 +1258,9 @@ export default function SandboxPrototipoPage() {
                       }}
                       className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs tracking-wide shadow-lg shadow-indigo-600/30 flex items-center gap-2 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+                      <span className="material-symbols-outlined text-base">
+                        qr_code_scanner
+                      </span>
                       <span>Simular Escaneo de este Boleto en Puerta</span>
                     </button>
 
@@ -1086,7 +1284,6 @@ export default function SandboxPrototipoPage() {
                ------------------------------------------------------------------- */}
             <div className="lg:col-span-4 flex flex-col gap-5 sticky top-20">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
-                
                 {/* Resumen del Evento */}
                 <div className="pb-3 border-b border-slate-800">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400 block mb-1">
@@ -1096,11 +1293,15 @@ export default function SandboxPrototipoPage() {
                     Corazón Serrano en Concierto - Gira 2026
                   </h4>
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1.5">
-                    <span className="material-symbols-outlined text-sm text-indigo-400">calendar_month</span>
+                    <span className="material-symbols-outlined text-sm text-indigo-400">
+                      calendar_month
+                    </span>
                     <span>Sáb 24 Oct, 20:00 hrs</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
-                    <span className="material-symbols-outlined text-sm text-indigo-400">stadium</span>
+                    <span className="material-symbols-outlined text-sm text-indigo-400">
+                      stadium
+                    </span>
                     <span>Estadio Nacional de Lima</span>
                   </div>
                 </div>
@@ -1111,25 +1312,35 @@ export default function SandboxPrototipoPage() {
                     <span>
                       {currentZone.name} (x{ticketQuantity})
                     </span>
-                    <span className="font-mono font-semibold">S/ {subtotal.toFixed(2)}</span>
+                    <span className="font-mono font-semibold">
+                      S/ {subtotal.toFixed(2)}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center text-slate-400">
                     <span>Comisión de Servicio (8%)</span>
-                    <span className="font-mono">S/ {ticketingFee.toFixed(2)}</span>
+                    <span className="font-mono">
+                      S/ {ticketingFee.toFixed(2)}
+                    </span>
                   </div>
 
                   {appliedCoupon && (
                     <div className="flex justify-between items-center text-emerald-400 font-semibold">
                       <span>Descuento ({appliedCoupon.code})</span>
-                      <span className="font-mono">- S/ {discountAmount.toFixed(2)}</span>
+                      <span className="font-mono">
+                        - S/ {discountAmount.toFixed(2)}
+                      </span>
                     </div>
                   )}
 
                   <div className="pt-3 border-t border-slate-800 flex justify-between items-end">
                     <div>
-                      <span className="text-xs text-slate-400 block">Total a Pagar:</span>
-                      <span className="text-[10px] text-slate-500">Impuestos y comisión incluidos</span>
+                      <span className="text-xs text-slate-400 block">
+                        Total a Pagar:
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        Impuestos y comisión incluidos
+                      </span>
                     </div>
                     <span className="text-2xl font-black text-white font-mono">
                       S/ {totalToPay.toFixed(2)}
@@ -1140,11 +1351,15 @@ export default function SandboxPrototipoPage() {
                 {/* Garantías de Seguridad */}
                 <div className="pt-3 border-t border-slate-800/80 space-y-2 text-[11px] text-slate-400">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-emerald-400 text-base">lock</span>
+                    <span className="material-symbols-outlined text-emerald-400 text-base">
+                      lock
+                    </span>
                     <span>Pago Encriptado TLS 256-Bit</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-indigo-400 text-base">verified_user</span>
+                    <span className="material-symbols-outlined text-indigo-400 text-base">
+                      verified_user
+                    </span>
                     <span>Entradas oficiales antifraude nominadas</span>
                   </div>
                 </div>
@@ -1159,11 +1374,9 @@ export default function SandboxPrototipoPage() {
          ========================================================================= */}
       {activeModule === "scanner" && (
         <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
           {/* VISOR DE ESCANEO */}
           <section className="lg:col-span-7 flex flex-col items-center">
             <div className="w-full max-w-md bg-slate-900 border-2 border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col aspect-[9/14] sm:aspect-[3/4] md:aspect-[9/14]">
-              
               {/* Barra de Cámara */}
               <div className="absolute top-0 inset-x-0 z-20 p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1202,7 +1415,9 @@ export default function SandboxPrototipoPage() {
                       <span className="material-symbols-outlined text-4xl text-indigo-400 mb-1">
                         qr_code_scanner
                       </span>
-                      <p className="text-xs font-semibold text-slate-300">Apunta al código QR</p>
+                      <p className="text-xs font-semibold text-slate-300">
+                        Apunta al código QR
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1216,17 +1431,19 @@ export default function SandboxPrototipoPage() {
                       scannerStatus === "success"
                         ? "bg-slate-900 border-emerald-500 text-white"
                         : scannerStatus === "already_used"
-                        ? "bg-slate-900 border-red-500 text-white"
-                        : scannerStatus === "wrong_gate"
-                        ? "bg-slate-900 border-amber-500 text-white"
-                        : "bg-slate-900 border-rose-600 text-white"
+                          ? "bg-slate-900 border-red-500 text-white"
+                          : scannerStatus === "wrong_gate"
+                            ? "bg-slate-900 border-amber-500 text-white"
+                            : "bg-slate-900 border-rose-600 text-white"
                     }`}
                   >
                     <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                       <h3 className="font-extrabold text-lg uppercase">
                         {scannerStatus === "success" && "¡Acceso Autorizado!"}
-                        {scannerStatus === "already_used" && "¡Boleto Ya Canjeado!"}
-                        {scannerStatus === "wrong_gate" && "¡Puerta Incorrecta!"}
+                        {scannerStatus === "already_used" &&
+                          "¡Boleto Ya Canjeado!"}
+                        {scannerStatus === "wrong_gate" &&
+                          "¡Puerta Incorrecta!"}
                         {scannerStatus === "invalid" && "Boleto Inválido"}
                       </h3>
                       {scannedTicket && (
@@ -1242,24 +1459,35 @@ export default function SandboxPrototipoPage() {
                     {scannedTicket && (
                       <div className="grid grid-cols-2 gap-2 text-xs bg-slate-950/60 p-3 rounded-xl">
                         <div>
-                          <span className="text-slate-400 text-[10px] block">Asistente:</span>
+                          <span className="text-slate-400 text-[10px] block">
+                            Asistente:
+                          </span>
                           <strong>{scannedTicket.attendee}</strong>
                         </div>
                         <div>
-                          <span className="text-slate-400 text-[10px] block">DNI:</span>
+                          <span className="text-slate-400 text-[10px] block">
+                            DNI:
+                          </span>
                           <span className="font-mono">{scannedTicket.dni}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 text-[10px] block">Código:</span>
-                          <span className="font-mono text-indigo-300 font-bold">{scannedTicket.code}</span>
+                          <span className="text-slate-400 text-[10px] block">
+                            Código:
+                          </span>
+                          <span className="font-mono text-indigo-300 font-bold">
+                            {scannedTicket.code}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-slate-400 text-[10px] block">Puerta:</span>
+                          <span className="text-slate-400 text-[10px] block">
+                            Puerta:
+                          </span>
                           <span>{scannedTicket.gate}</span>
                         </div>
                         {scannedTicket.firstScannedAt && (
                           <div className="col-span-2 text-red-300 font-bold text-[11px] mt-1">
-                            ⚠️ Primer escaneo registrado: {scannedTicket.firstScannedAt}
+                            ⚠️ Primer escaneo registrado:{" "}
+                            {scannedTicket.firstScannedAt}
                           </div>
                         )}
                       </div>
@@ -1280,7 +1508,9 @@ export default function SandboxPrototipoPage() {
           {/* PANEL DE PRUEBAS SANDBOX */}
           <section className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
             <h3 className="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-              <span className="material-symbols-outlined text-indigo-400">tune</span>
+              <span className="material-symbols-outlined text-indigo-400">
+                tune
+              </span>
               <span>Disparador de Escaneos de Prueba</span>
             </h3>
 
@@ -1289,16 +1519,24 @@ export default function SandboxPrototipoPage() {
                 onClick={() => handleSimulateScan("vip")}
                 className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700 hover:border-amber-400 cursor-pointer text-xs"
               >
-                <strong className="text-amber-400 block">Pase VIP Válido</strong>
-                <span className="text-[10px] text-slate-400">Puerta 01 • Autorizado</span>
+                <strong className="text-amber-400 block">
+                  Pase VIP Válido
+                </strong>
+                <span className="text-[10px] text-slate-400">
+                  Puerta 01 • Autorizado
+                </span>
               </button>
 
               <button
                 onClick={() => handleSimulateScan("general")}
                 className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700 hover:border-emerald-400 cursor-pointer text-xs"
               >
-                <strong className="text-emerald-400 block">Pase General Válido</strong>
-                <span className="text-[10px] text-slate-400">Sector General A</span>
+                <strong className="text-emerald-400 block">
+                  Pase General Válido
+                </strong>
+                <span className="text-[10px] text-slate-400">
+                  Sector General A
+                </span>
               </button>
 
               <button
@@ -1306,15 +1544,21 @@ export default function SandboxPrototipoPage() {
                 className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700 hover:border-red-400 cursor-pointer text-xs"
               >
                 <strong className="text-red-400 block">Boleto Duplicado</strong>
-                <span className="text-[10px] text-slate-400">Ya canjeado hace 28 min</span>
+                <span className="text-[10px] text-slate-400">
+                  Ya canjeado hace 28 min
+                </span>
               </button>
 
               <button
                 onClick={() => handleSimulateScan("wrongGate")}
                 className="p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700 hover:border-amber-400 cursor-pointer text-xs"
               >
-                <strong className="text-amber-300 block">Puerta Incorrecta</strong>
-                <span className="text-[10px] text-slate-400">Redirigir a Puerta 04 Boxes</span>
+                <strong className="text-amber-300 block">
+                  Puerta Incorrecta
+                </strong>
+                <span className="text-[10px] text-slate-400">
+                  Redirigir a Puerta 04 Boxes
+                </span>
               </button>
             </div>
           </section>

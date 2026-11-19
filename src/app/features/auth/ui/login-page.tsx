@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { loginUseCase } from '../index';
-import { GoogleAuthButton } from './components/google-auth-button';
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { loginUseCase } from "../index";
+import { GoogleAuthButton } from "./components/google-auth-button";
 
-const REMEMBER_EMAIL_KEY = 'qph_remembered_email';
+const REMEMBER_EMAIL_KEY = "qph_remembered_email";
 
 export default function LoginPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function LoginPageComponent() {
 
   // Cargar correo recordado al iniciar
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const savedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
       if (savedEmail) {
         setEmail(savedEmail);
@@ -37,12 +37,12 @@ export default function LoginPageComponent() {
 
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
-      setErrorMsg('Por favor, ingresa tu correo electrónico.');
+      setErrorMsg("Por favor, ingresa tu correo electrónico.");
       return;
     }
 
     if (!password) {
-      setErrorMsg('Por favor, ingresa tu contraseña.');
+      setErrorMsg("Por favor, ingresa tu contraseña.");
       return;
     }
 
@@ -56,7 +56,7 @@ export default function LoginPageComponent() {
         setIsLoading(false);
 
         // Guardar o borrar email según el checkbox
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           if (remember) {
             localStorage.setItem(REMEMBER_EMAIL_KEY, trimmedEmail);
           } else {
@@ -66,15 +66,18 @@ export default function LoginPageComponent() {
 
         // Redirigir suavemente al destino solicitado o al inicio
         setTimeout(() => {
-          const redirectTo = searchParams.get('redirect') || '/';
+          const redirectTo = searchParams.get("redirect") || "/";
           router.push(redirectTo);
           router.refresh();
         }, 900);
       },
       (error) => {
         setIsLoading(false);
-        setErrorMsg(error.message || 'Credenciales de acceso incorrectas. Verifica tu correo y contraseña.');
-      }
+        setErrorMsg(
+          error.message ||
+            "Credenciales de acceso incorrectas. Verifica tu correo y contraseña.",
+        );
+      },
     );
   };
 
@@ -92,15 +95,25 @@ export default function LoginPageComponent() {
         <div className="absolute inset-0 bg-gradient-to-b from-deep-slate/50 via-deep-slate/75 to-deep-slate/95 z-10"></div>
         <div className="relative z-20 flex flex-col justify-between p-16 w-full text-white">
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity">
-              <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplanhoy logo" />
+            <Link
+              href="/"
+              className="flex items-center gap-2 mb-8 cursor-pointer hover:opacity-90 transition-opacity"
+            >
+              <img
+                src="/logo-qph.svg"
+                className="w-10 h-10 rounded-md object-contain"
+                alt="queplanhoy logo"
+              />
               <span className="font-extrabold text-2xl tracking-tight text-white">
                 queplan<span className="text-electric-indigo">hoy</span>
               </span>
             </Link>
-            <h1 className="text-4xl font-extrabold leading-tight mb-6">Tus mejores planes, a un clic.</h1>
+            <h1 className="text-4xl font-extrabold leading-tight mb-6">
+              Tus mejores planes, a un clic.
+            </h1>
             <p className="text-lg text-platinum-silver max-w-md leading-relaxed">
-              Descubre y reserva las mejores experiencias en tu ciudad. Desde conciertos épicos hasta el teatro más íntimo.
+              Descubre y reserva las mejores experiencias en tu ciudad. Desde
+              conciertos épicos hasta el teatro más íntimo.
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -134,7 +147,11 @@ export default function LoginPageComponent() {
           {/* Logo Móvil */}
           <div className="lg:hidden mb-8 flex justify-start">
             <Link href="/" className="flex items-center gap-2 cursor-pointer">
-              <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
+              <img
+                src="/logo-qph.svg"
+                className="w-8 h-8 rounded-md object-contain"
+                alt="queplanhoy logo"
+              />
               <span className="font-extrabold text-xl tracking-tight text-deep-slate">
                 queplan<span className="text-electric-indigo">hoy</span>
               </span>
@@ -142,8 +159,12 @@ export default function LoginPageComponent() {
           </div>
 
           <div className="mb-8 text-left">
-            <h2 className="text-3xl font-extrabold text-deep-slate mb-2">Bienvenido de nuevo</h2>
-            <p className="text-on-surface-variant text-sm">Inicia sesión para continuar disfrutando de tus eventos.</p>
+            <h2 className="text-3xl font-extrabold text-deep-slate mb-2">
+              Bienvenido de nuevo
+            </h2>
+            <p className="text-on-surface-variant text-sm">
+              Inicia sesión para continuar disfrutando de tus eventos.
+            </p>
           </div>
 
           {/* Alerta de Error */}
@@ -154,9 +175,10 @@ export default function LoginPageComponent() {
               </span>
               <div className="flex-1">
                 <p className="font-semibold">{errorMsg}</p>
-                {errorMsg.toLowerCase().includes('inválidas') && (
+                {errorMsg.toLowerCase().includes("inválidas") && (
                   <p className="text-xs text-rose-600 mt-1">
-                    Verifica que hayas escrito correctamente tu correo y contraseña.
+                    Verifica que hayas escrito correctamente tu correo y
+                    contraseña.
                   </p>
                 )}
               </div>
@@ -167,7 +189,10 @@ export default function LoginPageComponent() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             {/* Campo Correo Electrónico */}
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="email">
+              <label
+                className="block text-xs font-semibold text-on-surface-variant"
+                htmlFor="email"
+              >
                 Correo electrónico
               </label>
               <div className="relative group">
@@ -194,7 +219,10 @@ export default function LoginPageComponent() {
             {/* Campo Contraseña */}
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="password">
+                <label
+                  className="block text-xs font-semibold text-on-surface-variant"
+                  htmlFor="password"
+                >
                   Contraseña
                 </label>
                 <Link
@@ -214,7 +242,7 @@ export default function LoginPageComponent() {
                   name="password"
                   placeholder="••••••••"
                   required
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -227,10 +255,12 @@ export default function LoginPageComponent() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading || success}
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  aria-label={
+                    showPassword ? "Ocultar contraseña" : "Ver contraseña"
+                  }
                 >
                   <span className="material-symbols-outlined select-none text-[20px]">
-                    {showPassword ? 'visibility_off' : 'visibility'}
+                    {showPassword ? "visibility_off" : "visibility"}
                   </span>
                 </button>
               </div>
@@ -246,7 +276,10 @@ export default function LoginPageComponent() {
                 onChange={(e) => setRemember(e.target.checked)}
                 disabled={isLoading || success}
               />
-              <label className="ml-2 text-xs font-medium text-on-surface-variant select-none cursor-pointer" htmlFor="remember">
+              <label
+                className="ml-2 text-xs font-medium text-on-surface-variant select-none cursor-pointer"
+                htmlFor="remember"
+              >
                 Recordar mi correo en este dispositivo
               </label>
             </div>
@@ -255,8 +288,8 @@ export default function LoginPageComponent() {
             <button
               className={`w-full py-4 rounded-xl text-white font-semibold text-base transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer ${
                 success
-                  ? 'bg-emerald-600 shadow-emerald-600/20'
-                  : 'bg-electric-indigo shadow-electric-indigo/25 hover:bg-primary active:scale-[0.98] disabled:opacity-50'
+                  ? "bg-emerald-600 shadow-emerald-600/20"
+                  : "bg-electric-indigo shadow-electric-indigo/25 hover:bg-primary active:scale-[0.98] disabled:opacity-50"
               }`}
               type="submit"
               disabled={isLoading || success}
@@ -271,7 +304,11 @@ export default function LoginPageComponent() {
                   check_circle
                 </span>
               )}
-              {success ? '¡Inicio de sesión exitoso!' : isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {success
+                ? "¡Inicio de sesión exitoso!"
+                : isLoading
+                  ? "Iniciando sesión..."
+                  : "Iniciar Sesión"}
             </button>
           </form>
 
@@ -281,14 +318,16 @@ export default function LoginPageComponent() {
               <div className="w-full border-t border-outline-variant/30"></div>
             </div>
             <div className="relative flex justify-center text-xs font-semibold">
-              <span className="px-4 bg-white text-platinum-silver">O continúa con</span>
+              <span className="px-4 bg-white text-platinum-silver">
+                O continúa con
+              </span>
             </div>
           </div>
 
           {/* Inicio de Sesión Social (Únicamente Google) */}
           <div>
             <GoogleAuthButton
-              redirectTo={searchParams.get('redirect') || undefined}
+              redirectTo={searchParams.get("redirect") || undefined}
               disabled={isLoading || success}
               label="Continuar con Google"
               onError={(msg) => setErrorMsg(msg)}
@@ -298,7 +337,7 @@ export default function LoginPageComponent() {
           {/* Enlace a Registro */}
           <div className="mt-8 text-center">
             <p className="text-sm text-on-surface-variant font-medium">
-              ¿No tienes una cuenta?{' '}
+              ¿No tienes una cuenta?{" "}
               <Link
                 href="/register"
                 className="font-bold text-electric-indigo hover:underline ml-1 cursor-pointer"

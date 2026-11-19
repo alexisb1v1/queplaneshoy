@@ -1,10 +1,11 @@
-import React, { Suspense } from 'react';
-import { Metadata } from 'next';
-import ForgotPasswordPage from '@/app/features/auth/ui/forgot-password-page';
+import React, { Suspense } from "react";
+import { Metadata } from "next";
+import ForgotPasswordPage from "@/app/features/auth/ui/forgot-password-page";
 
 export const metadata: Metadata = {
-  title: 'Recuperar Contraseña | queplanhoy',
-  description: 'Solicita un enlace seguro para restablecer la contraseña de tu cuenta en queplanhoy.',
+  title: "Recuperar Contraseña | queplanhoy",
+  description:
+    "Solicita un enlace seguro para restablecer la contraseña de tu cuenta en queplanhoy.",
 };
 
 export default function ForgotPasswordRoute() {
@@ -14,4 +15,3 @@ export default function ForgotPasswordRoute() {
     </Suspense>
   );
 }
-

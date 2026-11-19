@@ -52,7 +52,10 @@ export function ShareSocialPopover({
   // Cerrar al hacer clic fuera
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -70,7 +73,10 @@ export function ShareSocialPopover({
 
     const baseUrl = window.location.origin;
     // Si viene de landing o tiene slug, usamos la ruta canónica
-    const path = source === "landing" && slug ? `/e/${slug}` : `/events/${slug || publicUuid}`;
+    const path =
+      source === "landing" && slug
+        ? `/e/${slug}`
+        : `/events/${slug || publicUuid}`;
 
     const params = new URLSearchParams();
     params.set("utm_source", channel);
@@ -98,7 +104,7 @@ export function ShareSocialPopover({
     switch (channel) {
       case "whatsapp": {
         const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
-          `${shareText} ${shareUrl}`
+          `${shareText} ${shareUrl}`,
         )}`;
         window.open(whatsappUrl, "_blank", "noopener,noreferrer");
         setIsOpen(false);
@@ -111,7 +117,7 @@ export function ShareSocialPopover({
         window.open(
           fbUrl,
           "_blank",
-          "noopener,noreferrer,toolbar=0,status=0,width=626,height=436"
+          "noopener,noreferrer,toolbar=0,status=0,width=626,height=436",
         );
         setIsOpen(false);
         break;
@@ -168,8 +174,8 @@ export function ShareSocialPopover({
             align === "right"
               ? "right-0"
               : align === "left"
-              ? "left-0"
-              : "left-1/2 -translate-x-1/2"
+                ? "left-0"
+                : "left-1/2 -translate-x-1/2"
           } ${
             isDark
               ? "bg-zinc-950/95 border-white/15 text-white shadow-black/80"
@@ -197,7 +203,9 @@ export function ShareSocialPopover({
               type="button"
               onClick={() => handleShare("whatsapp")}
               className={`flex items-center gap-2.5 p-2 rounded-xl text-left text-xs font-semibold transition-all cursor-pointer ${
-                isDark ? "hover:bg-white/10 text-emerald-400" : "hover:bg-emerald-50 text-emerald-700"
+                isDark
+                  ? "hover:bg-white/10 text-emerald-400"
+                  : "hover:bg-emerald-50 text-emerald-700"
               }`}
             >
               <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
@@ -213,7 +221,9 @@ export function ShareSocialPopover({
               type="button"
               onClick={() => handleShare("facebook")}
               className={`flex items-center gap-2.5 p-2 rounded-xl text-left text-xs font-semibold transition-all cursor-pointer ${
-                isDark ? "hover:bg-white/10 text-blue-400" : "hover:bg-blue-50 text-blue-700"
+                isDark
+                  ? "hover:bg-white/10 text-blue-400"
+                  : "hover:bg-blue-50 text-blue-700"
               }`}
             >
               <div className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
@@ -229,7 +239,9 @@ export function ShareSocialPopover({
               type="button"
               onClick={() => handleShare("instagram")}
               className={`flex items-center gap-2.5 p-2 rounded-xl text-left text-xs font-semibold transition-all cursor-pointer ${
-                isDark ? "hover:bg-white/10 text-pink-400" : "hover:bg-pink-50 text-pink-700"
+                isDark
+                  ? "hover:bg-white/10 text-pink-400"
+                  : "hover:bg-pink-50 text-pink-700"
               }`}
             >
               <div className="w-7 h-7 rounded-lg bg-pink-500/20 flex items-center justify-center shrink-0">
@@ -247,7 +259,9 @@ export function ShareSocialPopover({
               type="button"
               onClick={() => handleShare("tiktok")}
               className={`flex items-center gap-2.5 p-2 rounded-xl text-left text-xs font-semibold transition-all cursor-pointer ${
-                isDark ? "hover:bg-white/10 text-cyan-300" : "hover:bg-cyan-50 text-cyan-700"
+                isDark
+                  ? "hover:bg-white/10 text-cyan-300"
+                  : "hover:bg-cyan-50 text-cyan-700"
               }`}
             >
               <div className="w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
@@ -269,15 +283,19 @@ export function ShareSocialPopover({
               className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 copiedChannel === "copy"
                   ? "bg-emerald-500 text-white"
-                : isDark
-                ? "bg-white/10 hover:bg-white/20 text-white"
-                : "bg-surface-variant/40 hover:bg-surface-variant/80 text-deep-slate"
+                  : isDark
+                    ? "bg-white/10 hover:bg-white/20 text-white"
+                    : "bg-surface-variant/40 hover:bg-surface-variant/80 text-deep-slate"
               }`}
             >
               <span className="material-symbols-outlined text-[17px]">
                 {copiedChannel === "copy" ? "check" : "link"}
               </span>
-              <span>{copiedChannel === "copy" ? "¡Enlace copiado con éxito!" : "Copiar enlace directo"}</span>
+              <span>
+                {copiedChannel === "copy"
+                  ? "¡Enlace copiado con éxito!"
+                  : "Copiar enlace directo"}
+              </span>
             </button>
           </div>
         </div>

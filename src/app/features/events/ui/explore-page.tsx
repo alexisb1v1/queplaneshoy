@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import Link from "next/link";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useFavorites } from "../../../common/hooks/use-favorites";
@@ -14,9 +20,11 @@ import {
 // =========================================================================
 // DEFINICIONES DE TIPOS PARA FILTROS
 // =========================================================================
-export type DateFilterType = "all" | "today" | "weekend" | "this_week" | "this_month" | "custom";
+export type DateFilterType =
+  "all" | "today" | "weekend" | "this_week" | "this_month" | "custom";
 export type SortByType = "date_asc" | "price_asc" | "price_desc" | "title_asc";
-export type PriceRangeType = "all" | "under_50" | "50_to_150" | "over_150" | "custom";
+export type PriceRangeType =
+  "all" | "under_50" | "50_to_150" | "over_150" | "custom";
 
 interface CategoryOption {
   id: string;
@@ -30,7 +38,11 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
   { id: "THEATER", name: "Teatro & Musicales", icon: "theater_comedy" },
   { id: "SPORTS", name: "Deportes", icon: "sports_soccer" },
   { id: "FESTIVALS", name: "Festivales", icon: "celebration" },
-  { id: "COMEDY", name: "Comedia & Stand Up", icon: "sentiment_very_satisfied" },
+  {
+    id: "COMEDY",
+    name: "Comedia & Stand Up",
+    icon: "sentiment_very_satisfied",
+  },
   { id: "GASTRONOMY", name: "Gastronomía", icon: "restaurant" },
   { id: "PARTY", name: "Fiestas & Nightlife", icon: "nightlife" },
   { id: "FAMILY", name: "Familiar & Niños", icon: "family_restroom" },
@@ -42,32 +54,32 @@ export default function ExploreEventsPageComponent() {
 
   // Estados de Filtros sincronizados con la URL
   const [searchTerm, setSearchTerm] = useState<string>(
-    searchParams.get("search") || searchParams.get("q") || ""
+    searchParams.get("search") || searchParams.get("q") || "",
   );
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    (searchParams.get("category") || "TODOS").toUpperCase()
+    (searchParams.get("category") || "TODOS").toUpperCase(),
   );
   const [selectedCity, setSelectedCity] = useState<string>(
-    searchParams.get("city") || "Todas"
+    searchParams.get("city") || "Todas",
   );
   const [pricePreset, setPricePreset] = useState<PriceRangeType>("all");
   const [minPrice, setMinPrice] = useState<number>(
-    searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : 0
+    searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : 0,
   );
   const [maxPrice, setMaxPrice] = useState<number>(
-    searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : 500
+    searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : 500,
   );
   const [dateFilter, setDateFilter] = useState<DateFilterType>(
-    (searchParams.get("date") as DateFilterType) || "all"
+    (searchParams.get("date") as DateFilterType) || "all",
   );
   const [customStartDate, setCustomStartDate] = useState<string>(
-    searchParams.get("startDate") || ""
+    searchParams.get("startDate") || "",
   );
   const [customEndDate, setCustomEndDate] = useState<string>(
-    searchParams.get("endDate") || ""
+    searchParams.get("endDate") || "",
   );
   const [sortBy, setSortBy] = useState<SortByType>(
-    (searchParams.get("sort") as SortByType) || "date_asc"
+    (searchParams.get("sort") as SortByType) || "date_asc",
   );
 
   // Estados de los Dropdowns Horizontales (Top Filter Bar)
@@ -84,12 +96,18 @@ export default function ExploreEventsPageComponent() {
   const [publishedCities, setPublishedCities] = useState<PublishedCity[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const toggleFavorite = async (eventId: string, e: React.MouseEvent, publicUuid?: string) => {
+  const toggleFavorite = async (
+    eventId: string,
+    e: React.MouseEvent,
+    publicUuid?: string,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     const res = await toggleFavApi(eventId, publicUuid);
     if (res.requiresAuth && typeof window !== "undefined") {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      router.push(
+        `/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+      );
     }
   };
 
@@ -101,7 +119,7 @@ export default function ExploreEventsPageComponent() {
         (cities) => {
           if (isMounted) setPublishedCities(cities);
         },
-        () => {}
+        () => {},
       );
     });
     return () => {
@@ -119,19 +137,38 @@ export default function ExploreEventsPageComponent() {
     setSelectedCity(c);
 
     // Detección automática para el filtro 'Cerca de ti'
-    if (searchParams.get("near") === "true" && typeof window !== "undefined" && "geolocation" in navigator) {
+    if (
+      searchParams.get("near") === "true" &&
+      typeof window !== "undefined" &&
+      "geolocation" in navigator
+    ) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          if (latitude >= -9.5 && latitude <= -7.0 && longitude >= -76.0 && longitude <= -73.0) {
+          if (
+            latitude >= -9.5 &&
+            latitude <= -7.0 &&
+            longitude >= -76.0 &&
+            longitude <= -73.0
+          ) {
             setSelectedCity("Pucallpa");
-          } else if (latitude >= -13.0 && latitude <= -11.0 && longitude >= -78.0 && longitude <= -76.5) {
+          } else if (
+            latitude >= -13.0 &&
+            latitude <= -11.0 &&
+            longitude >= -78.0 &&
+            longitude <= -76.5
+          ) {
             setSelectedCity("Lima");
-          } else if (latitude >= -14.0 && latitude <= -12.5 && longitude >= -73.0 && longitude <= -71.0) {
+          } else if (
+            latitude >= -14.0 &&
+            latitude <= -12.5 &&
+            longitude >= -73.0 &&
+            longitude <= -71.0
+          ) {
             setSelectedCity("Cusco");
           }
         },
-        () => {}
+        () => {},
       );
     }
   }, [searchParams]);
@@ -248,7 +285,7 @@ export default function ExploreEventsPageComponent() {
       const newUrl = `${pathname}${queryString ? `?${queryString}` : ""}`;
       window.history.replaceState(null, "", newUrl);
     },
-    [pathname]
+    [pathname],
   );
 
   // 6. Cargar eventos desde el caso de uso
@@ -256,7 +293,9 @@ export default function ExploreEventsPageComponent() {
     setIsLoading(true);
 
     const categoryParam =
-      selectedCategory && selectedCategory !== "TODOS" ? selectedCategory : undefined;
+      selectedCategory && selectedCategory !== "TODOS"
+        ? selectedCategory
+        : undefined;
     const cityParam =
       selectedCity && selectedCity !== "Todas" && selectedCity !== "Todos"
         ? selectedCity
@@ -280,7 +319,7 @@ export default function ExploreEventsPageComponent() {
       () => {
         setEvents([]);
         setIsLoading(false);
-      }
+      },
     );
   }, [searchTerm, selectedCategory, selectedCity, minPrice, maxPrice]);
 
@@ -329,8 +368,23 @@ export default function ExploreEventsPageComponent() {
         if (isNaN(evDate.getTime())) return true;
 
         const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        const todayStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          0,
+          0,
+          0,
+        );
+        const todayEnd = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          59,
+          999,
+        );
 
         if (dateFilter === "today") {
           return evDate >= todayStart && evDate <= todayEnd;
@@ -342,10 +396,13 @@ export default function ExploreEventsPageComponent() {
           const friday = new Date(
             now.getFullYear(),
             now.getMonth(),
-            now.getDate() + (daysUntilFriday === 0 && now.getHours() > 22 ? 7 : daysUntilFriday),
+            now.getDate() +
+              (daysUntilFriday === 0 && now.getHours() > 22
+                ? 7
+                : daysUntilFriday),
             0,
             0,
-            0
+            0,
           );
           const sunday = new Date(
             friday.getFullYear(),
@@ -354,13 +411,15 @@ export default function ExploreEventsPageComponent() {
             23,
             59,
             59,
-            999
+            999,
           );
           return evDate >= friday && evDate <= sunday;
         }
 
         if (dateFilter === "this_week") {
-          const in7Days = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+          const in7Days = new Date(
+            todayStart.getTime() + 7 * 24 * 60 * 60 * 1000,
+          );
           return evDate >= todayStart && evDate <= in7Days;
         }
 
@@ -372,7 +431,7 @@ export default function ExploreEventsPageComponent() {
             23,
             59,
             59,
-            999
+            999,
           );
           return evDate >= todayStart && evDate <= endOfMonth;
         }
@@ -454,7 +513,14 @@ export default function ExploreEventsPageComponent() {
     if (minPrice > 0 || maxPrice < 500) count++;
     if (dateFilter !== "all") count++;
     return count;
-  }, [searchTerm, selectedCategory, selectedCity, minPrice, maxPrice, dateFilter]);
+  }, [
+    searchTerm,
+    selectedCategory,
+    selectedCity,
+    minPrice,
+    maxPrice,
+    dateFilter,
+  ]);
 
   // Etiquetas para los botones de la barra superior
   const dateFilterLabel = useMemo(() => {
@@ -719,7 +785,6 @@ export default function ExploreEventsPageComponent() {
 
   return (
     <div className="w-full bg-[#f8fafc] min-h-screen text-on-background font-body-md">
-      
       {/* =========================================================================
           1. HEADER COMPACTO: TÍTULO INSTITUCIONAL + CONTEXTO DE ENTRETENIMIENTO
          ========================================================================= */}
@@ -735,13 +800,16 @@ export default function ExploreEventsPageComponent() {
                 Explora experiencias y planes
               </h1>
               <p className="text-on-surface-variant text-xs sm:text-sm">
-                Conciertos, festivales, teatro y vida nocturna garantizada en todo el Perú.
+                Conciertos, festivales, teatro y vida nocturna garantizada en
+                todo el Perú.
               </p>
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <span className="text-xs font-label-bold text-on-surface-variant bg-surface-gray px-3.5 py-1.5 rounded-xl border border-surface-variant">
-                {isLoading ? "Consultando eventos..." : `${filteredAndSortedEvents.length} eventos disponibles`}
+                {isLoading
+                  ? "Consultando eventos..."
+                  : `${filteredAndSortedEvents.length} eventos disponibles`}
               </span>
             </div>
           </div>
@@ -756,10 +824,8 @@ export default function ExploreEventsPageComponent() {
         className="sticky top-16 md:top-20 z-40 bg-white/95 backdrop-blur-md border-b border-surface-variant/80 py-2.5 sm:py-3 shadow-xs"
       >
         <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 overflow-x-auto md:overflow-visible qph-hide-scrollbar">
-          
           {/* Grupo de Filtros Desplegables (Pills en 1 fila horizontal deslizable en móvil) */}
           <div className="flex items-center gap-2 flex-nowrap md:flex-wrap flex-shrink-0">
-            
             {/* PILL 1: CUÁNDO (FECHAS) */}
             <div className="relative flex-shrink-0">
               <button
@@ -798,7 +864,9 @@ export default function ExploreEventsPageComponent() {
               <button
                 type="button"
                 onClick={() =>
-                  setActiveDropdown(activeDropdown === "category" ? null : "category")
+                  setActiveDropdown(
+                    activeDropdown === "category" ? null : "category",
+                  )
                 }
                 className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-label-bold border transition-all cursor-pointer shadow-2xs active:scale-95 whitespace-nowrap ${
                   selectedCategory !== "TODOS"
@@ -811,7 +879,9 @@ export default function ExploreEventsPageComponent() {
                 </span>
                 <span>{categoryFilterLabel}</span>
                 <span className="material-symbols-outlined text-[14px]">
-                  {activeDropdown === "category" ? "expand_less" : "expand_more"}
+                  {activeDropdown === "category"
+                    ? "expand_less"
+                    : "expand_more"}
                 </span>
               </button>
 
@@ -903,11 +973,12 @@ export default function ExploreEventsPageComponent() {
                 onClick={handleClearFilters}
                 className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-label-bold text-electric-indigo hover:bg-electric-indigo/10 border border-electric-indigo/20 transition-colors cursor-pointer flex-shrink-0 whitespace-nowrap"
               >
-                <span className="material-symbols-outlined text-[15px]">close</span>
+                <span className="material-symbols-outlined text-[15px]">
+                  close
+                </span>
                 <span>Limpiar filtros ({activeFiltersCount})</span>
               </button>
             )}
-
           </div>
 
           {/* Lado Derecho: Ordenamiento */}
@@ -927,11 +998,12 @@ export default function ExploreEventsPageComponent() {
                 <option value="title_asc">Nombre: A - Z</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-on-surface-variant">
-                <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  expand_more
+                </span>
               </div>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -996,7 +1068,9 @@ export default function ExploreEventsPageComponent() {
                 aria-label="Cerrar filtro"
                 className="w-8 h-8 rounded-full bg-surface-gray text-on-surface-variant flex items-center justify-center hover:bg-slate-200 active:scale-95 transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[18px]">close</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  close
+                </span>
               </button>
             </div>
 
@@ -1015,13 +1089,19 @@ export default function ExploreEventsPageComponent() {
           3. CATÁLOGO A PANTALLA COMPLETA (FULL-WIDTH GRID - 3 A 4 COLUMNAS)
          ========================================================================= */}
       <main className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-32 sm:py-10">
-        
         {/* Chip de búsqueda por texto activa si viene desde el Navbar */}
         {searchTerm && (
           <div className="mb-6 flex items-center gap-2">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-surface-variant text-xs text-deep-slate shadow-2xs">
-              <span className="material-symbols-outlined text-[16px] text-electric-indigo">search</span>
-              <span>Resultados para: <strong className="font-bold text-electric-indigo">&ldquo;{searchTerm}&rdquo;</strong></span>
+              <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                search
+              </span>
+              <span>
+                Resultados para:{" "}
+                <strong className="font-bold text-electric-indigo">
+                  &ldquo;{searchTerm}&rdquo;
+                </strong>
+              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -1031,7 +1111,9 @@ export default function ExploreEventsPageComponent() {
                 className="hover:bg-surface-gray rounded-full p-0.5 text-on-surface-variant transition-colors cursor-pointer"
                 title="Quitar término de búsqueda"
               >
-                <span className="material-symbols-outlined text-[14px]">close</span>
+                <span className="material-symbols-outlined text-[14px]">
+                  close
+                </span>
               </button>
             </div>
           </div>
@@ -1080,9 +1162,14 @@ export default function ExploreEventsPageComponent() {
             {/* VISTA MÓVIL: GRID DE 2 COLUMNAS (ESTILO EVENTOS PRÓXIMOS DE STITCH) */}
             <div className="grid grid-cols-2 gap-3.5 sm:hidden mb-8">
               {filteredAndSortedEvents.map((ev) => {
-                const isFav = checkFavorite(ev.id) || (ev.publicUuid ? checkFavorite(ev.publicUuid) : false);
+                const isFav =
+                  checkFavorite(ev.id) ||
+                  (ev.publicUuid ? checkFavorite(ev.publicUuid) : false);
                 const secureId = ev.publicUuid || ev.slug || ev.id;
-                const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
+                const ctaHref =
+                  ev.hasLandingPage && ev.slug
+                    ? `/e/${ev.slug}`
+                    : `/events/${secureId}`;
                 const fallbackImage =
                   "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80";
 
@@ -1109,14 +1196,22 @@ export default function ExploreEventsPageComponent() {
                         {/* Botón Favorito Flotante */}
                         <button
                           type="button"
-                          onClick={(e) => toggleFavorite(ev.id, e, ev.publicUuid)}
-                          aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                          onClick={(e) =>
+                            toggleFavorite(ev.id, e, ev.publicUuid)
+                          }
+                          aria-label={
+                            isFav
+                              ? "Quitar de favoritos"
+                              : "Guardar en favoritos"
+                          }
                           className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-deep-slate/60 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
                         >
                           <span
                             className="material-symbols-outlined text-[15px]"
                             style={{
-                              fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
+                              fontVariationSettings: isFav
+                                ? "'FILL' 1"
+                                : "'FILL' 0",
                               color: isFav ? "#e11d48" : "white",
                             }}
                           >
@@ -1127,7 +1222,9 @@ export default function ExploreEventsPageComponent() {
                         {/* Chip de Precio inferior */}
                         <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-[11px]">
                           <span className="bg-deep-slate/80 backdrop-blur-sm px-1.5 py-0.5 rounded qph-label-bold text-electric-indigo">
-                            {ev.minPrice > 0 ? `Desde S/ ${ev.minPrice.toFixed(2)}` : "Entrada Libre"}
+                            {ev.minPrice > 0
+                              ? `Desde S/ ${ev.minPrice.toFixed(2)}`
+                              : "Entrada Libre"}
                           </span>
                         </div>
                       </div>
@@ -1146,8 +1243,12 @@ export default function ExploreEventsPageComponent() {
 
                       {/* Ubicación con pin */}
                       <p className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                        <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
-                        <span className="truncate">{ev.venue || "Recinto Oficial"}</span>
+                        <span className="material-symbols-outlined text-[13px] text-platinum-silver">
+                          location_on
+                        </span>
+                        <span className="truncate">
+                          {ev.venue || "Recinto Oficial"}
+                        </span>
                       </p>
                     </Link>
                   </article>
@@ -1158,10 +1259,16 @@ export default function ExploreEventsPageComponent() {
             {/* VISTA ESCRITORIO Y TABLET: GRID MULTI-COLUMNAS (sm:grid) */}
             <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredAndSortedEvents.map((ev) => {
-                const isFav = checkFavorite(ev.id) || (ev.publicUuid ? checkFavorite(ev.publicUuid) : false);
+                const isFav =
+                  checkFavorite(ev.id) ||
+                  (ev.publicUuid ? checkFavorite(ev.publicUuid) : false);
                 const secureId = ev.publicUuid || ev.slug || ev.id;
-                const ctaHref = ev.hasLandingPage && ev.slug ? `/e/${ev.slug}` : `/events/${secureId}`;
-                const ctaText = ev.hasLandingPage && ev.slug ? "Ver Experiencia" : "Comprar";
+                const ctaHref =
+                  ev.hasLandingPage && ev.slug
+                    ? `/e/${ev.slug}`
+                    : `/events/${secureId}`;
+                const ctaText =
+                  ev.hasLandingPage && ev.slug ? "Ver Experiencia" : "Comprar";
                 const fallbackImage =
                   "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80";
 
@@ -1199,13 +1306,17 @@ export default function ExploreEventsPageComponent() {
                       <button
                         type="button"
                         onClick={(e) => toggleFavorite(ev.id, e, ev.publicUuid)}
-                        aria-label={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                        aria-label={
+                          isFav ? "Quitar de favoritos" : "Guardar en favoritos"
+                        }
                         className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
                       >
                         <span
                           className="material-symbols-outlined text-[18px]"
                           style={{
-                            fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
+                            fontVariationSettings: isFav
+                              ? "'FILL' 1"
+                              : "'FILL' 0",
                             color: isFav ? "#e11d48" : "inherit",
                           }}
                         >
@@ -1219,10 +1330,14 @@ export default function ExploreEventsPageComponent() {
                       <div>
                         {/* Fecha y Lugar */}
                         <p className="font-label-bold text-[11px] text-electric-indigo mb-1 uppercase tracking-wide flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px]">calendar_today</span>
+                          <span className="material-symbols-outlined text-[13px]">
+                            calendar_today
+                          </span>
                           <span>{formatEventDate(ev.date)}</span>
                           <span>•</span>
-                          <span className="truncate">{ev.venue || "Recinto Oficial"}</span>
+                          <span className="truncate">
+                            {ev.venue || "Recinto Oficial"}
+                          </span>
                         </p>
 
                         <Link href={ctaHref} className="block">
@@ -1232,7 +1347,8 @@ export default function ExploreEventsPageComponent() {
                         </Link>
 
                         <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3 leading-relaxed">
-                          {ev.description || "Acceso digital garantizado con control de seguridad oficial."}
+                          {ev.description ||
+                            "Acceso digital garantizado con control de seguridad oficial."}
                         </p>
                       </div>
 
@@ -1243,7 +1359,9 @@ export default function ExploreEventsPageComponent() {
                             Precio
                           </span>
                           <span className="font-headline-md font-black text-sm sm:text-base text-deep-slate">
-                            {ev.minPrice > 0 ? `Desde S/. ${ev.minPrice.toFixed(2)}` : "Entrada Libre"}
+                            {ev.minPrice > 0
+                              ? `Desde S/. ${ev.minPrice.toFixed(2)}`
+                              : "Entrada Libre"}
                           </span>
                         </div>
 
@@ -1272,7 +1390,8 @@ export default function ExploreEventsPageComponent() {
               No encontramos eventos con estos filtros
             </h3>
             <p className="text-on-surface-variant text-xs sm:text-sm mb-6 leading-relaxed">
-              Prueba cambiando la fecha, seleccionando otra ciudad o explorando todas las categorías disponibles.
+              Prueba cambiando la fecha, seleccionando otra ciudad o explorando
+              todas las categorías disponibles.
             </p>
             <button
               type="button"
@@ -1283,9 +1402,7 @@ export default function ExploreEventsPageComponent() {
             </button>
           </div>
         )}
-
       </main>
-
     </div>
   );
 }

@@ -1,27 +1,29 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { getOrderUseCase } from '../index';
-import { OrderModel } from '../models/order.model';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getOrderUseCase } from "../index";
+import { OrderModel } from "../models/order.model";
 
 interface CheckoutPageComponentProps {
   orderToken: string;
 }
 
-export default function CheckoutPageComponent({ orderToken }: CheckoutPageComponentProps) {
+export default function CheckoutPageComponent({
+  orderToken,
+}: CheckoutPageComponentProps) {
   const router = useRouter();
   const [order, setOrder] = useState<OrderModel | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0); // segundos
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
+
   // Estados del Formulario de Pago
-  const [cardName, setCardName] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
+  const [cardName, setCardName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvc, setCvc] = useState("");
   const [saveCard, setSaveCard] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
@@ -37,17 +39,22 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
           // Calcular segundos restantes basados en la fecha de expiración si está disponible
           const expiresTime = new Date(data.expiresAt).getTime();
           const now = Date.now();
-          const diffSeconds = Math.max(0, Math.floor((expiresTime - now) / 1000));
+          const diffSeconds = Math.max(
+            0,
+            Math.floor((expiresTime - now) / 1000),
+          );
           setTimeLeft(diffSeconds > 0 ? diffSeconds : data.expiresIn);
           setIsLoading(false);
         }
       },
       (error) => {
         if (active) {
-          setErrorMsg(error.message || 'No se pudo cargar el resumen de tu compra.');
+          setErrorMsg(
+            error.message || "No se pudo cargar el resumen de tu compra.",
+          );
           setIsLoading(false);
         }
-      }
+      },
     );
 
     return () => {
@@ -76,13 +83,15 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (timeLeft <= 0) {
-      alert('La reserva ha expirado. Por favor, vuelve a seleccionar tus entradas.');
+      alert(
+        "La reserva ha expirado. Por favor, vuelve a seleccionar tus entradas.",
+      );
       return;
     }
 
@@ -94,18 +103,21 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
       setIsPaid(true);
 
       // Si la orden es mock, actualizar su estado a pagado en sessionStorage
-      if (orderToken.startsWith('mock-order-')) {
+      if (orderToken.startsWith("mock-order-")) {
         const stored = sessionStorage.getItem(`order_${orderToken}`);
         if (stored) {
           const mockData = JSON.parse(stored) as OrderModel;
-          mockData.status = 'completed';
-          sessionStorage.setItem(`order_${orderToken}`, JSON.stringify(mockData));
+          mockData.status = "completed";
+          sessionStorage.setItem(
+            `order_${orderToken}`,
+            JSON.stringify(mockData),
+          );
         }
       }
 
       // Redirigir al listado de entradas compradas
       setTimeout(() => {
-        router.push('/profile/tickets');
+        router.push("/profile/tickets");
       }, 1500);
     }, 2000);
   };
@@ -113,8 +125,12 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-background">
-        <span className="material-symbols-outlined animate-spin text-[40px] text-electric-indigo">refresh</span>
-        <p className="text-on-surface-variant font-semibold">Cargando el resumen de tu compra...</p>
+        <span className="material-symbols-outlined animate-spin text-[40px] text-electric-indigo">
+          refresh
+        </span>
+        <p className="text-on-surface-variant font-semibold">
+          Cargando el resumen de tu compra...
+        </p>
       </div>
     );
   }
@@ -122,11 +138,17 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
   if (errorMsg || !order) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-background p-6 text-center">
-        <span className="material-symbols-outlined text-[48px] text-red-500">error</span>
-        <h2 className="text-2xl font-bold text-deep-slate">Enlace inválido o expirado</h2>
-        <p className="text-on-surface-variant max-w-md">{errorMsg || 'La orden especificada no existe.'}</p>
+        <span className="material-symbols-outlined text-[48px] text-red-500">
+          error
+        </span>
+        <h2 className="text-2xl font-bold text-deep-slate">
+          Enlace inválido o expirado
+        </h2>
+        <p className="text-on-surface-variant max-w-md">
+          {errorMsg || "La orden especificada no existe."}
+        </p>
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push("/")}
           className="mt-4 px-6 py-3 bg-electric-indigo text-white rounded-xl font-semibold shadow-md active:scale-95 transition-all"
         >
           Volver al Inicio
@@ -142,11 +164,15 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
       {/* Header Contextual del Checkout */}
       <header className="bg-white border-b border-outline-variant/10 sticky top-0 z-40 shadow-sm">
         <div className="flex justify-between items-center w-full px-8 h-20 max-w-container-max mx-auto">
-          <div 
+          <div
             className="flex items-center gap-2 cursor-pointer"
-            onClick={() => router.push('/')}
+            onClick={() => router.push("/")}
           >
-            <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
+            <img
+              src="/logo-qph.svg"
+              className="w-8 h-8 rounded-md object-contain"
+              alt="queplanhoy logo"
+            />
             <span className="font-extrabold text-xl tracking-tight text-deep-slate">
               queplan<span className="text-electric-indigo">hoy</span>
             </span>
@@ -159,49 +185,64 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
       </header>
 
       {/* Temporizador Superior */}
-      <div className={`w-full py-3 text-center transition-colors font-semibold text-sm flex items-center justify-center gap-2 ${
-        isExpired 
-          ? 'bg-red-100 text-red-700' 
-          : timeLeft < 120 
-            ? 'bg-amber-100 text-amber-800 animate-pulse' 
-            : 'bg-electric-indigo/10 text-electric-indigo'
-      }`}>
+      <div
+        className={`w-full py-3 text-center transition-colors font-semibold text-sm flex items-center justify-center gap-2 ${
+          isExpired
+            ? "bg-red-100 text-red-700"
+            : timeLeft < 120
+              ? "bg-amber-100 text-amber-800 animate-pulse"
+              : "bg-electric-indigo/10 text-electric-indigo"
+        }`}
+      >
         <span className="material-symbols-outlined text-[18px]">timer</span>
         <span>
-          {isExpired 
-            ? 'Tu reserva ha expirado. Las entradas han sido liberadas.' 
+          {isExpired
+            ? "Tu reserva ha expirado. Las entradas han sido liberadas."
             : `Tus entradas están reservadas por ${formatTime(timeLeft)} minutos.`}
         </span>
       </div>
 
       <main className="max-w-container-max mx-auto px-6 md:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          
           {/* Column Izquierda: Métodos de Pago y Formulario */}
           <div className="lg:col-span-8 space-y-8">
             <div>
-              <h1 className="text-3xl font-bold text-deep-slate mb-2">Método de Pago</h1>
-              <p className="text-on-surface-variant">Selecciona tu forma de pago preferida para completar la reserva.</p>
+              <h1 className="text-3xl font-bold text-deep-slate mb-2">
+                Método de Pago
+              </h1>
+              <p className="text-on-surface-variant">
+                Selecciona tu forma de pago preferida para completar la reserva.
+              </p>
             </div>
 
             {/* Billeteras Digitales */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button 
+              <button
                 type="button"
                 disabled={isExpired}
                 className="flex items-center justify-center gap-3 p-4 border border-outline-variant/30 rounded-xl hover:bg-surface-gray transition-all font-semibold bg-white cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => alert('Pago con Apple Pay simulado')}
+                onClick={() => alert("Pago con Apple Pay simulado")}
               >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>phone_iphone</span>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  phone_iphone
+                </span>
                 <span>Apple Pay</span>
               </button>
-              <button 
+              <button
                 type="button"
                 disabled={isExpired}
                 className="flex items-center justify-center gap-3 p-4 border border-outline-variant/30 rounded-xl hover:bg-surface-gray transition-all font-semibold bg-white cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => alert('Pago con Google Pay simulado')}
+                onClick={() => alert("Pago con Google Pay simulado")}
               >
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  payments
+                </span>
                 <span>Google Pay</span>
               </button>
             </div>
@@ -217,7 +258,10 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
             {/* Formulario de Tarjeta */}
             <form className="space-y-6" onSubmit={handlePaymentSubmit}>
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-on-surface-variant" htmlFor="cardName">
+                <label
+                  className="block text-sm font-semibold text-on-surface-variant"
+                  htmlFor="cardName"
+                >
                   Nombre en la tarjeta
                 </label>
                 <input
@@ -233,7 +277,10 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-on-surface-variant" htmlFor="cardNumber">
+                <label
+                  className="block text-sm font-semibold text-on-surface-variant"
+                  htmlFor="cardNumber"
+                >
                   Número de tarjeta
                 </label>
                 <div className="relative">
@@ -248,24 +295,31 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                     value={cardNumber}
                     onChange={(e) => {
                       // Formateador simple de tarjeta de crédito
-                      const val = e.target.value.replace(/\s?/g, '').replace(/[^0-9]/g, '');
-                      let formatted = '';
+                      const val = e.target.value
+                        .replace(/\s?/g, "")
+                        .replace(/[^0-9]/g, "");
+                      let formatted = "";
                       for (let i = 0; i < val.length; i++) {
-                        if (i > 0 && i % 4 === 0) formatted += ' ';
+                        if (i > 0 && i % 4 === 0) formatted += " ";
                         formatted += val[i];
                       }
                       setCardNumber(formatted);
                     }}
                   />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center text-platinum-silver">
-                    <span className="material-symbols-outlined">credit_card</span>
+                    <span className="material-symbols-outlined">
+                      credit_card
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-on-surface-variant" htmlFor="expiry">
+                  <label
+                    className="block text-sm font-semibold text-on-surface-variant"
+                    htmlFor="expiry"
+                  >
                     Vencimiento
                   </label>
                   <input
@@ -278,7 +332,7 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                     disabled={isExpired || isPaid}
                     value={expiry}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      const val = e.target.value.replace(/[^0-9]/g, "");
                       if (val.length >= 2) {
                         setExpiry(`${val.slice(0, 2)} / ${val.slice(2, 4)}`);
                       } else {
@@ -288,7 +342,10 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-on-surface-variant" htmlFor="cvc">
+                  <label
+                    className="block text-sm font-semibold text-on-surface-variant"
+                    htmlFor="cvc"
+                  >
                     CVC
                   </label>
                   <input
@@ -300,7 +357,9 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                     maxLength={4}
                     disabled={isExpired || isPaid}
                     value={cvc}
-                    onChange={(e) => setCvc(e.target.value.replace(/[^0-9]/g, ''))}
+                    onChange={(e) =>
+                      setCvc(e.target.value.replace(/[^0-9]/g, ""))
+                    }
                   />
                 </div>
               </div>
@@ -314,8 +373,12 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                   checked={saveCard}
                   onChange={(e) => setSaveCard(e.target.checked)}
                 />
-                <label className="text-sm text-on-surface-variant cursor-pointer select-none" htmlFor="saveCard">
-                  Guardar esta tarjeta para mis próximas compras en queplanhoy de forma segura.
+                <label
+                  className="text-sm text-on-surface-variant cursor-pointer select-none"
+                  htmlFor="saveCard"
+                >
+                  Guardar esta tarjeta para mis próximas compras en queplanhoy
+                  de forma segura.
                 </label>
               </div>
 
@@ -330,13 +393,24 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
                 />
-                <label className="text-xs sm:text-sm text-slate-700 cursor-pointer select-none leading-relaxed" htmlFor="acceptTerms">
+                <label
+                  className="text-xs sm:text-sm text-slate-700 cursor-pointer select-none leading-relaxed"
+                  htmlFor="acceptTerms"
+                >
                   He leído y acepto los{" "}
-                  <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                  <Link
+                    href="/terminos-y-condiciones"
+                    target="_blank"
+                    className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                  >
                     Términos y Condiciones
                   </Link>{" "}
                   y las{" "}
-                  <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                  <Link
+                    href="/politicas-de-privacidad"
+                    target="_blank"
+                    className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                  >
                     Políticas de Privacidad
                   </Link>{" "}
                   de queplanhoy (OmniCore S.A.C.).
@@ -346,10 +420,10 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
               <button
                 className={`w-full py-4 rounded-xl text-white font-semibold text-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/20 ${
                   isExpired || !acceptedTerms
-                    ? 'bg-gray-400 shadow-none cursor-not-allowed opacity-50' 
-                    : isPaid 
-                      ? 'bg-green-600 shadow-green-600/10' 
-                      : 'bg-electric-indigo hover:brightness-110 active:scale-95 cursor-pointer'
+                    ? "bg-gray-400 shadow-none cursor-not-allowed opacity-50"
+                    : isPaid
+                      ? "bg-green-600 shadow-green-600/10"
+                      : "bg-electric-indigo hover:brightness-110 active:scale-95 cursor-pointer"
                 }`}
                 type="submit"
                 disabled={isExpired || isProcessing || isPaid || !acceptedTerms}
@@ -364,13 +438,13 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                     check_circle
                   </span>
                 )}
-                {isExpired 
-                  ? 'Reserva Expirada' 
-                  : isPaid 
-                    ? '¡Compra Completada!' 
-                    : isProcessing 
-                      ? 'Procesando Pago...' 
-                      : 'Completar Compra'}
+                {isExpired
+                  ? "Reserva Expirada"
+                  : isPaid
+                    ? "¡Compra Completada!"
+                    : isProcessing
+                      ? "Procesando Pago..."
+                      : "Completar Compra"}
               </button>
             </form>
 
@@ -381,11 +455,15 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                 <span>Pago Seguro SSL</span>
               </div>
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tighter text-on-surface-variant">
-                <span className="material-symbols-outlined text-lg">verified_user</span>
+                <span className="material-symbols-outlined text-lg">
+                  verified_user
+                </span>
                 <span>Garantía de entradas</span>
               </div>
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tighter text-on-surface-variant">
-                <span className="material-symbols-outlined text-lg">shield</span>
+                <span className="material-symbols-outlined text-lg">
+                  shield
+                </span>
                 <span>Normativa PSD2</span>
               </div>
             </div>
@@ -411,11 +489,15 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                     {order.eventName}
                   </h2>
                   <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold">
-                    <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      calendar_month
+                    </span>
                     <span>{order.eventDate}</span>
                   </div>
                   <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold mt-1">
-                    <span className="material-symbols-outlined text-[16px]">location_on</span>
+                    <span className="material-symbols-outlined text-[16px]">
+                      location_on
+                    </span>
                     <span>{order.eventLocation}</span>
                   </div>
                 </div>
@@ -425,7 +507,8 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                   <div className="flex justify-between items-center">
                     <div className="flex flex-col">
                       <span className="text-on-background font-bold text-sm">
-                        {order.quantity}x Entrada{order.quantity > 1 ? 's' : ''} {order.zoneName}
+                        {order.quantity}x Entrada{order.quantity > 1 ? "s" : ""}{" "}
+                        {order.zoneName}
                       </span>
                       <span className="text-on-surface-variant text-xs mt-1">
                         Acceso Digital verificado
@@ -436,7 +519,9 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
 
                 {/* Total Final sin Desgloses */}
                 <div className="border-t border-outline-variant/20 pt-6 flex justify-between items-center">
-                  <span className="text-lg font-bold text-deep-slate">Monto Total</span>
+                  <span className="text-lg font-bold text-deep-slate">
+                    Monto Total
+                  </span>
                   <div className="text-right">
                     <span className="text-2xl font-extrabold text-electric-indigo">
                       €{order.totalAmount.toFixed(2)}
@@ -449,22 +534,28 @@ export default function CheckoutPageComponent({ orderToken }: CheckoutPageCompon
                     <span className="material-symbols-outlined">qr_code_2</span>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-deep-slate">Ticket Digital Directo</h4>
-                    <p className="text-[10px] text-on-surface-variant mt-0.5">Recibirás tu entrada en el móvil al instante.</p>
+                    <h4 className="text-xs font-bold text-deep-slate">
+                      Ticket Digital Directo
+                    </h4>
+                    <p className="text-[10px] text-on-surface-variant mt-0.5">
+                      Recibirás tu entrada en el móvil al instante.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-            
+
             {/* Mensaje de Garantía */}
             <div className="mt-6 p-4 border border-outline-variant/30 border-dashed rounded-xl">
               <p className="text-xs text-on-surface-variant text-center leading-relaxed">
-                <span className="material-symbols-outlined text-green-600 align-middle mr-1 text-[16px]">check_circle</span>
-                Tus datos están protegidos. Esta transacción cumple con la normativa de seguridad europea PSD2.
+                <span className="material-symbols-outlined text-green-600 align-middle mr-1 text-[16px]">
+                  check_circle
+                </span>
+                Tus datos están protegidos. Esta transacción cumple con la
+                normativa de seguridad europea PSD2.
               </p>
             </div>
           </div>
-
         </div>
       </main>
     </div>

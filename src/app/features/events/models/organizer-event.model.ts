@@ -1,11 +1,11 @@
 export type OrganizerEventStatus =
-  | 'draft'
-  | 'in_review'
-  | 'observed'
-  | 'published'
-  | 'paused'
-  | 'completed'
-  | 'cancelled'
+  | "draft"
+  | "in_review"
+  | "observed"
+  | "published"
+  | "paused"
+  | "completed"
+  | "cancelled"
   | string;
 
 export interface OrganizerEventZoneModel {
@@ -50,7 +50,7 @@ export interface OrganizerEventModel {
   statusLabel: string;
   hasLandingPage: boolean;
   feeIncluded?: boolean;
-  feeChargedTo?: 'buyer' | 'promoter' | 'mixed';
+  feeChargedTo?: "buyer" | "promoter" | "mixed";
   imageUrl: string | null;
   venue: string | null;
   city: string;
@@ -71,4 +71,3 @@ export interface OrganizerEventModel {
   draftChecklist: OrganizerDraftChecklistModel;
   zones: OrganizerEventZoneModel[];
 }
-

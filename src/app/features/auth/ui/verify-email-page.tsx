@@ -1,28 +1,30 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { verifyEmailUseCase, resendVerificationUseCase } from '../index';
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { verifyEmailUseCase, resendVerificationUseCase } from "../index";
 
-type VerificationState = 'loading' | 'success' | 'error' | 'no_token';
+type VerificationState = "loading" | "success" | "error" | "no_token";
 
 export default function VerifyEmailPageComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const token = searchParams.get('token');
+  const token = searchParams.get("token");
 
-  const [state, setState] = useState<VerificationState>(token ? 'loading' : 'no_token');
-  const [feedbackMessage, setFeedbackMessage] = useState<string>('');
-  const [resendEmail, setResendEmail] = useState<string>('');
+  const [state, setState] = useState<VerificationState>(
+    token ? "loading" : "no_token",
+  );
+  const [feedbackMessage, setFeedbackMessage] = useState<string>("");
+  const [resendEmail, setResendEmail] = useState<string>("");
   const [isResending, setIsResending] = useState<boolean>(false);
   const [resendSuccess, setResendSuccess] = useState<boolean>(false);
   const [resendError, setResendError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
-      setState('no_token');
+      setState("no_token");
       return;
     }
 
@@ -31,14 +33,19 @@ export default function VerifyEmailPageComponent() {
     verifyEmailUseCase.execute(token).match(
       (data) => {
         if (!isMounted) return;
-        setState('success');
-        setFeedbackMessage(data.message || 'Tu correo electrónico ha sido verificado con éxito.');
+        setState("success");
+        setFeedbackMessage(
+          data.message || "Tu correo electrónico ha sido verificado con éxito.",
+        );
       },
       (error) => {
         if (!isMounted) return;
-        setState('error');
-        setFeedbackMessage(error.message || 'El enlace de verificación es inválido o ha caducado.');
-      }
+        setState("error");
+        setFeedbackMessage(
+          error.message ||
+            "El enlace de verificación es inválido o ha caducado.",
+        );
+      },
     );
 
     return () => {
@@ -52,32 +59,45 @@ export default function VerifyEmailPageComponent() {
     setResendSuccess(false);
 
     if (!resendEmail.trim()) {
-      setResendError('Por favor, ingresa tu correo electrónico.');
+      setResendError("Por favor, ingresa tu correo electrónico.");
       return;
     }
 
     setIsResending(true);
 
-    const result = await resendVerificationUseCase.execute(resendEmail.trim().toLowerCase());
+    const result = await resendVerificationUseCase.execute(
+      resendEmail.trim().toLowerCase(),
+    );
 
     result.match(
       (data) => {
         setIsResending(false);
         setResendSuccess(true);
-        setFeedbackMessage(data.message || 'Nuevo correo de verificación enviado.');
+        setFeedbackMessage(
+          data.message || "Nuevo correo de verificación enviado.",
+        );
       },
       (error) => {
         setIsResending(false);
-        setResendError(error.message || 'No se pudo reenviar el correo. Inténtalo de nuevo.');
-      }
+        setResendError(
+          error.message || "No se pudo reenviar el correo. Inténtalo de nuevo.",
+        );
+      },
     );
   };
 
   return (
     <main className="min-h-screen bg-background flex flex-col justify-center items-center px-4 py-12">
       {/* Brand Logo Header */}
-      <div className="mb-8 flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-        <img src="/logo-qph.svg" className="w-10 h-10 rounded-md object-contain" alt="queplanhoy logo" />
+      <div
+        className="mb-8 flex items-center gap-2 cursor-pointer"
+        onClick={() => router.push("/")}
+      >
+        <img
+          src="/logo-qph.svg"
+          className="w-10 h-10 rounded-md object-contain"
+          alt="queplanhoy logo"
+        />
         <span className="font-extrabold text-2xl tracking-tight text-deep-slate">
           queplan<span className="text-electric-indigo">hoy</span>
         </span>
@@ -85,11 +105,10 @@ export default function VerifyEmailPageComponent() {
 
       {/* Card Central */}
       <div className="w-full max-w-lg bg-white rounded-3xl p-8 sm:p-10 border border-surface-variant shadow-xl text-center relative overflow-hidden">
-        
         {/* =========================================================================
             ESTADO 1: CARGANDO / VERIFICANDO
            ========================================================================= */}
-        {state === 'loading' && (
+        {state === "loading" && (
           <div className="py-8 space-y-6 animate-in fade-in">
             <div className="w-20 h-20 rounded-full bg-electric-indigo/10 text-electric-indigo mx-auto flex items-center justify-center">
               <span className="material-symbols-outlined text-4xl animate-spin">
@@ -97,9 +116,12 @@ export default function VerifyEmailPageComponent() {
               </span>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-deep-slate">Verificando tu cuenta</h2>
+              <h2 className="text-2xl font-bold text-deep-slate">
+                Verificando tu cuenta
+              </h2>
               <p className="text-on-surface-variant text-sm max-w-sm mx-auto">
-                Estamos validando tu enlace de seguridad. Esto solo tomará un momento...
+                Estamos validando tu enlace de seguridad. Esto solo tomará un
+                momento...
               </p>
             </div>
           </div>
@@ -108,7 +130,7 @@ export default function VerifyEmailPageComponent() {
         {/* =========================================================================
             ESTADO 2: ÉXITO
            ========================================================================= */}
-        {state === 'success' && (
+        {state === "success" && (
           <div className="py-6 space-y-6 animate-in zoom-in-95 duration-300">
             <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/10">
               <span className="material-symbols-outlined text-5xl font-bold">
@@ -122,7 +144,7 @@ export default function VerifyEmailPageComponent() {
               </h2>
               <p className="text-on-surface-variant text-sm max-w-sm mx-auto leading-relaxed">
                 {feedbackMessage ||
-                  'Tu cuenta ha sido activada correctamente. Ya puedes acceder a todas las funciones y reservar tus eventos.'}
+                  "Tu cuenta ha sido activada correctamente. Ya puedes acceder a todas las funciones y reservar tus eventos."}
               </p>
             </div>
 
@@ -146,12 +168,10 @@ export default function VerifyEmailPageComponent() {
         {/* =========================================================================
             ESTADO 3: ERROR / TOKEN EXPIRADO
            ========================================================================= */}
-        {state === 'error' && (
+        {state === "error" && (
           <div className="py-6 space-y-6 animate-in zoom-in-95 duration-300">
             <div className="w-20 h-20 rounded-full bg-rose-100 text-rose-600 mx-auto flex items-center justify-center shadow-lg shadow-rose-500/10">
-              <span className="material-symbols-outlined text-5xl">
-                error
-              </span>
+              <span className="material-symbols-outlined text-5xl">error</span>
             </div>
 
             <div className="space-y-2">
@@ -160,7 +180,7 @@ export default function VerifyEmailPageComponent() {
               </h2>
               <p className="text-on-surface-variant text-sm max-w-sm mx-auto leading-relaxed">
                 {feedbackMessage ||
-                  'El enlace de verificación que utilizaste ya no es válido o ha expirado. Por seguridad, solicita uno nuevo.'}
+                  "El enlace de verificación que utilizaste ya no es válido o ha expirado. Por seguridad, solicita uno nuevo."}
               </p>
             </div>
 
@@ -172,8 +192,12 @@ export default function VerifyEmailPageComponent() {
 
               {resendSuccess ? (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-600">check_circle</span>
-                  <span>¡Nuevo enlace enviado! Revisa tu bandeja de entrada.</span>
+                  <span className="material-symbols-outlined text-emerald-600">
+                    check_circle
+                  </span>
+                  <span>
+                    ¡Nuevo enlace enviado! Revisa tu bandeja de entrada.
+                  </span>
                 </div>
               ) : (
                 <form onSubmit={handleResend} className="space-y-3">
@@ -205,7 +229,9 @@ export default function VerifyEmailPageComponent() {
                   >
                     {isResending ? (
                       <>
-                        <span className="material-symbols-outlined animate-spin text-lg">refresh</span>
+                        <span className="material-symbols-outlined animate-spin text-lg">
+                          refresh
+                        </span>
                         <span>Enviando enlace...</span>
                       </>
                     ) : (
@@ -217,7 +243,10 @@ export default function VerifyEmailPageComponent() {
             </div>
 
             <div className="pt-2">
-              <Link href="/login" className="text-xs text-electric-indigo font-bold hover:underline">
+              <Link
+                href="/login"
+                className="text-xs text-electric-indigo font-bold hover:underline"
+              >
                 Volver a Iniciar Sesión
               </Link>
             </div>
@@ -227,7 +256,7 @@ export default function VerifyEmailPageComponent() {
         {/* =========================================================================
             ESTADO 4: NO HAY TOKEN (PÁGINA INFORMATIVA TRAS REGISTRO)
            ========================================================================= */}
-        {state === 'no_token' && (
+        {state === "no_token" && (
           <div className="py-6 space-y-6 animate-in fade-in">
             <div className="w-20 h-20 rounded-full bg-electric-indigo/10 text-electric-indigo mx-auto flex items-center justify-center shadow-lg shadow-electric-indigo/10">
               <span className="material-symbols-outlined text-5xl">
@@ -240,20 +269,24 @@ export default function VerifyEmailPageComponent() {
                 Verifica tu Correo Electrónico
               </h2>
               <p className="text-on-surface-variant text-sm max-w-sm mx-auto leading-relaxed">
-                Hemos enviado un enlace de confirmación a tu dirección de correo electrónico.
-                Por favor, abre tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.
+                Hemos enviado un enlace de confirmación a tu dirección de correo
+                electrónico. Por favor, abre tu bandeja de entrada y haz clic en
+                el enlace para activar tu cuenta.
               </p>
             </div>
 
             {/* Sección de Reenvío */}
             <div className="pt-4 border-t border-surface-variant">
               <p className="text-xs text-on-surface-variant mb-4">
-                ¿No recibiste el correo? Revisa tu carpeta de spam o solicita un nuevo enlace abajo:
+                ¿No recibiste el correo? Revisa tu carpeta de spam o solicita un
+                nuevo enlace abajo:
               </p>
 
               {resendSuccess ? (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+                  <span className="material-symbols-outlined text-emerald-600">
+                    check_circle
+                  </span>
                   <span>¡Enlace reenviado con éxito! Revisa tu correo.</span>
                 </div>
               ) : (
@@ -286,7 +319,9 @@ export default function VerifyEmailPageComponent() {
                   >
                     {isResending ? (
                       <>
-                        <span className="material-symbols-outlined animate-spin text-lg">refresh</span>
+                        <span className="material-symbols-outlined animate-spin text-lg">
+                          refresh
+                        </span>
                         <span>Enviando enlace...</span>
                       </>
                     ) : (
@@ -298,18 +333,22 @@ export default function VerifyEmailPageComponent() {
             </div>
 
             <div className="pt-2 flex justify-between items-center text-xs text-platinum-silver">
-              <Link href="/" className="hover:text-deep-slate transition-colors">
+              <Link
+                href="/"
+                className="hover:text-deep-slate transition-colors"
+              >
                 Ir al Inicio
               </Link>
-              <Link href="/login" className="text-electric-indigo font-bold hover:underline">
+              <Link
+                href="/login"
+                className="text-electric-indigo font-bold hover:underline"
+              >
                 Iniciar sesión
               </Link>
             </div>
           </div>
         )}
-
       </div>
     </main>
   );
 }
-

@@ -1,31 +1,44 @@
-import { EventDto, CreateEventParams } from '../dto/event.dto';
-import { OrganizerEventDto } from '../dto/organizer-event.dto';
-import { OrganizerEventReportDto } from '../dto/organizer-event-report.dto';
-import { EventSettlementDto, RequestEventSettlementParams } from '../dto/event-settlement.dto';
-import { SearchEventsResponse, PublishedCity, SearchEventItem } from '../models/search-event.model';
-import { HomeEventCardItem } from '../models/home-event-card.model';
-import { EventLandingModel } from '../models/event-landing.model';
-import { EventDetailModel } from '../models/event-detail.model';
-import { apiClient } from '../../../common/services/api-client';
+import { EventDto, CreateEventParams } from "../dto/event.dto";
+import { OrganizerEventDto } from "../dto/organizer-event.dto";
+import { OrganizerEventReportDto } from "../dto/organizer-event-report.dto";
+import {
+  EventSettlementDto,
+  RequestEventSettlementParams,
+} from "../dto/event-settlement.dto";
+import {
+  SearchEventsResponse,
+  PublishedCity,
+  SearchEventItem,
+} from "../models/search-event.model";
+import { HomeEventCardItem } from "../models/home-event-card.model";
+import { EventLandingModel } from "../models/event-landing.model";
+import { EventDetailModel } from "../models/event-detail.model";
+import { apiClient } from "../../../common/services/api-client";
 
 export class EventApiService {
   async fetchEvents(): Promise<EventDto[]> {
-    return apiClient.get<EventDto[]>('/events');
+    return apiClient.get<EventDto[]>("/events");
   }
 
-  async getOrganizerEvents(params?: { status?: string; q?: string; period?: '3m' | '6m' | '12m' | 'all' }): Promise<OrganizerEventDto[]> {
+  async getOrganizerEvents(params?: {
+    status?: string;
+    q?: string;
+    period?: "3m" | "6m" | "12m" | "all";
+  }): Promise<OrganizerEventDto[]> {
     const query = new URLSearchParams();
-    if (params?.status && params.status !== 'all') {
-      query.set('status', params.status);
+    if (params?.status && params.status !== "all") {
+      query.set("status", params.status);
     }
     if (params?.q && params.q.trim()) {
-      query.set('q', params.q.trim());
+      query.set("q", params.q.trim());
     }
     if (params?.period) {
-      query.set('period', params.period);
+      query.set("period", params.period);
     }
     const qs = query.toString();
-    return apiClient.get<OrganizerEventDto[]>(`/events/organizer${qs ? `?${qs}` : ''}`);
+    return apiClient.get<OrganizerEventDto[]>(
+      `/events/organizer${qs ? `?${qs}` : ""}`,
+    );
   }
 
   async getEventDetail(identifier: string): Promise<EventDetailModel> {
@@ -33,31 +46,39 @@ export class EventApiService {
   }
 
   async getFeaturedEvents(): Promise<SearchEventItem[]> {
-    return apiClient.get<SearchEventItem[]>('/events/featured');
+    return apiClient.get<SearchEventItem[]>("/events/featured");
   }
 
   async getUpcomingEvents(): Promise<HomeEventCardItem[]> {
-    return apiClient.get<HomeEventCardItem[]>('/events/upcoming');
+    return apiClient.get<HomeEventCardItem[]>("/events/upcoming");
   }
 
   async getWeeklyFeaturedEvents(): Promise<HomeEventCardItem[]> {
-    return apiClient.get<HomeEventCardItem[]>('/events/weekly-featured');
+    return apiClient.get<HomeEventCardItem[]>("/events/weekly-featured");
   }
 
   async getWeekendEvents(): Promise<HomeEventCardItem[]> {
-    return apiClient.get<HomeEventCardItem[]>('/events/weekend');
+    return apiClient.get<HomeEventCardItem[]>("/events/weekend");
   }
 
-  async getEventLanding(slug: string, previewTemp?: string): Promise<EventLandingModel> {
-    const query = previewTemp ? `?previewTemp=${encodeURIComponent(previewTemp)}` : '';
+  async getEventLanding(
+    slug: string,
+    previewTemp?: string,
+  ): Promise<EventLandingModel> {
+    const query = previewTemp
+      ? `?previewTemp=${encodeURIComponent(previewTemp)}`
+      : "";
     return apiClient.get<EventLandingModel>(`/events/landing/${slug}${query}`);
   }
 
   async createEvent(params: CreateEventParams): Promise<EventDto> {
-    return apiClient.post<EventDto>('/events', params);
+    return apiClient.post<EventDto>("/events", params);
   }
 
-  async updateEvent(eventId: string, params: CreateEventParams): Promise<EventDto> {
+  async updateEvent(
+    eventId: string,
+    params: CreateEventParams,
+  ): Promise<EventDto> {
     return apiClient.put<EventDto>(`/events/${eventId}`, params);
   }
 
@@ -65,8 +86,12 @@ export class EventApiService {
     return apiClient.get<any>(`/events/organizer/${eventId}/edit`);
   }
 
-  async getOrganizerEventReport(identifier: string): Promise<OrganizerEventReportDto> {
-    return apiClient.get<OrganizerEventReportDto>(`/events/organizer/${identifier}/report`);
+  async getOrganizerEventReport(
+    identifier: string,
+  ): Promise<OrganizerEventReportDto> {
+    return apiClient.get<OrganizerEventReportDto>(
+      `/events/organizer/${identifier}/report`,
+    );
   }
 
   async publishEvent(eventId: string): Promise<EventDto> {
@@ -74,7 +99,7 @@ export class EventApiService {
   }
 
   async getPublishedCities(): Promise<PublishedCity[]> {
-    return apiClient.get<PublishedCity[]>('/search/cities');
+    return apiClient.get<PublishedCity[]>("/search/cities");
   }
 
   async searchEvents(params: {
@@ -89,36 +114,51 @@ export class EventApiService {
     status?: string;
   }): Promise<SearchEventsResponse> {
     const query = new URLSearchParams();
-    if (params.q) query.set('q', params.q);
-    if (params.category && params.category !== 'Todas' && params.category !== 'Todos') {
-      query.set('category', params.category.toUpperCase());
+    if (params.q) query.set("q", params.q);
+    if (
+      params.category &&
+      params.category !== "Todas" &&
+      params.category !== "Todos"
+    ) {
+      query.set("category", params.category.toUpperCase());
     }
-    if (params.city && params.city !== 'Todas' && params.city !== 'Todos') {
-      query.set('city', params.city);
+    if (params.city && params.city !== "Todas" && params.city !== "Todos") {
+      query.set("city", params.city);
     }
-    if (params.ubigeoCode) query.set('ubigeoCode', params.ubigeoCode);
-    if (params.minPrice !== undefined) query.set('minPrice', params.minPrice.toString());
-    if (params.maxPrice !== undefined) query.set('maxPrice', params.maxPrice.toString());
-    if (params.limit) query.set('limit', params.limit.toString());
-    if (params.offset) query.set('offset', params.offset.toString());
+    if (params.ubigeoCode) query.set("ubigeoCode", params.ubigeoCode);
+    if (params.minPrice !== undefined)
+      query.set("minPrice", params.minPrice.toString());
+    if (params.maxPrice !== undefined)
+      query.set("maxPrice", params.maxPrice.toString());
+    if (params.limit) query.set("limit", params.limit.toString());
+    if (params.offset) query.set("offset", params.offset.toString());
     if (params.status) {
-      query.set('status', params.status);
+      query.set("status", params.status);
     } else {
-      query.set('status', 'published');
+      query.set("status", "published");
     }
 
     const queryString = query.toString();
-    return apiClient.get<SearchEventsResponse>(`/search/events${queryString ? `?${queryString}` : ''}`);
+    return apiClient.get<SearchEventsResponse>(
+      `/search/events${queryString ? `?${queryString}` : ""}`,
+    );
   }
 
-  async getOrganizerEventSettlement(identifier: string): Promise<EventSettlementDto> {
-    return apiClient.get<EventSettlementDto>(`/events/organizer/${identifier}/settlement`);
+  async getOrganizerEventSettlement(
+    identifier: string,
+  ): Promise<EventSettlementDto> {
+    return apiClient.get<EventSettlementDto>(
+      `/events/organizer/${identifier}/settlement`,
+    );
   }
 
   async requestOrganizerEventSettlement(
     identifier: string,
     data: RequestEventSettlementParams,
   ): Promise<EventSettlementDto> {
-    return apiClient.post<EventSettlementDto>(`/events/organizer/${identifier}/settlement`, data);
+    return apiClient.post<EventSettlementDto>(
+      `/events/organizer/${identifier}/settlement`,
+      data,
+    );
   }
 }

@@ -1,32 +1,32 @@
-'use client';
+"use client";
 
-import React, { useRef, useState } from 'react';
-import { apiClient } from '@/app/common/services/api-client';
+import React, { useRef, useState } from "react";
+import { apiClient } from "@/app/common/services/api-client";
 import {
   compressImage,
   getDefaultDimensionsForFolder,
-} from '@/app/common/utils/image-compressor';
+} from "@/app/common/utils/image-compressor";
 
 interface ImageUploaderProps {
   label?: string;
   helpText?: string;
   value?: string;
   onChange: (publicUrl: string) => void;
-  aspectRatio?: 'banner' | 'square' | 'portrait' | 'auto';
+  aspectRatio?: "banner" | "square" | "portrait" | "auto";
   compact?: boolean;
   className?: string;
-  folder?: 'banners' | 'croquis' | 'gallery' | 'landings' | 'organizers';
+  folder?: "banners" | "croquis" | "gallery" | "landings" | "organizers";
 }
 
 export default function ImageUploader({
   label,
-  helpText = 'PNG, JPG o WebP (Optimización automática)',
+  helpText = "PNG, JPG o WebP (Optimización automática)",
   value,
   onChange,
-  aspectRatio = 'auto',
+  aspectRatio = "auto",
   compact = false,
-  className = '',
-  folder = 'banners',
+  className = "",
+  folder = "banners",
 }: ImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -39,14 +39,14 @@ export default function ImageUploader({
     setErrorMsg(null);
     setCompressionInfo(null);
 
-    if (!file.type.startsWith('image/')) {
-      setErrorMsg('El archivo seleccionado no es una imagen válida.');
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("El archivo seleccionado no es una imagen válida.");
       return;
     }
 
     // Límite generoso de 15MB ya que se comprimirá en cliente antes de subir
     if (file.size > 15 * 1024 * 1024) {
-      setErrorMsg('La imagen supera el límite máximo de 15MB.');
+      setErrorMsg("La imagen supera el límite máximo de 15MB.");
       return;
     }
 
@@ -69,7 +69,7 @@ export default function ImageUploader({
         maxWidth: folderDimensions.maxWidth,
         maxHeight: folderDimensions.maxHeight,
         quality: 0.82,
-        targetFormat: 'image/webp',
+        targetFormat: "image/webp",
       });
 
       const fileToUpload = compressionResult.file;
@@ -82,33 +82,36 @@ export default function ImageUploader({
         uploadUrl: string;
         publicUrl: string;
         key: string;
-      }>('/media/presigned-url', {
+      }>("/media/presigned-url", {
         filename: fileToUpload.name,
-        contentType: fileToUpload.type || 'image/webp',
+        contentType: fileToUpload.type || "image/webp",
         folder,
       });
 
       // 3. Subir directamente el archivo optimizado a Cloudflare R2 vía PUT
       const uploadResponse = await fetch(presignedData.uploadUrl, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': fileToUpload.type || 'image/webp',
+          "Content-Type": fileToUpload.type || "image/webp",
         },
         body: fileToUpload,
       });
 
       if (!uploadResponse.ok) {
         throw new Error(
-          `Error al subir la imagen (${uploadResponse.status} ${uploadResponse.statusText})`
+          `Error al subir la imagen (${uploadResponse.status} ${uploadResponse.statusText})`,
         );
       }
 
       // 4. Si ya existía una imagen anterior en R2 para este mismo slot, solicitar su eliminación
       if (value && value !== presignedData.publicUrl) {
         apiClient
-          .delete('/media', { params: { url: value } })
+          .delete("/media", { params: { url: value } })
           .catch((delErr) =>
-            console.warn('[ImageUploader] No se pudo purgar la imagen anterior:', delErr)
+            console.warn(
+              "[ImageUploader] No se pudo purgar la imagen anterior:",
+              delErr,
+            ),
           );
       }
 
@@ -116,13 +119,13 @@ export default function ImageUploader({
       onChange(presignedData.publicUrl);
       setUploadPreview(null);
     } catch (err: any) {
-      console.error('Error al procesar/subir imagen:', err);
+      console.error("Error al procesar/subir imagen:", err);
       const isConnectionError =
-        err?.message?.includes('Failed to fetch') || err?.name === 'TypeError';
+        err?.message?.includes("Failed to fetch") || err?.name === "TypeError";
       setErrorMsg(
         isConnectionError
-          ? 'No se pudo conectar con el servidor backend (NestJS en http://localhost:3001). Verifica que el backend esté ejecutándose.'
-          : (err.message || 'Ocurrió un error al cargar la imagen.')
+          ? "No se pudo conectar con el servidor backend (NestJS en http://localhost:3001). Verifica que el backend esté ejecutándose."
+          : err.message || "Ocurrió un error al cargar la imagen.",
       );
       setUploadPreview(null);
     } finally {
@@ -162,33 +165,36 @@ export default function ImageUploader({
     // Si había una imagen cargada previamente, purgarla de Cloudflare R2
     if (value) {
       apiClient
-        .delete('/media', { params: { url: value } })
+        .delete("/media", { params: { url: value } })
         .catch((delErr) =>
-          console.warn('[ImageUploader] Error al purgar imagen eliminada de R2:', delErr)
+          console.warn(
+            "[ImageUploader] Error al purgar imagen eliminada de R2:",
+            delErr,
+          ),
         );
     }
 
-    onChange('');
+    onChange("");
     setUploadPreview(null);
     setCompressionInfo(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
   const getAspectClass = () => {
     if (compact) {
-      return 'h-24 sm:h-28 w-full';
+      return "h-24 sm:h-28 w-full";
     }
     switch (aspectRatio) {
-      case 'banner':
-        return 'aspect-[16/7] min-h-[140px]';
-      case 'square':
-        return 'aspect-square min-h-[120px]';
-      case 'portrait':
-        return 'aspect-[3/4] min-h-[150px]';
+      case "banner":
+        return "aspect-[16/7] min-h-[140px]";
+      case "square":
+        return "aspect-square min-h-[120px]";
+      case "portrait":
+        return "aspect-[3/4] min-h-[150px]";
       default:
-        return 'min-h-[120px]';
+        return "min-h-[120px]";
     }
   };
 
@@ -197,7 +203,9 @@ export default function ImageUploader({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {label && (
-        <label className="font-bold text-xs text-deep-slate block">{label}</label>
+        <label className="font-bold text-xs text-deep-slate block">
+          {label}
+        </label>
       )}
 
       <input
@@ -224,14 +232,18 @@ export default function ImageUploader({
           {isUploading && (
             <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white z-20">
               <span className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span className="text-xs font-bold tracking-wide">Cargando...</span>
+              <span className="text-xs font-bold tracking-wide">
+                Cargando...
+              </span>
             </div>
           )}
 
           {/* Badge de optimización WebP */}
           {compressionInfo && !isUploading && (
             <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-emerald-600/90 text-white text-[10px] font-bold shadow flex items-center gap-1 z-10 pointer-events-none">
-              <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
+              <span className="material-symbols-outlined text-[12px]">
+                auto_awesome
+              </span>
               {compressionInfo}
             </div>
           )}
@@ -244,7 +256,9 @@ export default function ImageUploader({
                 onClick={() => fileInputRef.current?.click()}
                 className="px-3 py-1.5 rounded-xl bg-white text-slate-800 text-xs font-bold hover:bg-slate-100 transition-colors flex items-center gap-1.5 shadow"
               >
-                <span className="material-symbols-outlined text-[16px]">refresh</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  refresh
+                </span>
                 Cambiar
               </button>
               <button
@@ -253,7 +267,9 @@ export default function ImageUploader({
                 className="p-1.5 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors shadow"
                 title="Eliminar imagen"
               >
-                <span className="material-symbols-outlined text-[18px]">delete</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  delete
+                </span>
               </button>
             </div>
           )}
@@ -267,11 +283,11 @@ export default function ImageUploader({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           className={`cursor-pointer rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center ${
-            compact ? 'p-3' : 'p-6'
+            compact ? "p-3" : "p-6"
           } ${
             isDragging
-              ? 'border-electric-indigo bg-indigo-50/50 scale-[1.01]'
-              : 'border-slate-300 hover:border-electric-indigo/80 bg-surface-gray/50 hover:bg-surface-gray'
+              ? "border-electric-indigo bg-indigo-50/50 scale-[1.01]"
+              : "border-slate-300 hover:border-electric-indigo/80 bg-surface-gray/50 hover:bg-surface-gray"
           } ${getAspectClass()}`}
         >
           {isUploading ? (
@@ -283,12 +299,12 @@ export default function ImageUploader({
             <>
               <div
                 className={`${
-                  compact ? 'w-8 h-8 mb-1' : 'w-12 h-12 mb-2'
+                  compact ? "w-8 h-8 mb-1" : "w-12 h-12 mb-2"
                 } rounded-xl bg-indigo-50 text-electric-indigo flex items-center justify-center shadow-xs`}
               >
                 <span
                   className={`material-symbols-outlined ${
-                    compact ? 'text-[18px]' : 'text-[24px]'
+                    compact ? "text-[18px]" : "text-[24px]"
                   }`}
                 >
                   cloud_upload
@@ -296,10 +312,12 @@ export default function ImageUploader({
               </div>
               <span className="text-xs font-bold text-deep-slate">
                 {compact
-                  ? 'Subir imagen'
-                  : 'Haz clic para subir o arrastra la imagen aquí'}
+                  ? "Subir imagen"
+                  : "Haz clic para subir o arrastra la imagen aquí"}
               </span>
-              <span className="text-[10px] text-slate-400 mt-0.5">{helpText}</span>
+              <span className="text-[10px] text-slate-400 mt-0.5">
+                {helpText}
+              </span>
             </>
           )}
         </div>

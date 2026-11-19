@@ -32,5 +32,3 @@ export interface PublishedCity {
   departmentCode: string;
   eventCount: number;
 }
-
-

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
 
-export type OrganizerMenuSection = 'events' | 'settlement' | 'advances';
+export type OrganizerMenuSection = "events" | "settlement" | "advances";
 
 interface OrganizerSidebarProps {
   activeSection?: OrganizerMenuSection;
@@ -18,7 +18,7 @@ interface OrganizerSidebarProps {
  * Menú lateral compartido del panel de Gestión de Promotor (Desktop + Drawer móvil).
  */
 export function OrganizerSidebar({
-  activeSection = 'events',
+  activeSection = "events",
   isMobileMenuOpen,
   onCloseMobileMenu,
   isMobileOpen,
@@ -27,7 +27,7 @@ export function OrganizerSidebar({
 }: OrganizerSidebarProps) {
   const effectiveMobileOpen = isMobileMenuOpen ?? isMobileOpen ?? false;
   const effectiveOnClose = onCloseMobileMenu ?? onClose ?? (() => {});
-  const isEventsActive = activeSection === 'events';
+  const isEventsActive = activeSection === "events";
 
   const renderNavLinks = (closeOnNavigate: boolean) => (
     <nav className="flex flex-col gap-1.5">
@@ -36,13 +36,15 @@ export function OrganizerSidebar({
         onClick={closeOnNavigate ? effectiveOnClose : undefined}
         className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all text-left w-full ${
           isEventsActive
-            ? 'bg-electric-indigo text-white shadow-md shadow-electric-indigo/25'
-            : 'text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate'
+            ? "bg-electric-indigo text-white shadow-md shadow-electric-indigo/25"
+            : "text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate"
         }`}
       >
         <span
           className="material-symbols-outlined text-[20px]"
-          style={{ fontVariationSettings: isEventsActive ? "'FILL' 1" : "'FILL' 0" }}
+          style={{
+            fontVariationSettings: isEventsActive ? "'FILL' 1" : "'FILL' 0",
+          }}
         >
           confirmation_number
         </span>
@@ -65,7 +67,9 @@ export function OrganizerSidebar({
                   PRO
                 </span>
               </div>
-              <p className="text-xs text-on-surface-variant">Herramientas y taquilla en tiempo real</p>
+              <p className="text-xs text-on-surface-variant">
+                Herramientas y taquilla en tiempo real
+              </p>
             </div>
 
             {renderNavLinks(false)}
@@ -76,7 +80,9 @@ export function OrganizerSidebar({
               href="/profile"
               className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray hover:text-deep-slate transition-all"
             >
-              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[20px]">
+                arrow_back
+              </span>
               <span>Volver a Vista Asistente</span>
             </Link>
 
@@ -85,9 +91,13 @@ export function OrganizerSidebar({
                 <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
                   Soporte Prioritario
                 </span>
-                <span className="font-extrabold text-xs text-electric-indigo">promotores@queplanhoy.com</span>
+                <span className="font-extrabold text-xs text-electric-indigo">
+                  promotores@queplanhoy.com
+                </span>
               </div>
-              <span className="material-symbols-outlined text-platinum-silver text-[20px]">headset_mic</span>
+              <span className="material-symbols-outlined text-platinum-silver text-[20px]">
+                headset_mic
+              </span>
             </div>
           </div>
         </div>
@@ -99,7 +109,9 @@ export function OrganizerSidebar({
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-surface-variant/40 pb-4">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-base text-deep-slate">Gestión de Promotor</span>
+                  <span className="font-bold text-base text-deep-slate">
+                    Gestión de Promotor
+                  </span>
                   <span className="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-extrabold text-[10px] uppercase">
                     PRO
                   </span>
@@ -110,7 +122,9 @@ export function OrganizerSidebar({
                   aria-label="Cerrar menú"
                   className="w-8 h-8 rounded-full hover:bg-surface-gray flex items-center justify-center text-on-surface-variant cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
+                  <span className="material-symbols-outlined text-[20px]">
+                    close
+                  </span>
                 </button>
               </div>
 
@@ -123,7 +137,9 @@ export function OrganizerSidebar({
                 onClick={effectiveOnClose}
                 className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-on-surface-variant hover:bg-surface-gray"
               >
-                <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                <span className="material-symbols-outlined text-[20px]">
+                  arrow_back
+                </span>
                 <span>Volver a Vista Asistente</span>
               </Link>
               <p className="text-[11px] text-on-surface-variant text-center">
@@ -136,4 +152,3 @@ export function OrganizerSidebar({
     </>
   );
 }
-

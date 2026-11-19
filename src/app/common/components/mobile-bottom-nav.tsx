@@ -31,7 +31,10 @@ function formatEventDate(dateStr?: string | null): string {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
   const day = d.toLocaleDateString("es-PE", { day: "2-digit" });
-  const month = d.toLocaleDateString("es-PE", { month: "short" }).toUpperCase().replace(".", "");
+  const month = d
+    .toLocaleDateString("es-PE", { month: "short" })
+    .toUpperCase()
+    .replace(".", "");
   return `${day} ${month}`;
 }
 
@@ -66,7 +69,8 @@ export function MobileBottomNav() {
   useEffect(() => {
     const handleOpenSearch = () => setIsSearchOpen(true);
     window.addEventListener("open-mobile-search", handleOpenSearch);
-    return () => window.removeEventListener("open-mobile-search", handleOpenSearch);
+    return () =>
+      window.removeEventListener("open-mobile-search", handleOpenSearch);
   }, []);
 
   // Cerrar búsqueda con tecla Escape
@@ -91,7 +95,8 @@ export function MobileBottomNav() {
 
     setIsLoading(true);
     const timer = setTimeout(async () => {
-      const categoryParam = selectedCategory !== "TODOS" ? selectedCategory : undefined;
+      const categoryParam =
+        selectedCategory !== "TODOS" ? selectedCategory : undefined;
       const res = await searchEventsUseCase.execute({
         q: trimmed,
         category: categoryParam,
@@ -107,7 +112,7 @@ export function MobileBottomNav() {
         () => {
           setResults([]);
           setIsLoading(false);
-        }
+        },
       );
     }, 200);
 
@@ -117,7 +122,10 @@ export function MobileBottomNav() {
   const handleSelectEvent = (event: SearchEventItem) => {
     setIsSearchOpen(false);
     const secureId = event.publicUuid || event.slug || event.id;
-    const targetUrl = event.hasLandingPage && event.slug ? `/e/${event.slug}` : `/events/${secureId}`;
+    const targetUrl =
+      event.hasLandingPage && event.slug
+        ? `/e/${event.slug}`
+        : `/events/${secureId}`;
     router.push(targetUrl);
   };
 
@@ -145,7 +153,9 @@ export function MobileBottomNav() {
         <Link
           href="/"
           className={`flex flex-col items-center gap-0.5 transition-colors cursor-pointer ${
-            isHome ? "text-primary" : "text-on-surface-variant hover:text-primary"
+            isHome
+              ? "text-primary"
+              : "text-on-surface-variant hover:text-primary"
           }`}
         >
           <span
@@ -154,23 +164,31 @@ export function MobileBottomNav() {
           >
             home
           </span>
-          <span className="font-bold text-[9px] uppercase tracking-tight">Inicio</span>
+          <span className="font-bold text-[9px] uppercase tracking-tight">
+            Inicio
+          </span>
         </Link>
 
         {/* 2. Explorar */}
         <Link
           href="/events"
           className={`flex flex-col items-center gap-0.5 transition-colors cursor-pointer ${
-            isExplore ? "text-primary" : "text-on-surface-variant hover:text-primary"
+            isExplore
+              ? "text-primary"
+              : "text-on-surface-variant hover:text-primary"
           }`}
         >
           <span
             className="material-symbols-outlined text-[20px]"
-            style={{ fontVariationSettings: isExplore ? "'FILL' 1" : "'FILL' 0" }}
+            style={{
+              fontVariationSettings: isExplore ? "'FILL' 1" : "'FILL' 0",
+            }}
           >
             explore
           </span>
-          <span className="font-semibold text-[9px] uppercase tracking-tight">Explorar</span>
+          <span className="font-semibold text-[9px] uppercase tracking-tight">
+            Explorar
+          </span>
         </Link>
 
         {/* 3. BOTÓN CENTRAL AZUL: BÚSQUEDA A PANTALLA COMPLETA */}
@@ -187,32 +205,44 @@ export function MobileBottomNav() {
         <Link
           href="/profile/tickets"
           className={`flex flex-col items-center gap-0.5 transition-colors cursor-pointer ${
-            isTickets ? "text-primary" : "text-on-surface-variant hover:text-primary"
+            isTickets
+              ? "text-primary"
+              : "text-on-surface-variant hover:text-primary"
           }`}
         >
           <span
             className="material-symbols-outlined text-[20px]"
-            style={{ fontVariationSettings: isTickets ? "'FILL' 1" : "'FILL' 0" }}
+            style={{
+              fontVariationSettings: isTickets ? "'FILL' 1" : "'FILL' 0",
+            }}
           >
             confirmation_number
           </span>
-          <span className="font-semibold text-[9px] uppercase tracking-tight">Tickets</span>
+          <span className="font-semibold text-[9px] uppercase tracking-tight">
+            Tickets
+          </span>
         </Link>
 
         {/* 5. Perfil */}
         <Link
           href="/profile"
           className={`flex flex-col items-center gap-0.5 transition-colors cursor-pointer ${
-            isProfile ? "text-primary" : "text-on-surface-variant hover:text-primary"
+            isProfile
+              ? "text-primary"
+              : "text-on-surface-variant hover:text-primary"
           }`}
         >
           <span
             className="material-symbols-outlined text-[20px]"
-            style={{ fontVariationSettings: isProfile ? "'FILL' 1" : "'FILL' 0" }}
+            style={{
+              fontVariationSettings: isProfile ? "'FILL' 1" : "'FILL' 0",
+            }}
           >
             person
           </span>
-          <span className="font-semibold text-[9px] uppercase tracking-tight">Perfil</span>
+          <span className="font-semibold text-[9px] uppercase tracking-tight">
+            Perfil
+          </span>
         </Link>
       </nav>
 
@@ -229,12 +259,16 @@ export function MobileBottomNav() {
               className="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-gray active:scale-90 transition-all cursor-pointer"
               aria-label="Cerrar búsqueda"
             >
-              <span className="material-symbols-outlined text-[24px]">arrow_back</span>
+              <span className="material-symbols-outlined text-[24px]">
+                arrow_back
+              </span>
             </button>
 
             <form onSubmit={handleFullSearchSubmit} className="flex-1 relative">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-platinum-silver">
-                <span className="material-symbols-outlined text-[20px]">search</span>
+                <span className="material-symbols-outlined text-[20px]">
+                  search
+                </span>
               </div>
               <input
                 ref={searchInputRef}
@@ -250,7 +284,9 @@ export function MobileBottomNav() {
                   onClick={() => setSearchQuery("")}
                   className="absolute inset-y-0 right-2 px-2 flex items-center text-platinum-silver hover:text-on-surface"
                 >
-                  <span className="material-symbols-outlined text-[18px]">cancel</span>
+                  <span className="material-symbols-outlined text-[18px]">
+                    cancel
+                  </span>
                 </button>
               )}
             </form>
@@ -271,7 +307,9 @@ export function MobileBottomNav() {
                       : "bg-surface-gray text-on-surface-variant hover:bg-surface-container"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[15px]">{cat.icon}</span>
+                  <span className="material-symbols-outlined text-[15px]">
+                    {cat.icon}
+                  </span>
                   <span>{cat.label}</span>
                 </button>
               );
@@ -284,7 +322,10 @@ export function MobileBottomNav() {
             {isLoading && (
               <div className="space-y-3">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="p-3 flex items-center gap-3 animate-pulse bg-white rounded-xl border border-surface-variant">
+                  <div
+                    key={i}
+                    className="p-3 flex items-center gap-3 animate-pulse bg-white rounded-xl border border-surface-variant"
+                  >
                     <div className="w-20 h-20 bg-slate-200 rounded-lg flex-shrink-0" />
                     <div className="flex-1 space-y-2">
                       <div className="h-3 w-24 bg-slate-200 rounded" />
@@ -321,7 +362,10 @@ export function MobileBottomNav() {
                     >
                       <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-slate-900">
                         <img
-                          src={ev.bannerUrl || "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80"}
+                          src={
+                            ev.bannerUrl ||
+                            "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80"
+                          }
                           alt={ev.title}
                           className="w-full h-full object-cover"
                         />
@@ -341,18 +385,27 @@ export function MobileBottomNav() {
                             {ev.title}
                           </h4>
                           <p className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                            <span className="material-symbols-outlined text-[13px] text-platinum-silver">location_on</span>
-                            <span className="truncate">{ev.venue || ev.city || "Perú"}</span>
+                            <span className="material-symbols-outlined text-[13px] text-platinum-silver">
+                              location_on
+                            </span>
+                            <span className="truncate">
+                              {ev.venue || ev.city || "Perú"}
+                            </span>
                           </p>
                         </div>
 
                         <div className="flex items-center justify-between mt-2 pt-1 border-t border-surface-variant/60">
                           <span className="text-xs font-bold text-on-surface">
-                            Desde <span className="text-electric-indigo font-bold">S/ {ev.minPrice || 0}</span>
+                            Desde{" "}
+                            <span className="text-electric-indigo font-bold">
+                              S/ {ev.minPrice || 0}
+                            </span>
                           </span>
                           <span className="px-3 py-1 bg-electric-indigo text-white font-bold text-xs rounded-xl shadow-xs shadow-electric-indigo/25 flex items-center gap-1">
                             <span>Ver</span>
-                            <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
+                            <span className="material-symbols-outlined text-[13px]">
+                              arrow_forward
+                            </span>
                           </span>
                         </div>
                       </div>
@@ -363,67 +416,88 @@ export function MobileBottomNav() {
             )}
 
             {/* Estado: Sin resultados tras buscar */}
-            {!isLoading && results.length === 0 && (searchQuery.trim().length > 0 || selectedCategory !== "TODOS") && (
-              <div className="py-16 text-center px-4">
-                <span className="material-symbols-outlined text-5xl text-platinum-silver mb-2">search_off</span>
-                <h4 className="font-bold text-base text-deep-slate mb-1">
-                  No se encontraron eventos
-                </h4>
-                <p className="text-xs text-on-surface-variant max-w-xs mx-auto mb-6">
-                  Prueba buscando por nombre de artista, ciudad o cambia la categoría seleccionada.
-                </p>
-                <Link
-                  href="/events"
-                  onClick={() => setIsSearchOpen(false)}
-                  className="px-5 py-2.5 bg-electric-indigo text-white text-xs font-bold rounded-xl shadow-md shadow-electric-indigo/25 inline-block"
-                >
-                  Ver toda la cartelera
-                </Link>
-              </div>
-            )}
+            {!isLoading &&
+              results.length === 0 &&
+              (searchQuery.trim().length > 0 ||
+                selectedCategory !== "TODOS") && (
+                <div className="py-16 text-center px-4">
+                  <span className="material-symbols-outlined text-5xl text-platinum-silver mb-2">
+                    search_off
+                  </span>
+                  <h4 className="font-bold text-base text-deep-slate mb-1">
+                    No se encontraron eventos
+                  </h4>
+                  <p className="text-xs text-on-surface-variant max-w-xs mx-auto mb-6">
+                    Prueba buscando por nombre de artista, ciudad o cambia la
+                    categoría seleccionada.
+                  </p>
+                  <Link
+                    href="/events"
+                    onClick={() => setIsSearchOpen(false)}
+                    className="px-5 py-2.5 bg-electric-indigo text-white text-xs font-bold rounded-xl shadow-md shadow-electric-indigo/25 inline-block"
+                  >
+                    Ver toda la cartelera
+                  </Link>
+                </div>
+              )}
 
             {/* Estado inicial: Sugerencias y búsquedas populares */}
-            {!isLoading && results.length === 0 && !searchQuery.trim() && selectedCategory === "TODOS" && (
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-3 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-electric-indigo">trending_up</span>
-                  Búsquedas populares
-                </h4>
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {TRENDING_SEARCHES.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => setSearchQuery(item)}
-                      className="px-3 py-1.5 bg-surface-gray hover:bg-surface-container text-xs font-semibold text-deep-slate rounded-lg transition-colors cursor-pointer"
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-
-                <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-3 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-electric-indigo">explore</span>
-                  Explorar cartelera oficial
-                </h4>
-                <Link
-                  href="/events"
-                  onClick={() => setIsSearchOpen(false)}
-                  className="w-full p-4 rounded-2xl bg-surface-container-lowest border border-surface-variant flex items-center justify-between shadow-2xs hover:border-electric-indigo transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-electric-indigo/10 text-electric-indigo flex items-center justify-center">
-                      <span className="material-symbols-outlined">confirmation_number</span>
-                    </div>
-                    <div>
-                      <h5 className="text-sm font-bold text-deep-slate">Todos los eventos disponibles</h5>
-                      <p className="text-xs text-on-surface-variant">Conciertos, teatro, deportes y más</p>
-                    </div>
+            {!isLoading &&
+              results.length === 0 &&
+              !searchQuery.trim() &&
+              selectedCategory === "TODOS" && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-3 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                      trending_up
+                    </span>
+                    Búsquedas populares
+                  </h4>
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {TRENDING_SEARCHES.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setSearchQuery(item)}
+                        className="px-3 py-1.5 bg-surface-gray hover:bg-surface-container text-xs font-semibold text-deep-slate rounded-lg transition-colors cursor-pointer"
+                      >
+                        {item}
+                      </button>
+                    ))}
                   </div>
-                  <span className="material-symbols-outlined text-electric-indigo">chevron_right</span>
-                </Link>
-              </div>
-            )}
+
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-3 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                      explore
+                    </span>
+                    Explorar cartelera oficial
+                  </h4>
+                  <Link
+                    href="/events"
+                    onClick={() => setIsSearchOpen(false)}
+                    className="w-full p-4 rounded-2xl bg-surface-container-lowest border border-surface-variant flex items-center justify-between shadow-2xs hover:border-electric-indigo transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-electric-indigo/10 text-electric-indigo flex items-center justify-center">
+                        <span className="material-symbols-outlined">
+                          confirmation_number
+                        </span>
+                      </div>
+                      <div>
+                        <h5 className="text-sm font-bold text-deep-slate">
+                          Todos los eventos disponibles
+                        </h5>
+                        <p className="text-xs text-on-surface-variant">
+                          Conciertos, teatro, deportes y más
+                        </p>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined text-electric-indigo">
+                      chevron_right
+                    </span>
+                  </Link>
+                </div>
+              )}
           </div>
         </div>
       )}

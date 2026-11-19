@@ -1,6 +1,6 @@
 export interface UrgencyBadge {
   text: string;
-  type: 'critical' | 'high_demand' | 'warning' | 'info';
+  type: "critical" | "high_demand" | "warning" | "info";
   icon: string;
 }
 
@@ -18,7 +18,6 @@ export interface HomeEventCardItem {
   description: string | null;
   minPrice: number;
   ticketType: string;
-  ticketBadgeStyle: 'general' | 'vip' | 'platinum' | 'error';
+  ticketBadgeStyle: "general" | "vip" | "platinum" | "error";
   urgencyBadge: UrgencyBadge;
 }
-

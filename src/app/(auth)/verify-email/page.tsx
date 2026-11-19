@@ -1,9 +1,10 @@
-import React, { Suspense } from 'react';
-import VerifyEmailPageComponent from '../../features/auth/ui/verify-email-page';
+import React, { Suspense } from "react";
+import VerifyEmailPageComponent from "../../features/auth/ui/verify-email-page";
 
 export const metadata = {
-  title: 'Verificar Correo Electrónico | queplanhoy',
-  description: 'Confirma tu dirección de correo electrónico para activar tu cuenta en queplanhoy y empezar a disfrutar de los mejores eventos.',
+  title: "Verificar Correo Electrónico | queplanhoy",
+  description:
+    "Confirma tu dirección de correo electrónico para activar tu cuenta en queplanhoy y empezar a disfrutar de los mejores eventos.",
 };
 
 export default function VerifyEmailPage() {
@@ -15,7 +16,9 @@ export default function VerifyEmailPage() {
             <span className="material-symbols-outlined animate-spin text-4xl text-electric-indigo">
               refresh
             </span>
-            <p className="text-sm font-semibold text-on-surface-variant">Cargando verificación...</p>
+            <p className="text-sm font-semibold text-on-surface-variant">
+              Cargando verificación...
+            </p>
           </div>
         </div>
       }
@@ -24,4 +27,3 @@ export default function VerifyEmailPage() {
     </Suspense>
   );
 }
-

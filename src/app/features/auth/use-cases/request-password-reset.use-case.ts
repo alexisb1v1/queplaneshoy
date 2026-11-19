@@ -1,6 +1,6 @@
-import { ResultAsync } from 'neverthrow';
-import { AuthRepository } from '../repositories/auth.repository';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { AuthRepository } from "../repositories/auth.repository";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class RequestPasswordResetUseCase {
   constructor(private readonly authRepository: AuthRepository) {}
@@ -9,4 +9,3 @@ export class RequestPasswordResetUseCase {
     return this.authRepository.requestPasswordReset(email);
   }
 }
-

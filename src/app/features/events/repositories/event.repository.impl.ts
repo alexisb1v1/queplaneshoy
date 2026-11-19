@@ -1,24 +1,35 @@
-import { ResultAsync } from 'neverthrow';
-import { EventRepository, GetOrganizerEventsParams, SearchEventsParams } from './event.repository';
-import { EventModel } from '../models/event.model';
-import { OrganizerEventModel } from '../models/organizer-event.model';
-import { OrganizerEventReportModel } from '../models/organizer-event-report.model';
-import { CreateEventParams, EventDto } from '../dto/event.dto';
-import { OrganizerEventDto } from '../dto/organizer-event.dto';
-import { OrganizerEventReportDto } from '../dto/organizer-event-report.dto';
-import { SearchEventsResponse, PublishedCity, SearchEventItem } from '../models/search-event.model';
-import { HomeEventCardItem } from '../models/home-event-card.model';
-import { EventLandingModel } from '../models/event-landing.model';
-import { EventDetailModel } from '../models/event-detail.model';
-import { EventSettlementModel } from '../models/event-settlement.model';
-import { EventSettlementDto, RequestEventSettlementParams } from '../dto/event-settlement.dto';
-import { DomainError } from '../../../common/errors/domain-error';
-import { EventApiService } from '../services/event-api.service';
-import { eventDtoToModel } from '../mappers/event.mapper';
-import { organizerEventDtoToModel } from '../mappers/organizer-event.mapper';
-import { organizerEventReportDtoToModel } from '../mappers/organizer-event-report.mapper';
-import { eventSettlementDtoToModel } from '../mappers/event-settlement.mapper';
-import { apiClient } from '../../../common/services/api-client';
+import { ResultAsync } from "neverthrow";
+import {
+  EventRepository,
+  GetOrganizerEventsParams,
+  SearchEventsParams,
+} from "./event.repository";
+import { EventModel } from "../models/event.model";
+import { OrganizerEventModel } from "../models/organizer-event.model";
+import { OrganizerEventReportModel } from "../models/organizer-event-report.model";
+import { CreateEventParams, EventDto } from "../dto/event.dto";
+import { OrganizerEventDto } from "../dto/organizer-event.dto";
+import { OrganizerEventReportDto } from "../dto/organizer-event-report.dto";
+import {
+  SearchEventsResponse,
+  PublishedCity,
+  SearchEventItem,
+} from "../models/search-event.model";
+import { HomeEventCardItem } from "../models/home-event-card.model";
+import { EventLandingModel } from "../models/event-landing.model";
+import { EventDetailModel } from "../models/event-detail.model";
+import { EventSettlementModel } from "../models/event-settlement.model";
+import {
+  EventSettlementDto,
+  RequestEventSettlementParams,
+} from "../dto/event-settlement.dto";
+import { DomainError } from "../../../common/errors/domain-error";
+import { EventApiService } from "../services/event-api.service";
+import { eventDtoToModel } from "../mappers/event.mapper";
+import { organizerEventDtoToModel } from "../mappers/organizer-event.mapper";
+import { organizerEventReportDtoToModel } from "../mappers/organizer-event-report.mapper";
+import { eventSettlementDtoToModel } from "../mappers/event-settlement.mapper";
+import { apiClient } from "../../../common/services/api-client";
 
 export class EventRepositoryImpl implements EventRepository {
   constructor(private readonly api: EventApiService) {}
@@ -29,7 +40,9 @@ export class EventRepositoryImpl implements EventRepository {
       .map((dtos) => dtos.map(eventDtoToModel));
   }
 
-  getOrganizerEvents(params?: GetOrganizerEventsParams): ResultAsync<OrganizerEventModel[], DomainError> {
+  getOrganizerEvents(
+    params?: GetOrganizerEventsParams,
+  ): ResultAsync<OrganizerEventModel[], DomainError> {
     return apiClient
       .requestResult<OrganizerEventDto[]>(this.api.getOrganizerEvents(params))
       .map((dtos) => dtos.map(organizerEventDtoToModel));
@@ -41,19 +54,28 @@ export class EventRepositoryImpl implements EventRepository {
       .map(eventDtoToModel);
   }
 
-  updateEvent(eventId: string, params: CreateEventParams): ResultAsync<EventModel, DomainError> {
+  updateEvent(
+    eventId: string,
+    params: CreateEventParams,
+  ): ResultAsync<EventModel, DomainError> {
     return apiClient
       .requestResult<EventDto>(this.api.updateEvent(eventId, params))
       .map(eventDtoToModel);
   }
 
   getOrganizerEventForEdit(eventId: string): ResultAsync<any, DomainError> {
-    return apiClient.requestResult<any>(this.api.getOrganizerEventForEdit(eventId));
+    return apiClient.requestResult<any>(
+      this.api.getOrganizerEventForEdit(eventId),
+    );
   }
 
-  getOrganizerEventReport(identifier: string): ResultAsync<OrganizerEventReportModel, DomainError> {
+  getOrganizerEventReport(
+    identifier: string,
+  ): ResultAsync<OrganizerEventReportModel, DomainError> {
     return apiClient
-      .requestResult<OrganizerEventReportDto>(this.api.getOrganizerEventReport(identifier))
+      .requestResult<OrganizerEventReportDto>(
+        this.api.getOrganizerEventReport(identifier),
+      )
       .map(organizerEventReportDtoToModel);
   }
 
@@ -63,41 +85,68 @@ export class EventRepositoryImpl implements EventRepository {
       .map(eventDtoToModel);
   }
 
-  searchEvents(params: SearchEventsParams): ResultAsync<SearchEventsResponse, DomainError> {
-    return apiClient.requestResult<SearchEventsResponse>(this.api.searchEvents(params));
+  searchEvents(
+    params: SearchEventsParams,
+  ): ResultAsync<SearchEventsResponse, DomainError> {
+    return apiClient.requestResult<SearchEventsResponse>(
+      this.api.searchEvents(params),
+    );
   }
 
   getPublishedCities(): ResultAsync<PublishedCity[], DomainError> {
-    return apiClient.requestResult<PublishedCity[]>(this.api.getPublishedCities());
+    return apiClient.requestResult<PublishedCity[]>(
+      this.api.getPublishedCities(),
+    );
   }
 
   getFeaturedEvents(): ResultAsync<SearchEventItem[], DomainError> {
-    return apiClient.requestResult<SearchEventItem[]>(this.api.getFeaturedEvents());
+    return apiClient.requestResult<SearchEventItem[]>(
+      this.api.getFeaturedEvents(),
+    );
   }
 
   getUpcomingEvents(): ResultAsync<HomeEventCardItem[], DomainError> {
-    return apiClient.requestResult<HomeEventCardItem[]>(this.api.getUpcomingEvents());
+    return apiClient.requestResult<HomeEventCardItem[]>(
+      this.api.getUpcomingEvents(),
+    );
   }
 
   getWeeklyFeaturedEvents(): ResultAsync<HomeEventCardItem[], DomainError> {
-    return apiClient.requestResult<HomeEventCardItem[]>(this.api.getWeeklyFeaturedEvents());
+    return apiClient.requestResult<HomeEventCardItem[]>(
+      this.api.getWeeklyFeaturedEvents(),
+    );
   }
 
   getWeekendEvents(): ResultAsync<HomeEventCardItem[], DomainError> {
-    return apiClient.requestResult<HomeEventCardItem[]>(this.api.getWeekendEvents());
+    return apiClient.requestResult<HomeEventCardItem[]>(
+      this.api.getWeekendEvents(),
+    );
   }
 
-  getEventLanding(slug: string, previewTemp?: string): ResultAsync<EventLandingModel, DomainError> {
-    return apiClient.requestResult<EventLandingModel>(this.api.getEventLanding(slug, previewTemp));
+  getEventLanding(
+    slug: string,
+    previewTemp?: string,
+  ): ResultAsync<EventLandingModel, DomainError> {
+    return apiClient.requestResult<EventLandingModel>(
+      this.api.getEventLanding(slug, previewTemp),
+    );
   }
 
-  getEventDetail(identifier: string): ResultAsync<EventDetailModel, DomainError> {
-    return apiClient.requestResult<EventDetailModel>(this.api.getEventDetail(identifier));
+  getEventDetail(
+    identifier: string,
+  ): ResultAsync<EventDetailModel, DomainError> {
+    return apiClient.requestResult<EventDetailModel>(
+      this.api.getEventDetail(identifier),
+    );
   }
 
-  getOrganizerEventSettlement(identifier: string): ResultAsync<EventSettlementModel, DomainError> {
+  getOrganizerEventSettlement(
+    identifier: string,
+  ): ResultAsync<EventSettlementModel, DomainError> {
     return apiClient
-      .requestResult<EventSettlementDto>(this.api.getOrganizerEventSettlement(identifier))
+      .requestResult<EventSettlementDto>(
+        this.api.getOrganizerEventSettlement(identifier),
+      )
       .map(eventSettlementDtoToModel);
   }
 
@@ -106,7 +155,9 @@ export class EventRepositoryImpl implements EventRepository {
     data: RequestEventSettlementParams,
   ): ResultAsync<EventSettlementModel, DomainError> {
     return apiClient
-      .requestResult<EventSettlementDto>(this.api.requestOrganizerEventSettlement(identifier, data))
+      .requestResult<EventSettlementDto>(
+        this.api.requestOrganizerEventSettlement(identifier, data),
+      )
       .map(eventSettlementDtoToModel);
   }
 }

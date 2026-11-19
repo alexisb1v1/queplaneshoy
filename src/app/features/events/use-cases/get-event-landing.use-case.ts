@@ -1,13 +1,15 @@
-import { ResultAsync } from 'neverthrow';
-import { EventRepository } from '../repositories/event.repository';
-import { EventLandingModel } from '../models/event-landing.model';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { EventRepository } from "../repositories/event.repository";
+import { EventLandingModel } from "../models/event-landing.model";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class GetEventLandingUseCase {
   constructor(private readonly eventRepository: EventRepository) {}
 
-  execute(slug: string, previewTemp?: string): ResultAsync<EventLandingModel, DomainError> {
+  execute(
+    slug: string,
+    previewTemp?: string,
+  ): ResultAsync<EventLandingModel, DomainError> {
     return this.eventRepository.getEventLanding(slug, previewTemp);
   }
 }
-

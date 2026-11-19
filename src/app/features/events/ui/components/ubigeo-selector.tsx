@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   getDepartamentos,
   getProvincias,
@@ -8,7 +8,7 @@ import {
   buildUbigeoCode,
   parseUbigeoCode,
   UbigeoOption,
-} from '@/app/common/utils/ubigeo';
+} from "@/app/common/utils/ubigeo";
 
 interface UbigeoSelectorProps {
   value: string;
@@ -18,9 +18,9 @@ interface UbigeoSelectorProps {
 export function UbigeoSelector({ value, onChange }: UbigeoSelectorProps) {
   const departamentos = getDepartamentos();
 
-  const [selectedDep, setSelectedDep] = useState<string>('');
-  const [selectedProv, setSelectedProv] = useState<string>('');
-  const [selectedDist, setSelectedDist] = useState<string>('');
+  const [selectedDep, setSelectedDep] = useState<string>("");
+  const [selectedProv, setSelectedProv] = useState<string>("");
+  const [selectedDist, setSelectedDist] = useState<string>("");
 
   const [provincias, setProvincias] = useState<UbigeoOption[]>([]);
   const [distritos, setDistritos] = useState<UbigeoOption[]>([]);
@@ -39,11 +39,11 @@ export function UbigeoSelector({ value, onChange }: UbigeoSelectorProps) {
       setSelectedDist(dist);
     } else if (!value && !selectedDep) {
       // Default a Lima (15) para conveniencia
-      const defaultDep = '15';
+      const defaultDep = "15";
       setSelectedDep(defaultDep);
       const provs = getProvincias(defaultDep);
       setProvincias(provs);
-      const defaultProv = '01';
+      const defaultProv = "01";
       setSelectedProv(defaultProv);
       const dists = getDistritos(defaultDep, defaultProv);
       setDistritos(dists);
@@ -53,23 +53,23 @@ export function UbigeoSelector({ value, onChange }: UbigeoSelectorProps) {
   const handleDepChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const depCode = e.target.value;
     setSelectedDep(depCode);
-    setSelectedProv('');
-    setSelectedDist('');
+    setSelectedProv("");
+    setSelectedDist("");
     setDistritos([]);
 
     const provs = getProvincias(depCode);
     setProvincias(provs);
-    onChange('', '');
+    onChange("", "");
   };
 
   const handleProvChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const provCode = e.target.value;
     setSelectedProv(provCode);
-    setSelectedDist('');
+    setSelectedDist("");
 
     const dists = getDistritos(selectedDep, provCode);
     setDistritos(dists);
-    onChange('', '');
+    onChange("", "");
   };
 
   const handleDistChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -81,7 +81,7 @@ export function UbigeoSelector({ value, onChange }: UbigeoSelectorProps) {
       const { fullLabel } = parseUbigeoCode(fullCode);
       onChange(fullCode, fullLabel);
     } else {
-      onChange('', '');
+      onChange("", "");
     }
   };
 
@@ -152,13 +152,16 @@ export function UbigeoSelector({ value, onChange }: UbigeoSelectorProps) {
 
       {currentParsed?.fullLabel && (
         <div className="flex items-center gap-2 p-2 px-3 rounded-lg bg-indigo-50/80 border border-indigo-100 text-[11px] text-electric-indigo font-semibold">
-          <span className="material-symbols-outlined text-[16px]">location_on</span>
+          <span className="material-symbols-outlined text-[16px]">
+            location_on
+          </span>
           <span>
-            Ubigeo INEI: <strong className="font-mono text-deep-slate">{value}</strong> ({currentParsed.fullLabel})
+            Ubigeo INEI:{" "}
+            <strong className="font-mono text-deep-slate">{value}</strong> (
+            {currentParsed.fullLabel})
           </span>
         </div>
       )}
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
-import { OrganizerEventReportDto } from '../dto/organizer-event-report.dto';
-import { OrganizerEventReportModel } from '../models/organizer-event-report.model';
+import { OrganizerEventReportDto } from "../dto/organizer-event-report.dto";
+import { OrganizerEventReportModel } from "../models/organizer-event-report.model";
 
 export function organizerEventReportDtoToModel(
   dto: OrganizerEventReportDto,
@@ -19,11 +19,13 @@ export function organizerEventReportDtoToModel(
       city: dto.event.city,
       imageUrl: dto.event.imageUrl,
       hasLandingPage: Boolean(dto.event.hasLandingPage),
-      feeChargedTo: dto.event.feeChargedTo || 'buyer',
+      feeChargedTo: dto.event.feeChargedTo || "buyer",
       createdAt: dto.event.createdAt,
       settlementStatus: dto.event.settlementStatus || null,
       settlementStatusLabel: dto.event.settlementStatusLabel || null,
-      settlementAmount: dto.event.settlementAmount ? Number(dto.event.settlementAmount) : null,
+      settlementAmount: dto.event.settlementAmount
+        ? Number(dto.event.settlementAmount)
+        : null,
       settlementBankName: dto.event.settlementBankName || null,
       settlementRequestedAt: dto.event.settlementRequestedAt || null,
     },
@@ -106,7 +108,7 @@ export function organizerEventReportDtoToModel(
       zones: (d.zones || []).map((z) => ({
         zoneId: z.zoneId,
         zoneName: z.zoneName,
-        color: z.color || '#6366F1',
+        color: z.color || "#6366F1",
         ticketsSold: Number(z.ticketsSold) || 0,
         revenue: Number(z.revenue) || 0,
       })),

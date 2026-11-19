@@ -1,7 +1,7 @@
-import { ResultAsync } from 'neverthrow';
-import { EventRepository } from '../repositories/event.repository';
-import { SearchEventItem } from '../models/search-event.model';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { EventRepository } from "../repositories/event.repository";
+import { SearchEventItem } from "../models/search-event.model";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class GetFeaturedEventsUseCase {
   constructor(private readonly eventRepository: EventRepository) {}
@@ -10,4 +10,3 @@ export class GetFeaturedEventsUseCase {
     return this.eventRepository.getFeaturedEvents();
   }
 }
-

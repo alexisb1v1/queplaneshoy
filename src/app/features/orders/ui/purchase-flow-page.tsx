@@ -130,13 +130,18 @@ export default function PurchaseFlowPageComponent() {
 
   // Temporizador de Reserva regresivo persistente ante recargas (14:59 min)
   const checkoutTimerKey = getCheckoutTimerKey(eventId);
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(CHECKOUT_RESERVATION_DURATION_SECONDS);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(
+    CHECKOUT_RESERVATION_DURATION_SECONDS,
+  );
   const [isTimerSynced, setIsTimerSynced] = useState<boolean>(false);
   const expiresAtRef = useRef<number | null>(null);
 
   // Lista de Funciones y Zonas Dinámicas
-  const [showFunctions, setShowFunctions] = useState<ShowFunction[]>(DEFAULT_SHOW_FUNCTIONS);
-  const [ticketTiers, setTicketTiers] = useState<TicketTier[]>(DEFAULT_TICKET_TIERS);
+  const [showFunctions, setShowFunctions] = useState<ShowFunction[]>(
+    DEFAULT_SHOW_FUNCTIONS,
+  );
+  const [ticketTiers, setTicketTiers] =
+    useState<TicketTier[]>(DEFAULT_TICKET_TIERS);
 
   // Método de pago en Paso 2 (Estándar Multipago Perú / Culqi)
   const [paymentMethod, setPaymentMethod] = useState<
@@ -144,9 +149,12 @@ export default function PurchaseFlowPageComponent() {
   >("yape");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGatewayModalOpen, setIsGatewayModalOpen] = useState(false);
-  const [processingLabel, setProcessingLabel] = useState<string>("Conectando con Culqi...");
+  const [processingLabel, setProcessingLabel] = useState<string>(
+    "Conectando con Culqi...",
+  );
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [checkoutResult, setCheckoutResult] = useState<SimulateCheckoutResponseModel | null>(null);
+  const [checkoutResult, setCheckoutResult] =
+    useState<SimulateCheckoutResponseModel | null>(null);
   const [pendingAsyncOrder, setPendingAsyncOrder] = useState<{
     orderPublicUuid: string;
     orderCode: string;
@@ -154,20 +162,25 @@ export default function PurchaseFlowPageComponent() {
     paymentCode?: string | null;
     method: "yape" | "card" | "transfer" | "cuotealo";
   } | null>(null);
-  const [isCheckingAsyncStatus, setIsCheckingAsyncStatus] = useState<boolean>(false);
+  const [isCheckingAsyncStatus, setIsCheckingAsyncStatus] =
+    useState<boolean>(false);
   const [isMobileSummaryExpanded, setIsMobileSummaryExpanded] = useState(false);
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState<boolean>(false);
 
   // Cupón de descuento (6 casos de uso + doble check atómico)
   const [couponCodeInput, setCouponCodeInput] = useState<string>("");
-  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResponseModel | null>(null);
+  const [appliedCoupon, setAppliedCoupon] =
+    useState<ValidateCouponResponseModel | null>(null);
   const [isCouponLoading, setIsCouponLoading] = useState<boolean>(false);
   const [couponError, setCouponError] = useState<string | null>(null);
-  const [couponSuccessMessage, setCouponSuccessMessage] = useState<string | null>(null);
+  const [couponSuccessMessage, setCouponSuccessMessage] = useState<
+    string | null
+  >(null);
 
   // Usuario autenticado en sesión y entradas ya compradas para este evento
   const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
-  const [alreadyPurchasedTicketsCount, setAlreadyPurchasedTicketsCount] = useState<number>(0);
+  const [alreadyPurchasedTicketsCount, setAlreadyPurchasedTicketsCount] =
+    useState<number>(0);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
   // Sincronizar sesión activa del comprador
@@ -183,7 +196,7 @@ export default function PurchaseFlowPageComponent() {
       (user) => {
         setCurrentUser(user);
       },
-      () => { }
+      () => { },
     );
   }, []);
 
@@ -196,14 +209,17 @@ export default function PurchaseFlowPageComponent() {
           (orders || []).forEach((o) => {
             const matchesEvent =
               (event && o.eventId && String(o.eventId) === String(event.id)) ||
-              (event && o.eventTitle && o.eventTitle.trim().toLowerCase() === event.name.trim().toLowerCase());
+              (event &&
+                o.eventTitle &&
+                o.eventTitle.trim().toLowerCase() ===
+                event.name.trim().toLowerCase());
             if (matchesEvent) {
               count += o.ticketCount || o.tickets?.length || 0;
             }
           });
           setAlreadyPurchasedTicketsCount(count);
         },
-        () => { }
+        () => { },
       );
     });
   }, [event, eventId]);
@@ -252,7 +268,9 @@ export default function PurchaseFlowPageComponent() {
         // 2. Mapear zonas con preselección inteligente de zoneId (soporta publicUuid o ID)
         if (data.zones && data.zones.length > 0) {
           const mappedTiers: TicketTier[] = data.zones.map((zone) => {
-            const isTarget = zoneId ? (zone.id === zoneId || zone.publicUuid === zoneId) : false;
+            const isTarget = zoneId
+              ? zone.id === zoneId || zone.publicUuid === zoneId
+              : false;
             const rawPrice = Number(zone.currentPrice) || 0;
             const zoneFee = Math.max(0, Number(zone.serviceFee) || 0);
             const isFeeIncluded = Boolean(zone.feeIncluded);
@@ -268,7 +286,8 @@ export default function PurchaseFlowPageComponent() {
                 ? "bg-red-100 text-red-800"
                 : "bg-emerald-100 text-emerald-800",
               description:
-                zone.benefits || `Acceso oficial garantizado para la localidad ${zone.name}`,
+                zone.benefits ||
+                `Acceso oficial garantizado para la localidad ${zone.name}`,
               price: buyerUnitPrice,
               serviceFee: zoneFee,
               feeIncluded: isFeeIncluded,
@@ -297,7 +316,7 @@ export default function PurchaseFlowPageComponent() {
       () => {
         if (!isMounted) return;
         setLoadingEvent(false);
-      }
+      },
     );
 
     return () => {
@@ -307,10 +326,14 @@ export default function PurchaseFlowPageComponent() {
 
   // Límites oficiales de entradas por persona (Regla 1: Por Evento)
   const eventUserTicketLimit = event?.userTicketLimit ?? 6;
-  const remainingUserQuotaForEvent = Math.max(0, eventUserTicketLimit - alreadyPurchasedTicketsCount);
+  const remainingUserQuotaForEvent = Math.max(
+    0,
+    eventUserTicketLimit - alreadyPurchasedTicketsCount,
+  );
 
   // Estado derivado cuando vence la ventana de reserva (solo tras sincronizar con sessionStorage)
-  const isReservationExpired = isTimerSynced && currentStep !== 3 && secondsRemaining <= 0;
+  const isReservationExpired =
+    isTimerSynced && currentStep !== 3 && secondsRemaining <= 0;
 
   // Hidratación inicial del temporizador desde sessionStorage para mantener el tiempo al refrescar
   useEffect(() => {
@@ -323,7 +346,8 @@ export default function PurchaseFlowPageComponent() {
       return;
     }
 
-    let resolvedExpiresAt = Date.now() + CHECKOUT_RESERVATION_DURATION_SECONDS * 1000;
+    let resolvedExpiresAt =
+      Date.now() + CHECKOUT_RESERVATION_DURATION_SECONDS * 1000;
     try {
       const storedValue = sessionStorage.getItem(checkoutTimerKey);
       const parsedExpiresAt = storedValue ? Number(storedValue) : NaN;
@@ -337,7 +361,10 @@ export default function PurchaseFlowPageComponent() {
     }
 
     expiresAtRef.current = resolvedExpiresAt;
-    const syncedRemaining = Math.max(0, Math.ceil((resolvedExpiresAt - Date.now()) / 1000));
+    const syncedRemaining = Math.max(
+      0,
+      Math.ceil((resolvedExpiresAt - Date.now()) / 1000),
+    );
     setSecondsRemaining(syncedRemaining);
     setIsTimerSynced(true);
   }, [checkoutTimerKey, currentStep]);
@@ -348,7 +375,10 @@ export default function PurchaseFlowPageComponent() {
 
     const syncRemainingTime = () => {
       if (!expiresAtRef.current) return;
-      const nextRemaining = Math.max(0, Math.ceil((expiresAtRef.current - Date.now()) / 1000));
+      const nextRemaining = Math.max(
+        0,
+        Math.ceil((expiresAtRef.current - Date.now()) / 1000),
+      );
       setSecondsRemaining(nextRemaining);
     };
 
@@ -425,17 +455,25 @@ export default function PurchaseFlowPageComponent() {
       const effectiveMaxForThisTier = Math.min(
         zoneMaxPerOrder,
         target.remainingTickets ?? 999,
-        Math.max(0, remainingUserQuotaForEvent - currentTotalExcludingTarget)
+        Math.max(0, remainingUserQuotaForEvent - currentTotalExcludingTarget),
       );
 
-      const newQty = Math.max(0, Math.min(effectiveMaxForThisTier, target.quantity + delta));
-      return prev.map((tier) => (tier.id === tierId ? { ...tier, quantity: newQty } : tier));
+      const newQty = Math.max(
+        0,
+        Math.min(effectiveMaxForThisTier, target.quantity + delta),
+      );
+      return prev.map((tier) =>
+        tier.id === tierId ? { ...tier, quantity: newQty } : tier,
+      );
     });
   };
 
   // Cálculos de Totales en Soles (PEN)
   const totalTickets = ticketTiers.reduce((acc, t) => acc + t.quantity, 0);
-  const subtotal = ticketTiers.reduce((acc, t) => acc + t.price * t.quantity, 0);
+  const subtotal = ticketTiers.reduce(
+    (acc, t) => acc + t.price * t.quantity,
+    0,
+  );
 
   // Recálculo dinámico de descuento si cambia el subtotal
   const effectiveDiscountAmount = appliedCoupon
@@ -445,7 +483,10 @@ export default function PurchaseFlowPageComponent() {
     : 0;
 
   // El precio de la entrada ya incluye el servicio definido al crear el evento (sin cobro duplicado)
-  const grandTotal = Math.max(0, Math.round((subtotal - effectiveDiscountAmount) * 100) / 100);
+  const grandTotal = Math.max(
+    0,
+    Math.round((subtotal - effectiveDiscountAmount) * 100) / 100,
+  );
 
   const handleApplyCoupon = () => {
     const trimmedCode = couponCodeInput.trim().toUpperCase();
@@ -454,7 +495,9 @@ export default function PurchaseFlowPageComponent() {
       return;
     }
     if (subtotal <= 0) {
-      setCouponError("Selecciona al menos una entrada antes de aplicar un cupón.");
+      setCouponError(
+        "Selecciona al menos una entrada antes de aplicar un cupón.",
+      );
       return;
     }
 
@@ -462,7 +505,7 @@ export default function PurchaseFlowPageComponent() {
     setCouponError(null);
     setCouponSuccessMessage(null);
 
-    const targetEventId = event ? (event.publicUuid || event.id) : eventId || "1";
+    const targetEventId = event ? event.publicUuid || event.id : eventId || "1";
 
     validateCouponUseCase
       .execute({
@@ -474,16 +517,18 @@ export default function PurchaseFlowPageComponent() {
         (res) => {
           setIsCouponLoading(false);
           setAppliedCoupon(res);
-          setCouponSuccessMessage(res.message || "¡Cupón aplicado exitosamente!");
+          setCouponSuccessMessage(
+            res.message || "¡Cupón aplicado exitosamente!",
+          );
           setCouponCodeInput("");
         },
         (err) => {
           setIsCouponLoading(false);
           setCouponError(
             err.message ||
-            "El cupón ingresado no es válido, ha expirado o no cumple con las condiciones."
+            "El cupón ingresado no es válido, ha expirado o no cumple con las condiciones.",
           );
-        }
+        },
       );
   };
 
@@ -497,11 +542,13 @@ export default function PurchaseFlowPageComponent() {
   const selectedFunction =
     showFunctions.find((f) => f.id === selectedFunctionId) || showFunctions[0];
 
-  const primarySelectedTier = ticketTiers.find((t) => t.quantity > 0) || ticketTiers[0];
+  const primarySelectedTier =
+    ticketTiers.find((t) => t.quantity > 0) || ticketTiers[0];
 
   // Referencia al contenedor del botón de acción del resumen para detectar visibilidad en móvil (Paso 1 y Paso 2)
   const summaryCtaContainerRef = useRef<HTMLDivElement | null>(null);
-  const [isSummaryCtaVisible, setIsSummaryCtaVisible] = useState<boolean>(false);
+  const [isSummaryCtaVisible, setIsSummaryCtaVisible] =
+    useState<boolean>(false);
 
   useEffect(() => {
     if (currentStep === 3) {
@@ -526,7 +573,11 @@ export default function PurchaseFlowPageComponent() {
 
     let observer: IntersectionObserver | null = null;
     const target = summaryCtaContainerRef.current;
-    if (typeof window !== "undefined" && "IntersectionObserver" in window && target) {
+    if (
+      typeof window !== "undefined" &&
+      "IntersectionObserver" in window &&
+      target
+    ) {
       observer = new IntersectionObserver(
         ([entry]) => {
           setIsSummaryCtaVisible(entry.isIntersecting);
@@ -534,7 +585,7 @@ export default function PurchaseFlowPageComponent() {
         {
           threshold: 0.1,
           rootMargin: "0px",
-        }
+        },
       );
       observer.observe(target);
     }
@@ -551,7 +602,8 @@ export default function PurchaseFlowPageComponent() {
   }, [currentStep, ticketTiers, loadingEvent]);
 
   // Mostrar el footer flotante en móvil en pasos 1 y 2 mientras no sea visible el botón oficial del resumen
-  const showMobileOrderFooter = (currentStep === 1 || currentStep === 2) && !isSummaryCtaVisible;
+  const showMobileOrderFooter =
+    (currentStep === 1 || currentStep === 2) && !isSummaryCtaVisible;
 
   useEffect(() => {
     if (!showMobileOrderFooter) {
@@ -564,7 +616,9 @@ export default function PurchaseFlowPageComponent() {
     setIsMobileSummaryExpanded(false);
     if (currentStep === 2) {
       const timer = setTimeout(() => {
-        const paymentSection = document.getElementById("payment-methods-section");
+        const paymentSection = document.getElementById(
+          "payment-methods-section",
+        );
         if (paymentSection) {
           paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
         } else {
@@ -585,7 +639,7 @@ export default function PurchaseFlowPageComponent() {
     }
     if (totalTickets > remainingUserQuotaForEvent) {
       alert(
-        `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`
+        `Has superado el límite de ${eventUserTicketLimit} entradas para este evento. Te quedan ${remainingUserQuotaForEvent} disponible(s).`,
       );
       return;
     }
@@ -609,7 +663,9 @@ export default function PurchaseFlowPageComponent() {
     }, 50);
   };
 
-  const completeSuccessfulCheckout = (response: SimulateCheckoutResponseModel) => {
+  const completeSuccessfulCheckout = (
+    response: SimulateCheckoutResponseModel,
+  ) => {
     setIsGatewayModalOpen(false);
     setIsProcessing(false);
     setPendingAsyncOrder(null);
@@ -622,14 +678,24 @@ export default function PurchaseFlowPageComponent() {
     }
   };
 
-  const handleCheckoutDomainError = (error: { code: string; message?: string }) => {
+  const handleCheckoutDomainError = (error: {
+    code: string;
+    message?: string;
+  }) => {
     setIsGatewayModalOpen(false);
     setIsProcessing(false);
-    if (error.code === "AUTH_001" || error.code === "UNAUTHORIZED" || error.message?.toLowerCase().includes("sesión")) {
+    if (
+      error.code === "AUTH_001" ||
+      error.code === "UNAUTHORIZED" ||
+      error.message?.toLowerCase().includes("sesión")
+    ) {
       setShowAuthModal(true);
       return;
     }
-    if (error.code === "COUPON_INVALID_OR_EXPIRED" || error.message?.toLowerCase().includes("cupón")) {
+    if (
+      error.code === "COUPON_INVALID_OR_EXPIRED" ||
+      error.message?.toLowerCase().includes("cupón")
+    ) {
       setAppliedCoupon(null);
       setCouponError(
         "El cupón de descuento ya no se encuentra disponible o ha expirado. Por favor retíralo o prueba con otro cupón.",
@@ -641,7 +707,7 @@ export default function PurchaseFlowPageComponent() {
     }
     setPaymentError(
       error.message ||
-        "La transacción no pudo completarse en Culqi. Por favor verifica tus datos o prueba con otro medio de pago.",
+      "La transacción no pudo completarse en Culqi. Por favor verifica tus datos o prueba con otro medio de pago.",
     );
   };
 
@@ -651,12 +717,17 @@ export default function PurchaseFlowPageComponent() {
 
     let isCancelled = false;
     const pollStatus = async () => {
-      const statusRes = await getCulqiOrderStatusUseCase.execute(pendingAsyncOrder.orderPublicUuid);
+      const statusRes = await getCulqiOrderStatusUseCase.execute(
+        pendingAsyncOrder.orderPublicUuid,
+      );
       if (isCancelled) return;
 
       statusRes.match(
         (data) => {
-          if (data.paymentCode && data.paymentCode !== pendingAsyncOrder.paymentCode) {
+          if (
+            data.paymentCode &&
+            data.paymentCode !== pendingAsyncOrder.paymentCode
+          ) {
             setPendingAsyncOrder((prev) =>
               prev ? { ...prev, paymentCode: data.paymentCode } : null,
             );
@@ -667,7 +738,9 @@ export default function PurchaseFlowPageComponent() {
           }
           if (data.status === "expired" || data.status === "cancelled") {
             setPendingAsyncOrder(null);
-            setPaymentError("La orden de pago expiró o fue cancelada. Puedes generar una nueva orden.");
+            setPaymentError(
+              "La orden de pago expiró o fue cancelada. Puedes generar una nueva orden.",
+            );
           }
         },
         () => {
@@ -688,7 +761,9 @@ export default function PurchaseFlowPageComponent() {
     setIsCheckingAsyncStatus(true);
     setPaymentError(null);
 
-    const statusRes = await getCulqiOrderStatusUseCase.execute(pendingAsyncOrder.orderPublicUuid);
+    const statusRes = await getCulqiOrderStatusUseCase.execute(
+      pendingAsyncOrder.orderPublicUuid,
+    );
     setIsCheckingAsyncStatus(false);
 
     statusRes.match(
@@ -704,7 +779,9 @@ export default function PurchaseFlowPageComponent() {
         }
         if (data.status === "expired" || data.status === "cancelled") {
           setPendingAsyncOrder(null);
-          setPaymentError("Tu orden expiró o fue cancelada. Inicia nuevamente tu pago.");
+          setPaymentError(
+            "Tu orden expiró o fue cancelada. Inicia nuevamente tu pago.",
+          );
           return;
         }
         setPaymentError(
@@ -712,7 +789,10 @@ export default function PurchaseFlowPageComponent() {
         );
       },
       (err) => {
-        setPaymentError(err.message || "No se pudo consultar el estado en Culqi en este momento.");
+        setPaymentError(
+          err.message ||
+          "No se pudo consultar el estado en Culqi en este momento.",
+        );
       },
     );
   };
@@ -740,7 +820,9 @@ export default function PurchaseFlowPageComponent() {
       return;
     }
     if (!acceptedLegalTerms) {
-      alert("Por favor acepta los Términos y Condiciones y las Políticas de Privacidad para continuar con el pago.");
+      alert(
+        "Por favor acepta los Términos y Condiciones y las Políticas de Privacidad para continuar con el pago.",
+      );
       return;
     }
 
@@ -818,9 +900,13 @@ export default function PurchaseFlowPageComponent() {
 
     if (modalOutcome.type === "CANCELLED") {
       setProcessingLabel("Liberando reserva temporal...");
-      const cancelRes = await cancelPendingCulqiOrderUseCase.execute(prepared.orderPublicUuid);
+      const cancelRes = await cancelPendingCulqiOrderUseCase.execute(
+        prepared.orderPublicUuid,
+      );
       if (cancelRes.isOk() && cancelRes.value.status === "paid") {
-        const paidCheck = await getCulqiOrderStatusUseCase.execute(prepared.orderPublicUuid);
+        const paidCheck = await getCulqiOrderStatusUseCase.execute(
+          prepared.orderPublicUuid,
+        );
         if (paidCheck.isOk() && paidCheck.value.checkoutResult) {
           completeSuccessfulCheckout(paidCheck.value.checkoutResult);
           return;
@@ -851,7 +937,9 @@ export default function PurchaseFlowPageComponent() {
     }
 
     // Token recibido (Tarjeta de Crédito/Débito o Yape con código de aprobación)
-    const resolvedMethodForCharge = modalOutcome.isYapeToken ? "yape" : paymentMethod;
+    const resolvedMethodForCharge = modalOutcome.isYapeToken
+      ? "yape"
+      : paymentMethod;
     setProcessingLabel("Confirmando transacción con Culqi...");
 
     const chargeRes = await confirmCulqiChargeUseCase.execute({
@@ -906,7 +994,9 @@ export default function PurchaseFlowPageComponent() {
             return;
           }
           setIsProcessing(false);
-          setPaymentError("No se pudo confirmar la autenticación 3D Secure con el emisor.");
+          setPaymentError(
+            "No se pudo confirmar la autenticación 3D Secure con el emisor.",
+          );
         },
         (retryErr) => handleCheckoutDomainError(retryErr),
       );
@@ -914,7 +1004,9 @@ export default function PurchaseFlowPageComponent() {
     }
 
     setIsProcessing(false);
-    setPaymentError("No se recibió confirmación definitiva de Culqi. Intenta nuevamente.");
+    setPaymentError(
+      "No se recibió confirmación definitiva de Culqi. Intenta nuevamente.",
+    );
   };
 
   const paymentMethodLabel = {
@@ -936,8 +1028,12 @@ export default function PurchaseFlowPageComponent() {
           />
         </div>
         <div className="w-6 h-6 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-sm font-bold text-deep-slate">Cargando taquilla oficial...</p>
-        <p className="text-xs text-on-surface-variant mt-1">Configurando zonas y accesos del evento</p>
+        <p className="text-sm font-bold text-deep-slate">
+          Cargando taquilla oficial...
+        </p>
+        <p className="text-xs text-on-surface-variant mt-1">
+          Configurando zonas y accesos del evento
+        </p>
       </div>
     );
   }
@@ -946,904 +1042,1119 @@ export default function PurchaseFlowPageComponent() {
   if (currentStep === 3) {
     return (
       <PaymentSuccessScreen
-        orderCode={checkoutResult ? checkoutResult.orderCode : `#QPH-${Math.floor(100000 + Math.random() * 900000)}`}
-        userEmail={currentUser?.email || "comprador@queplanhoy.com"}
-        customerName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : "Comprador Oficial QPH"}
-        eventTitle={event ? event.name : "Evento Oficial"}
-        categoryTag={event ? `${event.category} • Venta Oficial` : "Música en Vivo • Oficial"}
-        bannerImageUrl={
-          event?.bannerUrl ||
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuB6zlOV5Dky2moZZwBSETqhUT5lhvjwGPa9jJGDrr1krL9Lx8Y4cFqyEjtp_ep-p-XDjKBTdINqn32bKAXlcfVJ0iTnh5Z2nin5LAEEHCum75H9xWBMzSYey9B_8rQxRHEOWCqOizX5JHNzZXbyPQiWaR2DBYAmA7kEL4btLbIxCzLN-_52Xuuk4dYbl8qvh89DpQmSEwN_SYN2pKZSOIl0T-8Ry-WFWoBS8y9Y0uW5XlDwgdnoI0SnVQ"
+        orderCode={
+          checkoutResult
+            ? checkoutResult.orderCode
+            : `#QPH-${Math.floor(100000 + Math.random() * 900000)}`
+            : "#QPH-PROVISIONAL"
+  }
+  userEmail = { currentUser?.email || "comprador@queplanhoy.com"
+}
+customerName = {
+  currentUser
+  ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+            : "Comprador Oficial QPH"
         }
-        dateStr={selectedFunction ? selectedFunction.dateStr : "Fecha Confirmada"}
-        timeStr={selectedFunction ? selectedFunction.timeStr : "Horario Oficial"}
-        doorsOpenStr={event?.openingHoursComment || "Apertura 2 hrs antes"}
-        venueName={event ? event.venue || "Recinto Oficial" : "Campo Ferial"}
-        venueAccess={event?.entryRequirements || "Puerta Principal • Control QR Ed25519"}
-        venueAddress={event ? `${event.address || ""}, ${event.city}` : "Ucayali, Perú"}
-        coordinates={event?.coordinates || null}
-        addressReference={event?.addressReference || null}
-        city={event?.city || "Ucayali"}
-        googleMapsUrl={event?.googleMapsUrl || null}
-        zoneName={primarySelectedTier ? primarySelectedTier.name : "Zona General"}
-        tierBadge={primarySelectedTier ? primarySelectedTier.name : "General"}
-        ticketCount={checkoutResult ? checkoutResult.tickets.length : (totalTickets > 0 ? totalTickets : 1)}
-        unitPrice={primarySelectedTier ? primarySelectedTier.price : 65}
-        distributionFee={0}
-        vatAmount={0}
-        discountAmount={checkoutResult?.discountAmount ?? effectiveDiscountAmount}
-        couponCode={checkoutResult?.couponCode ?? (appliedCoupon ? appliedCoupon.code : null)}
-        totalAmount={checkoutResult ? checkoutResult.totalAmount : (grandTotal > 0 ? grandTotal : (primarySelectedTier ? primarySelectedTier.price : 65))}
-        paymentMethodText={paymentMethodLabel}
-        txCode={checkoutResult ? checkoutResult.txCode : `TX-${Math.floor(100000 + Math.random() * 900000)}`}
-        qrPayload={checkoutResult && checkoutResult.tickets.length > 0 ? checkoutResult.tickets[0].qrPayload : undefined}
-        tickets={checkoutResult ? checkoutResult.tickets : []}
-      />
+eventTitle = { event? event.name : "Evento Oficial"}
+categoryTag = {
+  event
+  ? `${event.category} • Venta Oficial`
+            : "Música en Vivo • Oficial"
+        }
+bannerImageUrl = {
+  event?.bannerUrl ||
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuB6zlOV5Dky2moZZwBSETqhUT5lhvjwGPa9jJGDrr1krL9Lx8Y4cFqyEjtp_ep-p-XDjKBTdINqn32bKAXlcfVJ0iTnh5Z2nin5LAEEHCum75H9xWBMzSYey9B_8rQxRHEOWCqOizX5JHNzZXbyPQiWaR2DBYAmA7kEL4btLbIxCzLN-_52Xuuk4dYbl8qvh89DpQmSEwN_SYN2pKZSOIl0T-8Ry-WFWoBS8y9Y0uW5XlDwgdnoI0SnVQ"
+        }
+dateStr = {
+  selectedFunction? selectedFunction.dateStr : "Fecha Confirmada"
+        }
+timeStr = {
+  selectedFunction? selectedFunction.timeStr : "Horario Oficial"
+        }
+doorsOpenStr = { event?.openingHoursComment || "Apertura 2 hrs antes"}
+venueName = { event? event.venue || "Recinto Oficial" : "Campo Ferial"}
+venueAccess = {
+  event?.entryRequirements || "Puerta Principal • Control QR Ed25519"
+        }
+venueAddress = {
+  event? `${event.address || ""}, ${event.city}` : "Ucayali, Perú"
+        }
+coordinates = { event?.coordinates || null}
+addressReference = { event?.addressReference || null}
+city = { event?.city || "Ucayali"}
+googleMapsUrl = { event?.googleMapsUrl || null}
+zoneName = {
+  primarySelectedTier? primarySelectedTier.name : "Zona General"
+        }
+tierBadge = { primarySelectedTier? primarySelectedTier.name : "General"}
+ticketCount = {
+  checkoutResult
+  ? checkoutResult.tickets.length
+            : totalTickets > 0
+  ? totalTickets
+  : 1
+        }
+unitPrice = { primarySelectedTier? primarySelectedTier.price : 65}
+distributionFee = { 0}
+vatAmount = { 0}
+discountAmount = {
+  checkoutResult?.discountAmount ?? effectiveDiscountAmount
+        }
+couponCode = {
+  checkoutResult?.couponCode ??
+  (appliedCoupon ? appliedCoupon.code : null)
+        }
+totalAmount = {
+  checkoutResult
+  ? checkoutResult.totalAmount
+            : grandTotal > 0
+  ? grandTotal
+  : primarySelectedTier
+    ? primarySelectedTier.price
+    : 65
+        }
+paymentMethodText = { paymentMethodLabel }
+txCode = {
+  checkoutResult
+  ? checkoutResult.txCode
+            : `TX-${Math.floor(100000 + Math.random() * 900000)}`
+            : "TX-PROVISIONAL"
+        }
+qrPayload = {
+  checkoutResult && checkoutResult.tickets.length > 0
+  ? checkoutResult.tickets[0].qrPayload
+  : undefined
+        }
+tickets = { checkoutResult? checkoutResult.tickets : []}
+  />
     );
   }
 
-  const eventTitle = event ? event.name : "Bareto en Concierto";
-  const eventVenue = event ? `${event.venue || "Recinto Oficial"}, ${event.city}` : "Campo Ferial, Pucallpa";
-  const eventBanner =
-    event?.bannerUrl ||
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAvDbqbGnlbfqUeC8z7aI3S9qHtQrEg0HBuv40tjwOWpwyto7jUUN4aK6zHkyjFpgrQuCmYbnML65LyCOmt4qfAeTI0iyr2BVCmLgaCJy5sBpz6YzL3uZFZIH-KYQuDSVFbpbW2Y6TUpo9uKWoJ2zKmlgzeVlfID8YoiQklT8co4xHrZ6sDZeLPqiY-dRNUsdzl8wQ2M9YvHfLR7G5WFio3W-SCX1AidCHyLkxiMeElBOJP2LgUnEYlNJevy2WQSrRm2T5c0o7zVSlx";
+const eventTitle = event ? event.name : "Bareto en Concierto";
+const eventVenue = event
+  ? `${event.venue || "Recinto Oficial"}, ${event.city}`
+  : "Campo Ferial, Pucallpa";
+const eventBanner =
+  event?.bannerUrl ||
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuAvDbqbGnlbfqUeC8z7aI3S9qHtQrEg0HBuv40tjwOWpwyto7jUUN4aK6zHkyjFpgrQuCmYbnML65LyCOmt4qfAeTI0iyr2BVCmLgaCJy5sBpz6YzL3uZFZIH-KYQuDSVFbpbW2Y6TUpo9uKWoJ2zKmlgzeVlfID8YoiQklT8co4xHrZ6sDZeLPqiY-dRNUsdzl8wQ2M9YvHfLR7G5WFio3W-SCX1AidCHyLkxiMeElBOJP2LgUnEYlNJevy2WQSrRm2T5c0o7zVSlx";
 
-  return (
-    <div className="bg-background font-body-md text-on-background min-h-screen flex flex-col">
-      {/* =========================================================================
+return (
+  <div className="bg-background font-body-md text-on-background min-h-screen flex flex-col">
+    {/* =========================================================================
           CABECERA CONTEXTUAL DEL CHECKOUT (STITCH STYLE)
          ========================================================================= */}
-      <header
-        className={`bg-surface/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 border-b border-outline-variant/10 ${
-          isProcessing ? "pointer-events-none select-none" : ""
+    <header
+      className={`bg-surface/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 border-b border-outline-variant/10 ${isProcessing ? "pointer-events-none select-none" : ""
         }`}
-      >
-        <div className="flex justify-between items-center w-full px-4 sm:px-8 h-20 max-w-container-max mx-auto">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-3 group">
-              <img
-                src="/logo-qph.svg"
-                alt="Logo QPH"
-                className="w-9 h-9 rounded-lg shadow-sm group-hover:scale-105 transition-all"
-              />
-              <span className="text-xl sm:text-2xl font-black text-deep-slate tracking-tighter">
-                queplan<span className="text-electric-indigo">hoy</span>
-              </span>
-            </Link>
+    >
+      <div className="flex justify-between items-center w-full px-4 sm:px-8 h-20 max-w-container-max mx-auto">
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-3 group">
+            <img
+              src="/logo-qph.svg"
+              alt="Logo QPH"
+              className="w-9 h-9 rounded-lg shadow-sm group-hover:scale-105 transition-all"
+            />
+            <span className="text-xl sm:text-2xl font-black text-deep-slate tracking-tighter">
+              queplan<span className="text-electric-indigo">hoy</span>
+            </span>
+          </Link>
 
-            <Link
-              href={event ? `/events/${event.publicUuid || event.slug || event.id}` : "/"}
-              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors pl-4 border-l border-surface-variant"
-            >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              <span>Volver al evento</span>
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <Link
-              href="/"
-              className="text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors hidden md:inline-block"
-            >
-              Cartelera
-            </Link>
-            <button
-              onClick={() => alert("Soporte disponible en soporte@queplanhoy.com")}
-              className="flex items-center gap-2 text-on-surface-variant hover:text-electric-indigo transition-colors font-semibold text-xs cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[20px]">help</span>
-              <span className="hidden sm:inline">Centro de Ayuda</span>
-            </button>
-          </div>
+          <Link
+            href={
+              event
+                ? `/events/${event.publicUuid || event.slug || event.id}`
+                : "/"
+            }
+            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors pl-4 border-l border-surface-variant"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              arrow_back
+            </span>
+            <span>Volver al evento</span>
+          </Link>
         </div>
-      </header>
 
-      {/* =========================================================================
+        <div className="flex items-center gap-6">
+          <Link
+            href="/"
+            className="text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors hidden md:inline-block"
+          >
+            Cartelera
+          </Link>
+          <button
+            onClick={() =>
+              alert("Soporte disponible en soporte@queplanhoy.com")
+            }
+            className="flex items-center gap-2 text-on-surface-variant hover:text-electric-indigo transition-colors font-semibold text-xs cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              help
+            </span>
+            <span className="hidden sm:inline">Centro de Ayuda</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    {/* =========================================================================
           CONTENIDO PRINCIPAL
          ========================================================================= */}
-      <main
-        className={`flex-grow w-full max-w-container-max mx-auto px-4 sm:px-8 pt-8 sm:pt-12 pb-28 lg:pb-12 ${
-          isProcessing ? "pointer-events-none select-none" : ""
+    <main
+      className={`flex-grow w-full max-w-container-max mx-auto px-4 sm:px-8 pt-8 sm:pt-12 pb-28 lg:pb-12 ${isProcessing ? "pointer-events-none select-none" : ""
         }`}
-      >
-        <div className="max-w-container-max mx-auto">
-          {/* STEPPER DE PROGRESO DE 3 PASOS */}
-          <CheckoutStepper
-            currentStep={currentStep}
-            onStepClick={(step) => {
-              if (step === 1) setCurrentStep(1);
-              if (step === 2 && totalTickets > 0) setCurrentStep(2);
-            }}
-            canNavigateToStep2={totalTickets > 0}
-          />
+    >
+      <div className="max-w-container-max mx-auto">
+        {/* STEPPER DE PROGRESO DE 3 PASOS */}
+        <CheckoutStepper
+          currentStep={currentStep}
+          onStepClick={(step) => {
+            if (step === 1) setCurrentStep(1);
+            if (step === 2 && totalTickets > 0) setCurrentStep(2);
+          }}
+          canNavigateToStep2={totalTickets > 0}
+        />
 
-          {/* TIMER ALERT (URGENCIA DINÁMICA SEGÚN TIEMPO RESTANTE) */}
-          <div
-            className={`mb-8 p-3.5 rounded-xl flex items-center justify-between gap-3 max-w-4xl mx-auto shadow-sm border transition-colors ${
-              isReservationExpired
-                ? "bg-red-50 border-red-200"
-                : secondsRemaining <= 120
-                  ? "bg-amber-50 border-amber-300"
-                  : "bg-electric-indigo/10 border-electric-indigo/20"
+        {/* TIMER ALERT (URGENCIA DINÁMICA SEGÚN TIEMPO RESTANTE) */}
+        <div
+          className={`mb-8 p-3.5 rounded-xl flex items-center justify-between gap-3 max-w-4xl mx-auto shadow-sm border transition-colors ${isReservationExpired
+              ? "bg-red-50 border-red-200"
+              : secondsRemaining <= 120
+                ? "bg-amber-50 border-amber-300"
+                : "bg-electric-indigo/10 border-electric-indigo/20"
             }`}
-          >
-            <div className="flex items-center gap-2.5 text-deep-slate text-xs sm:text-sm font-semibold">
-              <span
-                className={`material-symbols-outlined text-xl ${
-                  isReservationExpired
-                    ? "text-red-600"
-                    : secondsRemaining <= 120
-                      ? "text-amber-600"
-                      : "text-electric-indigo"
-                }`}
-              >
-                {isReservationExpired ? "timer_off" : "timer"}
-              </span>
-              <span>
-                {isReservationExpired
-                  ? "Tu tiempo de reserva temporal ha expirado:"
-                  : "Tus entradas seleccionadas se reservan temporalmente:"}
-              </span>
-            </div>
-            <div
-              className={`bg-white px-3 py-1 rounded-lg border font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm font-mono shrink-0 ${
-                isReservationExpired
-                  ? "border-red-300 text-red-600"
+        >
+          <div className="flex items-center gap-2.5 text-deep-slate text-xs sm:text-sm font-semibold">
+            <span
+              className={`material-symbols-outlined text-xl ${isReservationExpired
+                  ? "text-red-600"
                   : secondsRemaining <= 120
-                    ? "border-amber-300 text-amber-700"
-                    : "border-electric-indigo/30 text-electric-indigo"
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isReservationExpired
-                    ? "bg-red-500"
-                    : secondsRemaining <= 120
-                      ? "bg-red-500 animate-ping"
-                      : "bg-vip-gold animate-pulse"
+                    ? "text-amber-600"
+                    : "text-electric-indigo"
                 }`}
-              />
-              <span>{formatTimer(secondsRemaining)}</span>
-            </div>
+            >
+              {isReservationExpired ? "timer_off" : "timer"}
+            </span>
+            <span>
+              {isReservationExpired
+                ? "Tu tiempo de reserva temporal ha expirado:"
+                : "Tus entradas seleccionadas se reservan temporalmente:"}
+            </span>
           </div>
+          <div
+            className={`bg-white px-3 py-1 rounded-lg border font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm font-mono shrink-0 ${isReservationExpired
+                ? "border-red-300 text-red-600"
+                : secondsRemaining <= 120
+                  ? "border-amber-300 text-amber-700"
+                  : "border-electric-indigo/30 text-electric-indigo"
+              }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${isReservationExpired
+                  ? "bg-red-500"
+                  : secondsRemaining <= 120
+                    ? "bg-red-500 animate-ping"
+                    : "bg-vip-gold animate-pulse"
+                }`}
+            />
+            <span>{formatTimer(secondsRemaining)}</span>
+          </div>
+        </div>
 
-          {/* =====================================================================
+        {/* =====================================================================
               LAYOUT DE DOS COLUMNAS (FORMULARIO PRINCIPAL + SUMMARY STICKY)
              ===================================================================== */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-            {/* -------------------------------------------------------------------
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+          {/* -------------------------------------------------------------------
                 COLUMNA IZQUIERDA (PASO 1 O PASO 2)
                ------------------------------------------------------------------- */}
-            <div className="lg:col-span-8 space-y-8">
-              {/* =================================================================
+          <div className="lg:col-span-8 space-y-8">
+            {/* =================================================================
                   PASO 1: SELECCIÓN DE ENTRADAS Y ZONAS
                  ================================================================= */}
-              {currentStep === 1 && (
-                <>
-                  {/* Selector de Fechas / Funciones */}
-                  <div className="bg-white p-6 rounded-2xl border border-surface-variant shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg sm:text-xl font-bold text-deep-slate">
-                        Selecciona tu Función
-                      </h2>
-                      <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider truncate max-w-xs">
-                        {eventVenue}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {showFunctions.map((fn) => {
-                        const isSelected = selectedFunctionId === fn.id;
-                        return (
-                          <button
-                            key={fn.id}
-                            type="button"
-                            onClick={() => setSelectedFunctionId(fn.id)}
-                            className={`p-3.5 rounded-xl text-left transition-all relative cursor-pointer ${isSelected
-                                ? "border-2 border-electric-indigo bg-electric-indigo/5 shadow-md shadow-electric-indigo/10"
-                                : "border border-surface-variant hover:border-electric-indigo bg-surface-container-low/50 hover:bg-surface-gray"
-                              }`}
-                          >
-                            {isSelected && (
-                              <span className="absolute -top-2.5 right-3 bg-electric-indigo text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                                Seleccionado
-                              </span>
-                            )}
-                            <div
-                              className={`text-xs font-bold ${isSelected ? "text-electric-indigo" : "text-on-surface-variant"
-                                }`}
-                            >
-                              {fn.dateStr}
-                            </div>
-                            <div className="font-extrabold text-deep-slate text-base mt-0.5">
-                              {fn.timeStr}
-                            </div>
-                            <div className="text-[11px] mt-1 flex items-center gap-1 font-medium">
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${fn.statusType === "last_passes" ? "bg-vip-gold" : "bg-emerald-500"
-                                  }`}
-                              />
-                              <span
-                                className={
-                                  fn.statusType === "last_passes" ? "text-vip-gold" : "text-platinum-silver"
-                                }
-                              >
-                                {fn.statusText}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Mapa Esquemático del Recinto / Zonas y Localidades (Alineado con Stitch) */}
-                  <VenueZonesMap
-                    venueName={event?.venue || "Recinto Oficial"}
-                    zones={ticketTiers.map((tier) => ({
-                      id: tier.id,
-                      name: tier.name,
-                      price: tier.price,
-                      available: tier.available,
-                      colorHex: tier.colorHex,
-                      badge: tier.badge,
-                    }))}
-                    zoneMapImageUrl={event?.zoneMapUrl}
-                    selectedZoneId={primarySelectedTier?.id}
-                    selectedZoneNote={primarySelectedTier?.description}
-                    onSelectZone={(selectedId) => {
-                      setTicketTiers((prev) =>
-                        prev.map((t) => {
-                          if (t.id === selectedId && t.available) {
-                            return { ...t, quantity: t.quantity > 0 ? t.quantity : 1 };
-                          }
-                          return t;
-                        })
-                      );
-                    }}
-                    occupancyPercentage={
-                      event?.zones && event.zones.length > 0
-                        ? Math.min(
-                            100,
-                            Math.max(
-                              0,
-                              Math.round(
-                                (event.zones.reduce(
-                                  (acc, z) => acc + Math.max(0, z.capacity - z.remainingTickets),
-                                  0
-                                ) /
-                                  (event.zones.reduce((acc, z) => acc + z.capacity, 0) || 1)) *
-                                  100
-                              )
-                            )
-                          )
-                        : 0
-                    }
-                  />
-
-                  {/* Banner Oficial de Límites por Persona / Antirreventa */}
-                  <div className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${remainingUserQuotaForEvent <= 0
-                      ? "bg-rose-50 border-rose-200 text-rose-900"
-                      : "bg-electric-indigo/5 border-electric-indigo/20 text-deep-slate"
-                    }`}>
-                    <span className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${remainingUserQuotaForEvent <= 0 ? "text-rose-600" : "text-electric-indigo"
-                      }`}>
-                      {remainingUserQuotaForEvent <= 0 ? "block" : "verified_user"}
+            {currentStep === 1 && (
+              <>
+                {/* Selector de Fechas / Funciones */}
+                <div className="bg-white p-6 rounded-2xl border border-surface-variant shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg sm:text-xl font-bold text-deep-slate">
+                      Selecciona tu Función
+                    </h2>
+                    <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider truncate max-w-xs">
+                      {eventVenue}
                     </span>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="font-bold">
-                          {remainingUserQuotaForEvent <= 0
-                            ? "Límite Oficial de Entradas Alcanzado"
-                            : "Política Oficial de Venta Antirreventa QPH"}
-                        </span>
-                        <span className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${remainingUserQuotaForEvent <= 0
-                            ? "bg-rose-100 text-rose-700"
-                            : "bg-electric-indigo/10 text-electric-indigo"
-                          }`}>
-                          Tope: {eventUserTicketLimit} entradas por persona
-                        </span>
-                      </div>
-                      <p className="text-on-surface-variant leading-relaxed">
-                        {remainingUserQuotaForEvent <= 0 ? (
-                          <strong className="text-rose-700 font-semibold block">
-                            Ya cuentas con {alreadyPurchasedTicketsCount} entrada(s) registrada(s) para este evento. Se ha alcanzado el tope máximo permitido por persona ({eventUserTicketLimit}).
-                          </strong>
-                        ) : alreadyPurchasedTicketsCount > 0 ? (
-                          <span>
-                            Ya cuentas con <strong>{alreadyPurchasedTicketsCount} entrada(s)</strong> registrada(s). En esta orden puedes adquirir hasta un máximo de <strong>{remainingUserQuotaForEvent} entrada(s) más</strong>.
-                          </span>
-                        ) : (
-                          <span>
-                            Para garantizar un acceso equitativo y evitar la reventa, cada cliente puede adquirir hasta un máximo de <strong>{eventUserTicketLimit} entradas oficiales</strong> para este evento.
-                          </span>
-                        )}
-                      </p>
-                    </div>
                   </div>
 
-                  {/* Selector de Tipos de Entradas y Cantidades */}
-                  <div id="tickets-selector-section" className="space-y-4">
-                    <h3 className="text-lg font-bold text-deep-slate">
-                      Selecciona tus Entradas
-                    </h3>
-
-                    {ticketTiers.map((tier) => {
-                      const isSelected = tier.quantity > 0;
-                      const isPlusDisabled =
-                        totalTickets >= remainingUserQuotaForEvent ||
-                        tier.quantity >= (tier.maxTicketsPerOrder ?? 4) ||
-                        tier.quantity >= (tier.remainingTickets ?? 999) ||
-                        remainingUserQuotaForEvent <= 0;
-
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {showFunctions.map((fn) => {
+                      const isSelected = selectedFunctionId === fn.id;
                       return (
-                        <div
-                          key={tier.id}
-                          className={`p-5 rounded-2xl border-2 transition-all relative ${!tier.available
-                              ? "bg-white/60 border-surface-variant/70 opacity-70"
-                              : isSelected
-                                ? "bg-white border-electric-indigo shadow-md shadow-electric-indigo/10"
-                                : "bg-white border-surface-variant hover:border-outline-variant"
+                        <button
+                          key={fn.id}
+                          type="button"
+                          onClick={() => setSelectedFunctionId(fn.id)}
+                          className={`p-3.5 rounded-xl text-left transition-all relative cursor-pointer ${isSelected
+                              ? "border-2 border-electric-indigo bg-electric-indigo/5 shadow-md shadow-electric-indigo/10"
+                              : "border border-surface-variant hover:border-electric-indigo bg-surface-container-low/50 hover:bg-surface-gray"
                             }`}
                         >
-                          {isSelected && tier.available && (
-                            <span className="absolute -top-3 right-4 bg-electric-indigo text-white text-[11px] font-bold px-3 py-0.5 rounded-full shadow-sm">
+                          {isSelected && (
+                            <span className="absolute -top-2.5 right-3 bg-electric-indigo text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                               Seleccionado
                             </span>
                           )}
-
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span
-                                  className="w-3 h-3 rounded-full shrink-0"
-                                  style={{ backgroundColor: tier.colorHex }}
-                                />
-                                <h4 className="text-base sm:text-lg text-deep-slate font-bold">
-                                  {tier.name}
-                                </h4>
-                                <span
-                                  className={`text-[11px] font-bold px-2 py-0.5 rounded ${tier.badgeColor}`}
-                                >
-                                  {tier.badge}
-                                </span>
-                              </div>
-                              <p className="text-xs text-on-surface-variant max-w-md">
-                                {tier.description}
-                              </p>
-                              <div className="flex items-center gap-2.5 flex-wrap text-sm text-electric-indigo font-bold">
-                                <span>
-                                  S/. {tier.price.toFixed(2)}{" "}
-                                  <span className="text-xs text-platinum-silver font-normal">
-                                    / entrada oficial
-                                  </span>
-                                </span>
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-gray text-on-surface-variant border border-surface-variant">
-                                  Máx. {tier.maxTicketsPerOrder ?? 4} por orden
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Controles de Cantidad */}
-                            <div className="flex items-center gap-3 self-end sm:self-center">
-                              {tier.available ? (
-                                <>
-                                  <div className="flex items-center border border-surface-variant rounded-xl bg-surface-container-low p-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleQuantityChange(tier.id, -1)}
-                                      disabled={tier.quantity === 0}
-                                      className="w-9 h-9 rounded-lg bg-white text-deep-slate hover:bg-surface-gray font-bold flex items-center justify-center border border-surface-variant shadow-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                                    >
-                                      −
-                                    </button>
-                                    <span className="w-10 text-center font-bold text-base text-deep-slate">
-                                      {tier.quantity}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleQuantityChange(tier.id, 1)}
-                                      disabled={isPlusDisabled}
-                                      className="w-9 h-9 rounded-lg bg-electric-indigo text-white hover:bg-primary font-bold flex items-center justify-center shadow-sm transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                                      title={isPlusDisabled ? "Límite de entradas alcanzado" : "Añadir entrada"}
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-
-                                  <div className="text-right min-w-[90px]">
-                                    <span className="block font-bold text-base text-deep-slate">
-                                      S/. {(tier.price * tier.quantity).toFixed(2)}
-                                    </span>
-                                    <span className="text-[11px] text-platinum-silver">
-                                      {tier.quantity} entradas
-                                    </span>
-                                  </div>
-                                </>
-                              ) : (
-                                <span className="text-xs font-bold text-red-600 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
-                                  Agotado
-                                </span>
-                              )}
-                            </div>
+                          <div
+                            className={`text-xs font-bold ${isSelected
+                                ? "text-electric-indigo"
+                                : "text-on-surface-variant"
+                              }`}
+                          >
+                            {fn.dateStr}
                           </div>
-                        </div>
+                          <div className="font-extrabold text-deep-slate text-base mt-0.5">
+                            {fn.timeStr}
+                          </div>
+                          <div className="text-[11px] mt-1 flex items-center gap-1 font-medium">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${fn.statusType === "last_passes"
+                                  ? "bg-vip-gold"
+                                  : "bg-emerald-500"
+                                }`}
+                            />
+                            <span
+                              className={
+                                fn.statusType === "last_passes"
+                                  ? "text-vip-gold"
+                                  : "text-platinum-silver"
+                              }
+                            >
+                              {fn.statusText}
+                            </span>
+                          </div>
+                        </button>
                       );
                     })}
                   </div>
-                </>
-              )}
+                </div>
 
-              {/* =================================================================
+                {/* Mapa Esquemático del Recinto / Zonas y Localidades (Alineado con Stitch) */}
+                <VenueZonesMap
+                  venueName={event?.venue || "Recinto Oficial"}
+                  zones={ticketTiers.map((tier) => ({
+                    id: tier.id,
+                    name: tier.name,
+                    price: tier.price,
+                    available: tier.available,
+                    colorHex: tier.colorHex,
+                    badge: tier.badge,
+                  }))}
+                  zoneMapImageUrl={event?.zoneMapUrl}
+                  selectedZoneId={primarySelectedTier?.id}
+                  selectedZoneNote={primarySelectedTier?.description}
+                  onSelectZone={(selectedId) => {
+                    setTicketTiers((prev) =>
+                      prev.map((t) => {
+                        if (t.id === selectedId && t.available) {
+                          return {
+                            ...t,
+                            quantity: t.quantity > 0 ? t.quantity : 1,
+                          };
+                        }
+                        return t;
+                      }),
+                    );
+                  }}
+                  occupancyPercentage={
+                    event?.zones && event.zones.length > 0
+                      ? Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          Math.round(
+                            (event.zones.reduce(
+                              (acc, z) =>
+                                acc +
+                                Math.max(
+                                  0,
+                                  z.capacity - z.remainingTickets,
+                                ),
+                              0,
+                            ) /
+                              (event.zones.reduce(
+                                (acc, z) => acc + z.capacity,
+                                0,
+                              ) || 1)) *
+                            100,
+                          ),
+                        ),
+                      )
+                      : 0
+                  }
+                />
+
+                {/* Banner Oficial de Límites por Persona / Antirreventa */}
+                <div
+                  className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${remainingUserQuotaForEvent <= 0
+                      ? "bg-rose-50 border-rose-200 text-rose-900"
+                      : "bg-electric-indigo/5 border-electric-indigo/20 text-deep-slate"
+                    }`}
+                >
+                  <span
+                    className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${remainingUserQuotaForEvent <= 0
+                        ? "text-rose-600"
+                        : "text-electric-indigo"
+                      }`}
+                  >
+                    {remainingUserQuotaForEvent <= 0
+                      ? "block"
+                      : "verified_user"}
+                  </span>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="font-bold">
+                        {remainingUserQuotaForEvent <= 0
+                          ? "Límite Oficial de Entradas Alcanzado"
+                          : "Política Oficial de Venta Antirreventa QPH"}
+                      </span>
+                      <span
+                        className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${remainingUserQuotaForEvent <= 0
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-electric-indigo/10 text-electric-indigo"
+                          }`}
+                      >
+                        Tope: {eventUserTicketLimit} entradas por persona
+                      </span>
+                    </div>
+                    <p className="text-on-surface-variant leading-relaxed">
+                      {remainingUserQuotaForEvent <= 0 ? (
+                        <strong className="text-rose-700 font-semibold block">
+                          Ya cuentas con {alreadyPurchasedTicketsCount}{" "}
+                          entrada(s) registrada(s) para este evento. Se ha
+                          alcanzado el tope máximo permitido por persona (
+                          {eventUserTicketLimit}).
+                        </strong>
+                      ) : alreadyPurchasedTicketsCount > 0 ? (
+                        <span>
+                          Ya cuentas con{" "}
+                          <strong>
+                            {alreadyPurchasedTicketsCount} entrada(s)
+                          </strong>{" "}
+                          registrada(s). En esta orden puedes adquirir hasta
+                          un máximo de{" "}
+                          <strong>
+                            {remainingUserQuotaForEvent} entrada(s) más
+                          </strong>
+                          .
+                        </span>
+                      ) : (
+                        <span>
+                          Para garantizar un acceso equitativo y evitar la
+                          reventa, cada cliente puede adquirir hasta un máximo
+                          de{" "}
+                          <strong>
+                            {eventUserTicketLimit} entradas oficiales
+                          </strong>{" "}
+                          para este evento.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Selector de Tipos de Entradas y Cantidades */}
+                <div id="tickets-selector-section" className="space-y-4">
+                  <h3 className="text-lg font-bold text-deep-slate">
+                    Selecciona tus Entradas
+                  </h3>
+
+                  {ticketTiers.map((tier) => {
+                    const isSelected = tier.quantity > 0;
+                    const isPlusDisabled =
+                      totalTickets >= remainingUserQuotaForEvent ||
+                      tier.quantity >= (tier.maxTicketsPerOrder ?? 4) ||
+                      tier.quantity >= (tier.remainingTickets ?? 999) ||
+                      remainingUserQuotaForEvent <= 0;
+
+                    return (
+                      <div
+                        key={tier.id}
+                        className={`p-5 rounded-2xl border-2 transition-all relative ${!tier.available
+                            ? "bg-white/60 border-surface-variant/70 opacity-70"
+                            : isSelected
+                              ? "bg-white border-electric-indigo shadow-md shadow-electric-indigo/10"
+                              : "bg-white border-surface-variant hover:border-outline-variant"
+                          }`}
+                      >
+                        {isSelected && tier.available && (
+                          <span className="absolute -top-3 right-4 bg-electric-indigo text-white text-[11px] font-bold px-3 py-0.5 rounded-full shadow-sm">
+                            Seleccionado
+                          </span>
+                        )}
+
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span
+                                className="w-3 h-3 rounded-full shrink-0"
+                                style={{ backgroundColor: tier.colorHex }}
+                              />
+                              <h4 className="text-base sm:text-lg text-deep-slate font-bold">
+                                {tier.name}
+                              </h4>
+                              <span
+                                className={`text-[11px] font-bold px-2 py-0.5 rounded ${tier.badgeColor}`}
+                              >
+                                {tier.badge}
+                              </span>
+                            </div>
+                            <p className="text-xs text-on-surface-variant max-w-md">
+                              {tier.description}
+                            </p>
+                            <div className="flex items-center gap-2.5 flex-wrap text-sm text-electric-indigo font-bold">
+                              <span>
+                                S/. {tier.price.toFixed(2)}{" "}
+                                <span className="text-xs text-platinum-silver font-normal">
+                                  / entrada oficial
+                                </span>
+                              </span>
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-gray text-on-surface-variant border border-surface-variant">
+                                Máx. {tier.maxTicketsPerOrder ?? 4} por orden
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Controles de Cantidad */}
+                          <div className="flex items-center gap-3 self-end sm:self-center">
+                            {tier.available ? (
+                              <>
+                                <div className="flex items-center border border-surface-variant rounded-xl bg-surface-container-low p-1">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleQuantityChange(tier.id, -1)
+                                    }
+                                    disabled={tier.quantity === 0}
+                                    className="w-9 h-9 rounded-lg bg-white text-deep-slate hover:bg-surface-gray font-bold flex items-center justify-center border border-surface-variant shadow-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                  >
+                                    −
+                                  </button>
+                                  <span className="w-10 text-center font-bold text-base text-deep-slate">
+                                    {tier.quantity}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleQuantityChange(tier.id, 1)
+                                    }
+                                    disabled={isPlusDisabled}
+                                    className="w-9 h-9 rounded-lg bg-electric-indigo text-white hover:bg-primary font-bold flex items-center justify-center shadow-sm transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                    title={
+                                      isPlusDisabled
+                                        ? "Límite de entradas alcanzado"
+                                        : "Añadir entrada"
+                                    }
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                <div className="text-right min-w-[90px]">
+                                  <span className="block font-bold text-base text-deep-slate">
+                                    S/.{" "}
+                                    {(tier.price * tier.quantity).toFixed(2)}
+                                  </span>
+                                  <span className="text-[11px] text-platinum-silver">
+                                    {tier.quantity} entradas
+                                  </span>
+                                </div>
+                              </>
+                            ) : (
+                              <span className="text-xs font-bold text-red-600 px-3 py-1.5 bg-red-50 rounded-lg border border-red-200">
+                                Agotado
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* =================================================================
                   PASO 2: PASARELA DE PAGOS Y MÉTODOS SEGUROS (PERÚ / CULQI READY)
                  ================================================================= */}
-              {currentStep === 2 && (
-                <div
-                  id="payment-methods-section"
-                  className="space-y-6 bg-white p-5 sm:p-8 rounded-2xl border border-surface-variant shadow-sm scroll-mt-24 md:scroll-mt-28 animate-in fade-in duration-200"
-                >
-                  {/* Cabecera del Paso 2 */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-variant/60 pb-5">
-                    <div>
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-electric-indigo/10 text-electric-indigo text-[11px] font-bold mb-1.5">
-                        <span className="material-symbols-outlined text-[14px]">verified_user</span>
-                        <span>Pasarela Segura • Pagos en Soles (PEN)</span>
+            {currentStep === 2 && (
+              <div
+                id="payment-methods-section"
+                className="space-y-6 bg-white p-5 sm:p-8 rounded-2xl border border-surface-variant shadow-sm scroll-mt-24 md:scroll-mt-28 animate-in fade-in duration-200"
+              >
+                {/* Cabecera del Paso 2 */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-variant/60 pb-5">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-electric-indigo/10 text-electric-indigo text-[11px] font-bold mb-1.5">
+                      <span className="material-symbols-outlined text-[14px]">
+                        verified_user
+                      </span>
+                      <span>Pasarela Segura • Pagos en Soles (PEN)</span>
+                    </div>
+                    <h1 className="text-2xl font-black text-deep-slate tracking-tight">
+                      Elige cómo quieres pagar
+                    </h1>
+                    <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
+                      Al confirmar se abrirá la pasarela protegida para
+                      completar tu pago sin salir de la plataforma.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (pendingAsyncOrder) {
+                        void handleCancelPendingAsyncOrder();
+                      }
+                      setCurrentStep(1);
+                    }}
+                    className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-electric-indigo hover:bg-surface-gray border border-surface-variant/70 transition-colors cursor-pointer shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">
+                      arrow_back
+                    </span>
+                    <span>Editar entradas</span>
+                  </button>
+                </div>
+
+                {/* Panel de Seguimiento para Pagos Asíncronos (QR Billeteras / PagoEfectivo CIP / Cuotéalo) */}
+                {pendingAsyncOrder && (
+                  <div className="p-5 rounded-2xl bg-electric-indigo/5 border-2 border-electric-indigo/30 space-y-4 animate-in fade-in duration-150">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-electric-indigo/15 text-electric-indigo flex items-center justify-center shrink-0">
+                        <div className="w-5 h-5 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin" />
                       </div>
-                      <h1 className="text-2xl font-black text-deep-slate tracking-tight">
-                        Elige cómo quieres pagar
-                      </h1>
-                      <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
-                        Al confirmar se abrirá la pasarela protegida para completar tu pago sin salir de la plataforma.
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center flex-wrap gap-2">
+                          <h4 className="font-extrabold text-sm text-deep-slate">
+                            Esperando confirmación de Culqi (
+                            {pendingAsyncOrder.orderCode})
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+                            En proceso
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                          Tus entradas permanecen reservadas mientras
+                          completas la operación. Verificamos automáticamente
+                          cada pocos segundos para emitir tus códigos QR al
+                          instante.
+                        </p>
+                        {pendingAsyncOrder.paymentCode && (
+                          <div className="mt-3 p-3 rounded-xl bg-white border border-surface-variant flex items-center justify-between gap-3">
+                            <div>
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                                Código de Pago (CIP / Referencia Culqi)
+                              </span>
+                              <span className="font-mono font-black text-base text-deep-slate tracking-wider">
+                                {pendingAsyncOrder.paymentCode}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (
+                                  typeof navigator !== "undefined" &&
+                                  pendingAsyncOrder.paymentCode
+                                ) {
+                                  void navigator.clipboard.writeText(
+                                    pendingAsyncOrder.paymentCode,
+                                  );
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold cursor-pointer shrink-0"
+                            >
+                              Copiar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleManualVerifyAsyncOrder}
+                        disabled={isCheckingAsyncStatus}
+                        className="px-4 py-2 rounded-xl bg-electric-indigo hover:bg-primary text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        {isCheckingAsyncStatus ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Verificando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined text-[16px]">
+                              refresh
+                            </span>
+                            <span>Ya pagué, verificar ahora</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelPendingAsyncOrder}
+                        className="px-3.5 py-2 rounded-xl bg-white hover:bg-surface-gray border border-surface-variant text-deep-slate text-xs font-semibold cursor-pointer"
+                      >
+                        Cambiar método o cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Alerta de Transacción Rechazada */}
+                {paymentError && (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-start gap-3 animate-in fade-in duration-150">
+                    <span className="material-symbols-outlined text-red-600 text-xl shrink-0 mt-0.5">
+                      error
+                    </span>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm">
+                        Transacción no completada
+                      </h4>
+                      <p className="text-xs text-red-700 mt-1">
+                        {paymentError}
+                      </p>
+                      <p className="text-xs text-slate-600 mt-2">
+                        💡 <strong>Tus entradas continúan reservadas:</strong>{" "}
+                        Puedes reintentar o elegir otro medio de pago (por
+                        ejemplo, Tarjeta o PagoEfectivo).
                       </p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (pendingAsyncOrder) {
-                          void handleCancelPendingAsyncOrder();
-                        }
-                        setCurrentStep(1);
-                      }}
-                      className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-electric-indigo hover:bg-surface-gray border border-surface-variant/70 transition-colors cursor-pointer shrink-0"
+                      onClick={() => setPaymentError(null)}
+                      aria-label="Cerrar alerta"
+                      className="text-red-500 hover:text-red-800 text-xs font-bold cursor-pointer p-1"
                     >
-                      <span className="material-symbols-outlined text-[15px]">arrow_back</span>
-                      <span>Editar entradas</span>
+                      ✕
                     </button>
                   </div>
+                )}
 
-                  {/* Panel de Seguimiento para Pagos Asíncronos (QR Billeteras / PagoEfectivo CIP / Cuotéalo) */}
-                  {pendingAsyncOrder && (
-                    <div className="p-5 rounded-2xl bg-electric-indigo/5 border-2 border-electric-indigo/30 space-y-4 animate-in fade-in duration-150">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-electric-indigo/15 text-electric-indigo flex items-center justify-center shrink-0">
-                          <div className="w-5 h-5 border-2 border-electric-indigo border-t-transparent rounded-full animate-spin" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center flex-wrap gap-2">
-                            <h4 className="font-extrabold text-sm text-deep-slate">
-                              Esperando confirmación de Culqi ({pendingAsyncOrder.orderCode})
-                            </h4>
-                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
-                              En proceso
-                            </span>
-                          </div>
-                          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                            Tus entradas permanecen reservadas mientras completas la operación. Verificamos automáticamente cada pocos segundos para emitir tus códigos QR al instante.
-                          </p>
-                          {pendingAsyncOrder.paymentCode && (
-                            <div className="mt-3 p-3 rounded-xl bg-white border border-surface-variant flex items-center justify-between gap-3">
-                              <div>
-                                <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
-                                  Código de Pago (CIP / Referencia Culqi)
-                                </span>
-                                <span className="font-mono font-black text-base text-deep-slate tracking-wider">
-                                  {pendingAsyncOrder.paymentCode}
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (typeof navigator !== "undefined" && pendingAsyncOrder.paymentCode) {
-                                    void navigator.clipboard.writeText(pendingAsyncOrder.paymentCode);
-                                  }
-                                }}
-                                className="px-3 py-1.5 rounded-lg bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold cursor-pointer shrink-0"
-                              >
-                                Copiar
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                        <button
-                          type="button"
-                          onClick={handleManualVerifyAsyncOrder}
-                          disabled={isCheckingAsyncStatus}
-                          className="px-4 py-2 rounded-xl bg-electric-indigo hover:bg-primary text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                        >
-                          {isCheckingAsyncStatus ? (
-                            <>
-                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              <span>Verificando...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="material-symbols-outlined text-[16px]">refresh</span>
-                              <span>Ya pagué, verificar ahora</span>
-                            </>
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelPendingAsyncOrder}
-                          className="px-3.5 py-2 rounded-xl bg-white hover:bg-surface-gray border border-surface-variant text-deep-slate text-xs font-semibold cursor-pointer"
-                        >
-                          Cambiar método o cancelar
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Alerta de Transacción Rechazada */}
-                  {paymentError && (
-                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-start gap-3 animate-in fade-in duration-150">
-                      <span className="material-symbols-outlined text-red-600 text-xl shrink-0 mt-0.5">
-                        error
-                      </span>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-sm">Transacción no completada</h4>
-                        <p className="text-xs text-red-700 mt-1">{paymentError}</p>
-                        <p className="text-xs text-slate-600 mt-2">
-                          💡 <strong>Tus entradas continúan reservadas:</strong> Puedes reintentar o elegir otro medio de pago (por ejemplo, Tarjeta o PagoEfectivo).
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setPaymentError(null)}
-                        aria-label="Cerrar alerta"
-                        className="text-red-500 hover:text-red-800 text-xs font-bold cursor-pointer p-1"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Grid 2x2 de Métodos de Pago Oficiales Perú */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    {/* 1. Yape / Plin */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("yape")}
-                      className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "yape"
-                          ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
-                          : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
+                {/* Grid 2x2 de Métodos de Pago Oficiales Perú */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* 1. Yape / Plin */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("yape")}
+                    className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${paymentMethod === "yape"
+                        ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
+                        : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
                       }`}
-                    >
-                      <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-purple-600 text-white text-[9px] font-extrabold uppercase tracking-wider shadow-xs">
-                        Más usado
-                      </span>
-                      <div className="flex items-center gap-3.5 pr-2">
-                        <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 shrink-0 border border-purple-200/70">
-                          <span className="material-symbols-outlined text-2xl">qr_code_scanner</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">Yape / Plin</span>
-                          <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
-                            Escanea el QR o usa código de aprobación
-                          </span>
-                        </div>
-                      </div>
-                      <span
-                        className={`material-symbols-outlined shrink-0 ${
-                          paymentMethod === "yape" ? "text-electric-indigo" : "text-slate-300"
-                        }`}
-                        style={{ fontVariationSettings: paymentMethod === "yape" ? "'FILL' 1" : "'FILL' 0" }}
-                      >
-                        {paymentMethod === "yape" ? "check_circle" : "radio_button_unchecked"}
-                      </span>
-                    </button>
-
-                    {/* 2. Tarjeta de Crédito / Débito */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("card")}
-                      className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "card"
-                          ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
-                          : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5 pr-2">
-                        <div className="w-11 h-11 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0 border border-electric-indigo/20">
-                          <span className="material-symbols-outlined text-2xl">credit_card</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">
-                            Tarjeta de Crédito / Débito
-                          </span>
-                          <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
-                            Visa, Mastercard, Amex y Diners
-                          </span>
-                        </div>
-                      </div>
-                      <span
-                        className={`material-symbols-outlined shrink-0 ${
-                          paymentMethod === "card" ? "text-electric-indigo" : "text-slate-300"
-                        }`}
-                        style={{ fontVariationSettings: paymentMethod === "card" ? "'FILL' 1" : "'FILL' 0" }}
-                      >
-                        {paymentMethod === "card" ? "check_circle" : "radio_button_unchecked"}
-                      </span>
-                    </button>
-
-                    {/* 3. PagoEfectivo / Agentes */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("transfer")}
-                      className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "transfer"
-                          ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
-                          : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5 pr-2">
-                        <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 shrink-0 border border-amber-200/70">
-                          <span className="material-symbols-outlined text-2xl">account_balance</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">
-                            PagoEfectivo / Agentes
-                          </span>
-                          <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
-                            Código CIP en BCP, BBVA, Interbank y agentes
-                          </span>
-                        </div>
-                      </div>
-                      <span
-                        className={`material-symbols-outlined shrink-0 ${
-                          paymentMethod === "transfer" ? "text-electric-indigo" : "text-slate-300"
-                        }`}
-                        style={{ fontVariationSettings: paymentMethod === "transfer" ? "'FILL' 1" : "'FILL' 0" }}
-                      >
-                        {paymentMethod === "transfer" ? "check_circle" : "radio_button_unchecked"}
-                      </span>
-                    </button>
-
-                    {/* 4. Cuotéalo BCP */}
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("cuotealo")}
-                      className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${
-                        paymentMethod === "cuotealo"
-                          ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
-                          : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5 pr-2">
-                        <div className="w-11 h-11 rounded-xl bg-sky-50 flex items-center justify-center text-sky-700 shrink-0 border border-sky-200/70">
-                          <span className="material-symbols-outlined text-2xl">calendar_month</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-deep-slate">Cuotéalo BCP</span>
-                          <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
-                            Financia en cuotas sin tarjeta con BCP
-                          </span>
-                        </div>
-                      </div>
-                      <span
-                        className={`material-symbols-outlined shrink-0 ${
-                          paymentMethod === "cuotealo" ? "text-electric-indigo" : "text-slate-300"
-                        }`}
-                        style={{ fontVariationSettings: paymentMethod === "cuotealo" ? "'FILL' 1" : "'FILL' 0" }}
-                      >
-                        {paymentMethod === "cuotealo" ? "check_circle" : "radio_button_unchecked"}
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Panel Contextual del Método Seleccionado */}
-                  <div className="p-5 bg-surface-container-low/80 rounded-2xl border border-surface-variant space-y-4">
-                    <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-electric-indigo/10 text-electric-indigo flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-[22px]">
-                          {paymentMethod === "yape"
-                            ? "qr_code_2"
-                            : paymentMethod === "card"
-                            ? "shield_lock"
-                            : paymentMethod === "transfer"
-                            ? "receipt_long"
-                            : "payments"}
+                  >
+                    <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-purple-600 text-white text-[9px] font-extrabold uppercase tracking-wider shadow-xs">
+                      Más usado
+                    </span>
+                    <div className="flex items-center gap-3.5 pr-2">
+                      <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 shrink-0 border border-purple-200/70">
+                        <span className="material-symbols-outlined text-2xl">
+                          qr_code_scanner
                         </span>
                       </div>
-                      <div className="space-y-1">
-                        <h3 className="text-deep-slate text-sm font-bold">
-                          {paymentMethod === "yape" && "Pago instantáneo con Yape o Plin"}
-                          {paymentMethod === "card" && "Pago cifrado con Tarjeta (Protección 3D Secure)"}
-                          {paymentMethod === "transfer" && "Pago con Código CIP vía PagoEfectivo"}
-                          {paymentMethod === "cuotealo" && "Financiamiento directo con Cuotéalo BCP"}
-                        </h3>
-                        <p className="text-on-surface-variant text-xs leading-relaxed">
-                          {paymentMethod === "yape" &&
-                            "Al confirmar, se desplegará el modal seguro donde podrás escanear el código QR con Yape/Plin o ingresar tu celular + código de aprobación de Yape."}
-                          {paymentMethod === "card" &&
-                            "Ingresa los datos de tu tarjeta Visa, Mastercard, Amex o Diners directamente en el entorno certificado PCI DSS. Si tu banco lo solicita, podrás autorizar con clave dinámica 3DS."}
-                          {paymentMethod === "transfer" &&
-                            "Se generará un código de pago CIP válido durante los próximos 10 minutos para que abones desde tu app bancaria o agente autorizado."}
-                          {paymentMethod === "cuotealo" &&
-                            "Completa la solicitud en línea ingresando con tu cuenta BCP y elige el plan de cuotas que mejor se adapte a ti sin usar tarjeta de crédito."}
-                        </p>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-deep-slate">
+                          Yape / Plin
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
+                          Escanea el QR o usa código de aprobación
+                        </span>
                       </div>
                     </div>
+                    <span
+                      className={`material-symbols-outlined shrink-0 ${paymentMethod === "yape"
+                          ? "text-electric-indigo"
+                          : "text-slate-300"
+                        }`}
+                      style={{
+                        fontVariationSettings:
+                          paymentMethod === "yape" ? "'FILL' 1" : "'FILL' 0",
+                      }}
+                    >
+                      {paymentMethod === "yape"
+                        ? "check_circle"
+                        : "radio_button_unchecked"}
+                    </span>
+                  </button>
 
-                    {/* Aviso Inteligente de Límites para Yape / QR */}
-                    {paymentMethod === "yape" && grandTotal > 500 && grandTotal <= 2000 && (
+                  {/* 2. Tarjeta de Crédito / Débito */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("card")}
+                    className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${paymentMethod === "card"
+                        ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
+                        : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
+                      }`}
+                  >
+                    <div className="flex items-center gap-3.5 pr-2">
+                      <div className="w-11 h-11 rounded-xl bg-electric-indigo/10 flex items-center justify-center text-electric-indigo shrink-0 border border-electric-indigo/20">
+                        <span className="material-symbols-outlined text-2xl">
+                          credit_card
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-deep-slate">
+                          Tarjeta de Crédito / Débito
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
+                          Visa, Mastercard, Amex y Diners
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={`material-symbols-outlined shrink-0 ${paymentMethod === "card"
+                          ? "text-electric-indigo"
+                          : "text-slate-300"
+                        }`}
+                      style={{
+                        fontVariationSettings:
+                          paymentMethod === "card" ? "'FILL' 1" : "'FILL' 0",
+                      }}
+                    >
+                      {paymentMethod === "card"
+                        ? "check_circle"
+                        : "radio_button_unchecked"}
+                    </span>
+                  </button>
+
+                  {/* 3. PagoEfectivo / Agentes */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("transfer")}
+                    className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${paymentMethod === "transfer"
+                        ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
+                        : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
+                      }`}
+                  >
+                    <div className="flex items-center gap-3.5 pr-2">
+                      <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 shrink-0 border border-amber-200/70">
+                        <span className="material-symbols-outlined text-2xl">
+                          account_balance
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-deep-slate">
+                          PagoEfectivo / Agentes
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
+                          Código CIP en BCP, BBVA, Interbank y agentes
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={`material-symbols-outlined shrink-0 ${paymentMethod === "transfer"
+                          ? "text-electric-indigo"
+                          : "text-slate-300"
+                        }`}
+                      style={{
+                        fontVariationSettings:
+                          paymentMethod === "transfer"
+                            ? "'FILL' 1"
+                            : "'FILL' 0",
+                      }}
+                    >
+                      {paymentMethod === "transfer"
+                        ? "check_circle"
+                        : "radio_button_unchecked"}
+                    </span>
+                  </button>
+
+                  {/* 4. Cuotéalo BCP */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("cuotealo")}
+                    className={`relative flex items-center justify-between p-4 border-2 rounded-2xl text-left transition-all cursor-pointer ${paymentMethod === "cuotealo"
+                        ? "border-electric-indigo bg-electric-indigo/5 shadow-sm ring-2 ring-electric-indigo/15"
+                        : "border-surface-variant bg-white hover:bg-surface-gray/70 hover:border-slate-300"
+                      }`}
+                  >
+                    <div className="flex items-center gap-3.5 pr-2">
+                      <div className="w-11 h-11 rounded-xl bg-sky-50 flex items-center justify-center text-sky-700 shrink-0 border border-sky-200/70">
+                        <span className="material-symbols-outlined text-2xl">
+                          calendar_month
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-deep-slate">
+                          Cuotéalo BCP
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
+                          Financia en cuotas sin tarjeta con BCP
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={`material-symbols-outlined shrink-0 ${paymentMethod === "cuotealo"
+                          ? "text-electric-indigo"
+                          : "text-slate-300"
+                        }`}
+                      style={{
+                        fontVariationSettings:
+                          paymentMethod === "cuotealo"
+                            ? "'FILL' 1"
+                            : "'FILL' 0",
+                      }}
+                    >
+                      {paymentMethod === "cuotealo"
+                        ? "check_circle"
+                        : "radio_button_unchecked"}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Panel Contextual del Método Seleccionado */}
+                <div className="p-5 bg-surface-container-low/80 rounded-2xl border border-surface-variant space-y-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-electric-indigo/10 text-electric-indigo flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[22px]">
+                        {paymentMethod === "yape"
+                          ? "qr_code_2"
+                          : paymentMethod === "card"
+                            ? "shield_lock"
+                            : paymentMethod === "transfer"
+                              ? "receipt_long"
+                              : "payments"}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-deep-slate text-sm font-bold">
+                        {paymentMethod === "yape" &&
+                          "Pago instantáneo con Yape o Plin"}
+                        {paymentMethod === "card" &&
+                          "Pago cifrado con Tarjeta (Protección 3D Secure)"}
+                        {paymentMethod === "transfer" &&
+                          "Pago con Código CIP vía PagoEfectivo"}
+                        {paymentMethod === "cuotealo" &&
+                          "Financiamiento directo con Cuotéalo BCP"}
+                      </h3>
+                      <p className="text-on-surface-variant text-xs leading-relaxed">
+                        {paymentMethod === "yape" &&
+                          "Al confirmar, se desplegará el modal seguro donde podrás escanear el código QR con Yape/Plin o ingresar tu celular + código de aprobación de Yape."}
+                        {paymentMethod === "card" &&
+                          "Ingresa los datos de tu tarjeta Visa, Mastercard, Amex o Diners directamente en el entorno certificado PCI DSS. Si tu banco lo solicita, podrás autorizar con clave dinámica 3DS."}
+                        {paymentMethod === "transfer" &&
+                          "Se generará un código de pago CIP válido durante los próximos 10 minutos para que abones desde tu app bancaria o agente autorizado."}
+                        {paymentMethod === "cuotealo" &&
+                          "Completa la solicitud en línea ingresando con tu cuenta BCP y elige el plan de cuotas que mejor se adapte a ti sin usar tarjeta de crédito."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Aviso Inteligente de Límites para Yape / QR */}
+                  {paymentMethod === "yape" &&
+                    grandTotal > 500 &&
+                    grandTotal <= 2000 && (
                       <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-[11px]">
                         <span className="material-symbols-outlined text-amber-600 text-[17px] shrink-0 mt-0.5">
                           info
                         </span>
                         <span>
-                          Para compras entre <strong>S/. 500 y S/. 2,000</strong>, selecciona la opción de <strong>Yape con Código de Aprobación</strong> dentro de la pasarela (o verifica tu límite diario en tu app).
+                          Para compras entre{" "}
+                          <strong>S/. 500 y S/. 2,000</strong>, selecciona la
+                          opción de{" "}
+                          <strong>Yape con Código de Aprobación</strong>{" "}
+                          dentro de la pasarela (o verifica tu límite diario
+                          en tu app).
                         </span>
                       </div>
                     )}
-                    {paymentMethod === "yape" && grandTotal > 2000 && (
-                      <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-[11px]">
-                        <span className="material-symbols-outlined text-rose-600 text-[17px] shrink-0 mt-0.5">
-                          warning
-                        </span>
-                        <span>
-                          Tu compra supera el límite estándar por operación de Yape (<strong>S/. 2,000</strong>). Te recomendamos seleccionar <strong>Tarjeta</strong> o <strong>PagoEfectivo</strong>.
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Micro-pasos de confirmación */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-surface-variant/70 text-[11px] font-semibold text-on-surface-variant">
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
-                          1
-                        </span>
-                        <span>Confirma tu pedido</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
-                          2
-                        </span>
-                        <span>Autoriza en ventana segura</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
-                          3
-                        </span>
-                        <span>Recibe tus QR al instante</span>
-                      </div>
+                  {paymentMethod === "yape" && grandTotal > 2000 && (
+                    <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-[11px]">
+                      <span className="material-symbols-outlined text-rose-600 text-[17px] shrink-0 mt-0.5">
+                        warning
+                      </span>
+                      <span>
+                        Tu compra supera el límite estándar por operación de
+                        Yape (<strong>S/. 2,000</strong>). Te recomendamos
+                        seleccionar <strong>Tarjeta</strong> o{" "}
+                        <strong>PagoEfectivo</strong>.
+                      </span>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Datos del Titular de la Orden (Usuario en Sesión) */}
-                  <div className="p-4 bg-surface-container-lowest rounded-2xl border border-surface-variant flex items-center justify-between gap-3 shadow-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-electric-indigo/10 text-electric-indigo flex items-center justify-center font-bold text-sm shrink-0">
-                        <span className="material-symbols-outlined text-[20px]">person</span>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-[11px] font-bold text-electric-indigo uppercase tracking-wider">
-                            Titular de las entradas
-                          </p>
-                          {currentUser && (
-                            <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
-                              Sesión Activa
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm font-bold text-deep-slate truncate">
-                          {currentUser
-                            ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
-                            : "Usuario Invitado"}
-                        </p>
-                        <p className="text-xs text-on-surface-variant truncate">
-                          {currentUser?.email || "Las entradas se emitirán a tu cuenta"}
-                        </p>
-                      </div>
+                  {/* Micro-pasos de confirmación */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-surface-variant/70 text-[11px] font-semibold text-on-surface-variant">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
+                        1
+                      </span>
+                      <span>Confirma tu pedido</span>
                     </div>
-                    {!currentUser && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAuthModal(true)}
-                        className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1 cursor-pointer shrink-0"
-                      >
-                        Iniciar sesión <span className="material-symbols-outlined text-xs">arrow_forward</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Botón Principal de Acción en la Pasarela (Desktop / Tablet, estilo Stitch) */}
-                  <div className="hidden lg:block pt-2 space-y-3">
-                    {/* Checkbox Obligatorio Legal de Aceptación Expresa */}
-                    <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-left">
-                      <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          id="acceptTermsStep2Main"
-                          checked={acceptedLegalTerms}
-                          onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
-                          className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
-                        />
-                        <span className="text-[11px] text-slate-700 leading-tight">
-                          He leído y acepto los{" "}
-                          <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
-                            Términos y Condiciones
-                          </Link>{" "}
-                          y las{" "}
-                          <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
-                            Políticas de Privacidad
-                          </Link>{" "}
-                          de queplanhoy.
-                        </span>
-                      </label>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
+                        2
+                      </span>
+                      <span>Autoriza en ventana segura</span>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={handleSubmitPayment}
-                      disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
-                      className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-electric-indigo/25 active:scale-[0.99] cursor-pointer"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>{processingLabel}</span>
-                        </>
-                      ) : pendingAsyncOrder ? (
-                        <>
-                          <span className="material-symbols-outlined text-[20px]">hourglass_top</span>
-                          <span>Orden pendiente de confirmación...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-[20px]">lock</span>
-                          <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Trust Badges de Seguridad (Móvil: 2 arriba + 1 abajo centrados; Desktop: 3 en fila centrados) */}
-                  <div className="pt-4 border-t border-surface-variant/60 text-on-surface-variant/80">
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-y-2.5 gap-x-6">
-                      <div className="flex items-center justify-center gap-4 sm:gap-6">
-                        <div className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">lock</span>
-                          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
-                            Cifrado SSL 256-bit
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[15px] text-electric-indigo">verified_user</span>
-                          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
-                            Entradas Oficiales QPH
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="material-symbols-outlined text-[15px] text-electric-indigo">shield</span>
-                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
-                          Estándar PCI DSS
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-electric-indigo/15 text-electric-indigo font-bold flex items-center justify-center text-[10px]">
+                        3
+                      </span>
+                      <span>Recibe tus QR al instante</span>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* -------------------------------------------------------------------
+                {/* Datos del Titular de la Orden (Usuario en Sesión) */}
+                <div className="p-4 bg-surface-container-lowest rounded-2xl border border-surface-variant flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-electric-indigo/10 text-electric-indigo flex items-center justify-center font-bold text-sm shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">
+                        person
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[11px] font-bold text-electric-indigo uppercase tracking-wider">
+                          Titular de las entradas
+                        </p>
+                        {currentUser && (
+                          <span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
+                            Sesión Activa
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-bold text-deep-slate truncate">
+                        {currentUser
+                          ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
+                          : "Usuario Invitado"}
+                      </p>
+                      <p className="text-xs text-on-surface-variant truncate">
+                        {currentUser?.email ||
+                          "Las entradas se emitirán a tu cuenta"}
+                      </p>
+                    </div>
+                  </div>
+                  {!currentUser && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthModal(true)}
+                      className="text-xs font-bold text-electric-indigo hover:underline flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      Iniciar sesión{" "}
+                      <span className="material-symbols-outlined text-xs">
+                        arrow_forward
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Botón Principal de Acción en la Pasarela (Desktop / Tablet, estilo Stitch) */}
+                <div className="hidden lg:block pt-2 space-y-3">
+                  {/* Checkbox Obligatorio Legal de Aceptación Expresa */}
+                  <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-left">
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        id="acceptTermsStep2Main"
+                        checked={acceptedLegalTerms}
+                        onChange={(e) =>
+                          setAcceptedLegalTerms(e.target.checked)
+                        }
+                        className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
+                      />
+                      <span className="text-[11px] text-slate-700 leading-tight">
+                        He leído y acepto los{" "}
+                        <Link
+                          href="/terminos-y-condiciones"
+                          target="_blank"
+                          className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                        >
+                          Términos y Condiciones
+                        </Link>{" "}
+                        y las{" "}
+                        <Link
+                          href="/politicas-de-privacidad"
+                          target="_blank"
+                          className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                        >
+                          Políticas de Privacidad
+                        </Link>{" "}
+                        de queplanhoy.
+                      </span>
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSubmitPayment}
+                    disabled={
+                      isProcessing ||
+                      Boolean(pendingAsyncOrder) ||
+                      totalTickets === 0 ||
+                      !acceptedLegalTerms
+                    }
+                    className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-electric-indigo/25 active:scale-[0.99] cursor-pointer"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>{processingLabel}</span>
+                      </>
+                    ) : pendingAsyncOrder ? (
+                      <>
+                        <span className="material-symbols-outlined text-[20px]">
+                          hourglass_top
+                        </span>
+                        <span>Orden pendiente de confirmación...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-[20px]">
+                          lock
+                        </span>
+                        <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Trust Badges de Seguridad (Móvil: 2 arriba + 1 abajo centrados; Desktop: 3 en fila centrados) */}
+                <div className="pt-4 border-t border-surface-variant/60 text-on-surface-variant/80">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-y-2.5 gap-x-6">
+                    <div className="flex items-center justify-center gap-4 sm:gap-6">
+                      <div className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[15px] text-electric-indigo">
+                          lock
+                        </span>
+                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+                          Cifrado SSL 256-bit
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[15px] text-electric-indigo">
+                          verified_user
+                        </span>
+                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+                          Entradas Oficiales QPH
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="material-symbols-outlined text-[15px] text-electric-indigo">
+                        shield
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+                        Estándar PCI DSS
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* -------------------------------------------------------------------
                 COLUMNA DERECHA: STICKY ORDER SUMMARY
                ------------------------------------------------------------------- */}
-            <div className="lg:col-span-4">
+          <div className="lg:col-span-4">
             <div className="sticky top-28 space-y-6">
               <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-surface-variant">
                 {/* Mini Banner del Evento */}
@@ -1872,7 +2183,8 @@ export default function PurchaseFlowPageComponent() {
                         calendar_month
                       </span>
                       <span className="capitalize">
-                        {selectedFunction.dateStr} • {selectedFunction.timeStr}
+                        {selectedFunction.dateStr} •{" "}
+                        {selectedFunction.timeStr}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-on-surface-variant font-semibold">
@@ -1887,7 +2199,8 @@ export default function PurchaseFlowPageComponent() {
                       </span>
                       <span>
                         Zona:{" "}
-                        {ticketTiers.find((t) => t.quantity > 0)?.name || "Ninguna zona seleccionada"}
+                        {ticketTiers.find((t) => t.quantity > 0)?.name ||
+                          "Ninguna zona seleccionada"}
                       </span>
                     </div>
                   </div>
@@ -1897,7 +2210,10 @@ export default function PurchaseFlowPageComponent() {
                     {ticketTiers
                       .filter((t) => t.quantity > 0)
                       .map((t) => (
-                        <div key={t.id} className="flex justify-between items-start text-sm">
+                        <div
+                          key={t.id}
+                          className="flex justify-between items-start text-sm"
+                        >
                           <div className="flex flex-col">
                             <span className="font-bold text-deep-slate">
                               {t.quantity}x {t.name}
@@ -1927,7 +2243,11 @@ export default function PurchaseFlowPageComponent() {
                           local_offer
                         </span>
                         <span className="truncate">
-                          Cupón {appliedCoupon.code} ({appliedCoupon.discountType === 'percentage' ? `-${appliedCoupon.discountValue}%` : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`})
+                          Cupón {appliedCoupon.code} (
+                          {appliedCoupon.discountType === "percentage"
+                            ? `-${appliedCoupon.discountValue}%`
+                            : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`}
+                          )
                         </span>
                       </div>
                       <span className="text-emerald-700 font-bold shrink-0">
@@ -1939,8 +2259,13 @@ export default function PurchaseFlowPageComponent() {
                   {/* Bloque Interactivo de Cupón de Descuento (Stitch Design) */}
                   <div className="py-4 border-b border-surface-variant space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <label htmlFor="coupon-input" className="text-xs font-bold text-deep-slate flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">confirmation_number</span>
+                      <label
+                        htmlFor="coupon-input"
+                        className="text-xs font-bold text-deep-slate flex items-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                          confirmation_number
+                        </span>
                         <span>¿Tienes un cupón de descuento?</span>
                       </label>
                       {appliedCoupon && (
@@ -1954,7 +2279,9 @@ export default function PurchaseFlowPageComponent() {
                       <div className="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 shadow-xs">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[20px]">verified</span>
+                            <span className="material-symbols-outlined text-[20px]">
+                              verified
+                            </span>
                           </div>
                           <div className="truncate">
                             <div className="flex items-center gap-1.5">
@@ -1962,13 +2289,14 @@ export default function PurchaseFlowPageComponent() {
                                 {appliedCoupon.code}
                               </span>
                               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                                {appliedCoupon.discountType === 'percentage'
+                                {appliedCoupon.discountType === "percentage"
                                   ? `-${appliedCoupon.discountValue}%`
                                   : `-S/. ${appliedCoupon.discountValue.toFixed(2)}`}
                               </span>
                             </div>
                             <p className="text-[11px] text-emerald-700 truncate">
-                              {appliedCoupon.message || "Descuento aplicado en el total"}
+                              {appliedCoupon.message ||
+                                "Descuento aplicado en el total"}
                             </p>
                           </div>
                         </div>
@@ -1978,7 +2306,9 @@ export default function PurchaseFlowPageComponent() {
                           title="Remover cupón"
                           className="w-7 h-7 rounded-lg hover:bg-emerald-200/50 text-emerald-800 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-base">close</span>
+                          <span className="material-symbols-outlined text-base">
+                            close
+                          </span>
                         </button>
                       </div>
                     ) : (
@@ -1989,7 +2319,9 @@ export default function PurchaseFlowPageComponent() {
                             type="text"
                             value={couponCodeInput}
                             onChange={(e) => {
-                              setCouponCodeInput(e.target.value.toUpperCase());
+                              setCouponCodeInput(
+                                e.target.value.toUpperCase(),
+                              );
                               if (couponError) setCouponError(null);
                             }}
                             onKeyDown={(e) => {
@@ -2004,7 +2336,11 @@ export default function PurchaseFlowPageComponent() {
                           <button
                             type="button"
                             onClick={handleApplyCoupon}
-                            disabled={isCouponLoading || !couponCodeInput.trim() || subtotal <= 0}
+                            disabled={
+                              isCouponLoading ||
+                              !couponCodeInput.trim() ||
+                              subtotal <= 0
+                            }
                             className="px-4 py-2 bg-electric-indigo/10 hover:bg-electric-indigo/20 text-electric-indigo disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-bold text-xs transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
                           >
                             {isCouponLoading ? (
@@ -2016,13 +2352,17 @@ export default function PurchaseFlowPageComponent() {
                         </div>
                         {couponError && (
                           <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 animate-in fade-in duration-150">
-                            <span className="material-symbols-outlined text-[13px]">error</span>
+                            <span className="material-symbols-outlined text-[13px]">
+                              error
+                            </span>
                             <span>{couponError}</span>
                           </p>
                         )}
                         {couponSuccessMessage && (
                           <p className="text-[11px] font-medium text-emerald-600 flex items-center gap-1 animate-in fade-in duration-150">
-                            <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                            <span className="material-symbols-outlined text-[13px]">
+                              check_circle
+                            </span>
                             <span>{couponSuccessMessage}</span>
                           </p>
                         )}
@@ -2033,7 +2373,9 @@ export default function PurchaseFlowPageComponent() {
                   {/* Total Final */}
                   <div className="py-5 flex justify-between items-center">
                     <div className="flex flex-col">
-                      <span className="text-deep-slate text-xl font-bold">Total</span>
+                      <span className="text-deep-slate text-xl font-bold">
+                        Total
+                      </span>
                       <span className="text-[11px] text-platinum-silver">
                         IGV y emisión digital incluidos
                       </span>
@@ -2057,7 +2399,10 @@ export default function PurchaseFlowPageComponent() {
                       <button
                         type="button"
                         onClick={handleProceedToStep2}
-                        disabled={totalTickets === 0 || remainingUserQuotaForEvent <= 0}
+                        disabled={
+                          totalTickets === 0 ||
+                          remainingUserQuotaForEvent <= 0
+                        }
                         className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
                       >
                         <span>
@@ -2083,16 +2428,26 @@ export default function PurchaseFlowPageComponent() {
                               type="checkbox"
                               id="acceptTermsStep2Web"
                               checked={acceptedLegalTerms}
-                              onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
+                              onChange={(e) =>
+                                setAcceptedLegalTerms(e.target.checked)
+                              }
                               className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
                             />
                             <span className="text-[11px] text-slate-700 leading-tight">
                               He leído y acepto los{" "}
-                              <Link href="/terminos-y-condiciones" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                              <Link
+                                href="/terminos-y-condiciones"
+                                target="_blank"
+                                className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                              >
                                 Términos y Condiciones
                               </Link>{" "}
                               y las{" "}
-                              <Link href="/politicas-de-privacidad" target="_blank" className="font-bold text-electric-indigo underline hover:text-indigo-800">
+                              <Link
+                                href="/politicas-de-privacidad"
+                                target="_blank"
+                                className="font-bold text-electric-indigo underline hover:text-indigo-800"
+                              >
                                 Políticas de Privacidad
                               </Link>{" "}
                               de queplanhoy.
@@ -2103,7 +2458,12 @@ export default function PurchaseFlowPageComponent() {
                         <button
                           type="button"
                           onClick={handleSubmitPayment}
-                          disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
+                          disabled={
+                            isProcessing ||
+                            Boolean(pendingAsyncOrder) ||
+                            totalTickets === 0 ||
+                            !acceptedLegalTerms
+                          }
                           className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/25 active:scale-95 group cursor-pointer"
                         >
                           {isProcessing ? (
@@ -2113,13 +2473,19 @@ export default function PurchaseFlowPageComponent() {
                             </>
                           ) : pendingAsyncOrder ? (
                             <>
-                              <span className="material-symbols-outlined">hourglass_top</span>
+                              <span className="material-symbols-outlined">
+                                hourglass_top
+                              </span>
                               <span>Esperando pago Culqi...</span>
                             </>
                           ) : (
                             <>
-                              <span className="material-symbols-outlined">lock</span>
-                              <span>Confirmar y Pagar S/. {grandTotal.toFixed(2)}</span>
+                              <span className="material-symbols-outlined">
+                                lock
+                              </span>
+                              <span>
+                                Confirmar y Pagar S/. {grandTotal.toFixed(2)}
+                              </span>
                             </>
                           )}
                         </button>
@@ -2155,15 +2521,15 @@ export default function PurchaseFlowPageComponent() {
       </div>
     </main>
 
-      {/* =========================================================================
+    {/* =========================================================================
           FOOTER GLOBAL OFICIAL (Unificado con Home y toda la plataforma)
          ========================================================================= */}
-      <div className={isProcessing ? "pointer-events-none select-none" : ""}>
-        <GlobalFooter />
-      </div>
+    <div className={isProcessing ? "pointer-events-none select-none" : ""}>
+      <GlobalFooter />
+    </div>
 
-      {/* MODAL: IDENTIFICACIÓN OBLIGATORIA PARA COMPRA Y EMISIÓN DE TICKETS */}
-      {showAuthModal && (
+    {/* MODAL: IDENTIFICACIÓN OBLIGATORIA PARA COMPRA Y EMISIÓN DE TICKETS */}
+    {showAuthModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
         <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-surface-variant space-y-5 text-center">
           <div className="w-16 h-16 bg-electric-indigo/10 text-electric-indigo rounded-2xl flex items-center justify-center mx-auto">
@@ -2174,22 +2540,30 @@ export default function PurchaseFlowPageComponent() {
               Inicia sesión para emitir tus entradas 🎟️
             </h3>
             <p className="text-xs text-on-surface-variant leading-relaxed">
-              Por seguridad y para garantizar la validez legal de tus boletos con código QR único e intransferible, tus entradas deben asociarse directamente a tu cuenta oficial.
+              Por seguridad y para garantizar la validez legal de tus boletos
+              con código QR único e intransferible, tus entradas deben
+              asociarse directamente a tu cuenta oficial.
             </p>
           </div>
           <div className="space-y-2.5 pt-2">
             <Link
               href={`/login?redirect=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.pathname + window.location.search : ''
+                typeof window !== "undefined"
+                  ? window.location.pathname + window.location.search
+                  : "",
               )}`}
               className="w-full qph-btn-primary py-3 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
             >
-              <span className="material-symbols-outlined text-[18px]">login</span>
+              <span className="material-symbols-outlined text-[18px]">
+                login
+              </span>
               <span>Iniciar Sesión</span>
             </Link>
             <Link
               href={`/register?redirect=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.pathname + window.location.search : ''
+                typeof window !== "undefined"
+                  ? window.location.pathname + window.location.search
+                  : "",
               )}`}
               className="w-full py-2.5 px-4 rounded-xl bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
@@ -2205,310 +2579,356 @@ export default function PurchaseFlowPageComponent() {
           </div>
         </div>
       </div>
-    )
-  }
+    )}
 
-      {/* OVERLAY MODAL BLOQUEANTE: PROCESAMIENTO ACTIVO DEL PAGO */}
-      {isProcessing && !isGatewayModalOpen && !isReservationExpired && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-busy="true"
-          aria-labelledby="checkout-processing-title"
-          className="fixed inset-0 z-[75] flex items-center justify-center bg-deep-slate/65 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none"
-        >
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-electric-indigo/15 space-y-5 text-center">
-            <div className="w-16 h-16 bg-electric-indigo/10 border border-electric-indigo/20 text-electric-indigo rounded-2xl flex items-center justify-center mx-auto">
-              <div className="w-8 h-8 border-[3px] border-electric-indigo border-t-transparent rounded-full animate-spin" />
-            </div>
-            <div className="space-y-2">
-              <h3
-                id="checkout-processing-title"
-                className="text-xl font-black text-deep-slate tracking-tight"
-              >
-                Procesando tu pago de forma segura...
-              </h3>
-              <p className="text-sm font-semibold text-electric-indigo">
-                {processingLabel}
-              </p>
-              <p className="text-xs text-on-surface-variant leading-relaxed pt-1">
-                Por favor no cierres ni recargues esta ventana mientras confirmamos tu compra con la pasarela.
-              </p>
-            </div>
+    {/* OVERLAY MODAL BLOQUEANTE: PROCESAMIENTO ACTIVO DEL PAGO */}
+    {isProcessing && !isGatewayModalOpen && !isReservationExpired && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-busy="true"
+        aria-labelledby="checkout-processing-title"
+        className="fixed inset-0 z-[75] flex items-center justify-center bg-deep-slate/65 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none"
+      >
+        <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-electric-indigo/15 space-y-5 text-center">
+          <div className="w-16 h-16 bg-electric-indigo/10 border border-electric-indigo/20 text-electric-indigo rounded-2xl flex items-center justify-center mx-auto">
+            <div className="w-8 h-8 border-[3px] border-electric-indigo border-t-transparent rounded-full animate-spin" />
+          </div>
+          <div className="space-y-2">
+            <h3
+              id="checkout-processing-title"
+              className="text-xl font-black text-deep-slate tracking-tight"
+            >
+              Procesando tu pago de forma segura...
+            </h3>
+            <p className="text-sm font-semibold text-electric-indigo">
+              {processingLabel}
+            </p>
+            <p className="text-xs text-on-surface-variant leading-relaxed pt-1">
+              Por favor no cierres ni recargues esta ventana mientras
+              confirmamos tu compra con la pasarela.
+            </p>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-      {/* MODAL BLOQUEANTE: TIEMPO DE RESERVA EN PASARELA AGOTADO */}
-      {isReservationExpired && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="checkout-expired-title"
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-        >
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-red-100 space-y-5 text-center">
-            <div className="w-16 h-16 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-4xl">timer_off</span>
-            </div>
-            <div className="space-y-2">
-              <h3
-                id="checkout-expired-title"
-                className="text-xl font-black text-deep-slate tracking-tight"
-              >
-                ¡Tu tiempo se acabó!
-              </h3>
-              <p className="text-sm text-on-surface-variant leading-relaxed">
-                El tiempo límite de reserva temporal en la pasarela ha finalizado y tus entradas fueron liberadas. Por favor, inicia nuevamente tu proceso de compra desde el inicio.
-              </p>
-            </div>
-            <div className="pt-2">
-              <Link
-                href="/"
-                onClick={() => {
-                  expiresAtRef.current = null;
-                  removePersistedCheckoutTimer(checkoutTimerKey);
-                }}
-                className="w-full qph-btn-primary py-3.5 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-electric-indigo/25"
-              >
-                <span className="material-symbols-outlined text-[20px]">home</span>
-                <span>Volver al Inicio</span>
-              </Link>
-            </div>
+    {/* MODAL BLOQUEANTE: TIEMPO DE RESERVA EN PASARELA AGOTADO */}
+    {isReservationExpired && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="checkout-expired-title"
+        className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      >
+        <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-red-100 space-y-5 text-center">
+          <div className="w-16 h-16 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-4xl">
+              timer_off
+            </span>
+          </div>
+          <div className="space-y-2">
+            <h3
+              id="checkout-expired-title"
+              className="text-xl font-black text-deep-slate tracking-tight"
+            >
+              ¡Tu tiempo se acabó!
+            </h3>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              El tiempo límite de reserva temporal en la pasarela ha
+              finalizado y tus entradas fueron liberadas. Por favor, inicia
+              nuevamente tu proceso de compra desde el inicio.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              href="/"
+              onClick={() => {
+                expiresAtRef.current = null;
+                removePersistedCheckoutTimer(checkoutTimerKey);
+              }}
+              className="w-full qph-btn-primary py-3.5 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-electric-indigo/25"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                home
+              </span>
+              <span>Volver al Inicio</span>
+            </Link>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-      {/* =========================================================================
+    {/* =========================================================================
           FOOTER FLOTANTE MÓVIL: RESUMEN EXPANDIBLE + CTA PRINCIPAL (SOLO MÓVIL)
           En Paso 2 evita duplicar el monto total y ofrece el detalle desplegable.
          ========================================================================= */}
-      {isMobileSummaryExpanded && showMobileOrderFooter && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden bg-black/30 backdrop-blur-[1px] animate-in fade-in duration-150"
-          onClick={() => setIsMobileSummaryExpanded(false)}
-          aria-hidden="true"
-        />
-      )}
+    {isMobileSummaryExpanded && showMobileOrderFooter && (
+      <div
+        className="fixed inset-0 z-40 lg:hidden bg-black/30 backdrop-blur-[1px] animate-in fade-in duration-150"
+        onClick={() => setIsMobileSummaryExpanded(false)}
+        aria-hidden="true"
+      />
+    )}
 
-      <aside
-        aria-label="Total de la compra en versión móvil"
-        className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-md border-t border-surface-variant shadow-[0_-6px_30px_rgba(15,23,42,0.14)] transition-all duration-300 ease-in-out ${
-          showMobileOrderFooter
-            ? `translate-y-0 opacity-100 ${isProcessing ? "pointer-events-none select-none" : "pointer-events-auto"}`
-            : "translate-y-full opacity-0 pointer-events-none"
+    <aside
+      aria-label="Total de la compra en versión móvil"
+      className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-md border-t border-surface-variant shadow-[0_-6px_30px_rgba(15,23,42,0.14)] transition-all duration-300 ease-in-out ${showMobileOrderFooter
+          ? `translate-y-0 opacity-100 ${isProcessing ? "pointer-events-none select-none" : "pointer-events-auto"}`
+          : "translate-y-full opacity-0 pointer-events-none"
         }`}
-      >
-        {/* Desplegable del Detalle de la Orden en Móvil */}
-        {isMobileSummaryExpanded && (
-          <div className="border-b border-surface-variant/80 bg-surface-container-low/95 px-4 py-3.5 max-h-[55vh] overflow-y-auto animate-in slide-in-from-bottom-2 duration-200">
-            <div className="max-w-md mx-auto space-y-2.5">
-              <div className="flex items-center justify-between border-b border-surface-variant/70 pb-2">
-                <span className="text-xs font-extrabold text-deep-slate uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-electric-indigo">
-                    receipt_long
-                  </span>
-                  <span>Detalle de la orden ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})</span>
+    >
+      {/* Desplegable del Detalle de la Orden en Móvil */}
+      {isMobileSummaryExpanded && (
+        <div className="border-b border-surface-variant/80 bg-surface-container-low/95 px-4 py-3.5 max-h-[55vh] overflow-y-auto animate-in slide-in-from-bottom-2 duration-200">
+          <div className="max-w-md mx-auto space-y-2.5">
+            <div className="flex items-center justify-between border-b border-surface-variant/70 pb-2">
+              <span className="text-xs font-extrabold text-deep-slate uppercase tracking-wider flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                  receipt_long
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileSummaryExpanded(false)}
-                  aria-label="Cerrar detalle"
-                  className="w-6 h-6 rounded-full bg-white border border-surface-variant flex items-center justify-center text-on-surface-variant hover:text-deep-slate cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[14px]">close</span>
-                </button>
-              </div>
+                <span>
+                  Detalle de la orden ({totalTickets}{" "}
+                  {totalTickets === 1 ? "entrada" : "entradas"})
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileSummaryExpanded(false)}
+                aria-label="Cerrar detalle"
+                className="w-6 h-6 rounded-full bg-white border border-surface-variant flex items-center justify-center text-on-surface-variant hover:text-deep-slate cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[14px]">
+                  close
+                </span>
+              </button>
+            </div>
 
-              <div className="space-y-1.5">
-                {ticketTiers
-                  .filter((t) => t.quantity > 0)
-                  .map((t) => (
-                    <div
-                      key={`mob-sum-${t.id}`}
-                      className="flex items-center justify-between text-xs py-1"
-                    >
-                      <span className="font-semibold text-deep-slate">
-                        {t.quantity} {t.name}
-                      </span>
-                      <span className="font-bold text-deep-slate tabular-nums">
-                        S/. {(t.price * t.quantity).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-
-                {totalTickets === 0 && (
-                  <p className="text-xs text-on-surface-variant italic py-1">
-                    No has seleccionado entradas aún.
-                  </p>
-                )}
-
-                {appliedCoupon && effectiveDiscountAmount > 0 && (
-                  <div className="flex items-center justify-between text-xs py-1 text-emerald-700 font-semibold border-t border-dashed border-surface-variant/80 pt-1.5">
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">local_offer</span>
-                      <span>Cupón {appliedCoupon.code}</span>
+            <div className="space-y-1.5">
+              {ticketTiers
+                .filter((t) => t.quantity > 0)
+                .map((t) => (
+                  <div
+                    key={`mob-sum-${t.id}`}
+                    className="flex items-center justify-between text-xs py-1"
+                  >
+                    <span className="font-semibold text-deep-slate">
+                      {t.quantity} {t.name}
                     </span>
-                    <span className="font-bold tabular-nums">
-                      -S/. {effectiveDiscountAmount.toFixed(2)}
+                    <span className="font-bold text-deep-slate tabular-nums">
+                      S/. {(t.price * t.quantity).toFixed(2)}
                     </span>
                   </div>
-                )}
-              </div>
+                ))}
 
-              <div className="flex items-center justify-between pt-2 border-t border-surface-variant/80 text-xs">
-                <span className="font-bold text-on-surface-variant">Total a pagar</span>
-                <span className="font-black text-electric-indigo text-sm tabular-nums">
-                  S/. {grandTotal.toFixed(2)}
-                </span>
-              </div>
+              {totalTickets === 0 && (
+                <p className="text-xs text-on-surface-variant italic py-1">
+                  No has seleccionado entradas aún.
+                </p>
+              )}
 
-              {currentStep === 2 && (
-                <div className="pt-2 border-t border-surface-variant/80 text-left">
-                  <label className="flex items-start gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={acceptedLegalTerms}
-                      onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
-                      className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
-                    />
-                    <span className="text-[10px] text-slate-600 leading-tight">
-                      He leído y acepto los{" "}
-                      <Link href="/terminos-y-condiciones" target="_blank" className="font-bold underline text-electric-indigo">
-                        Términos y Condiciones
-                      </Link>{" "}
-                      y las{" "}
-                      <Link href="/politicas-de-privacidad" target="_blank" className="font-bold underline text-electric-indigo">
-                        Políticas de Privacidad
-                      </Link>.
+              {appliedCoupon && effectiveDiscountAmount > 0 && (
+                <div className="flex items-center justify-between text-xs py-1 text-emerald-700 font-semibold border-t border-dashed border-surface-variant/80 pt-1.5">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">
+                      local_offer
                     </span>
-                  </label>
+                    <span>Cupón {appliedCoupon.code}</span>
+                  </span>
+                  <span className="font-bold tabular-nums">
+                    -S/. {effectiveDiscountAmount.toFixed(2)}
+                  </span>
                 </div>
               )}
             </div>
-          </div>
-        )}
 
-        <div className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="max-w-md mx-auto flex items-center justify-between gap-3">
-            {/* Lado Izquierdo: En Paso 2 muestra Resumen Expandible limpio (sin repetir el monto); en Paso 1 muestra el Total + toggle */}
-            {currentStep === 2 ? (
-              <button
-                type="button"
-                onClick={() => setIsMobileSummaryExpanded((prev) => !prev)}
-                aria-expanded={isMobileSummaryExpanded}
-                className="flex items-center gap-2 text-left py-1 pr-2 rounded-xl hover:bg-surface-gray/70 active:scale-[0.98] transition-all cursor-pointer min-w-0"
-              >
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-extrabold text-deep-slate flex items-center gap-1 whitespace-nowrap">
-                    <span>Detalle de orden</span>
-                    <span className="material-symbols-outlined text-[18px] text-electric-indigo">
-                      {isMobileSummaryExpanded ? "expand_more" : "expand_less"}
-                    </span>
+            <div className="flex items-center justify-between pt-2 border-t border-surface-variant/80 text-xs">
+              <span className="font-bold text-on-surface-variant">
+                Total a pagar
+              </span>
+              <span className="font-black text-electric-indigo text-sm tabular-nums">
+                S/. {grandTotal.toFixed(2)}
+              </span>
+            </div>
+
+            {currentStep === 2 && (
+              <div className="pt-2 border-t border-surface-variant/80 text-left">
+                <label className="flex items-start gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={acceptedLegalTerms}
+                    onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
+                    className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
+                  />
+                  <span className="text-[10px] text-slate-600 leading-tight">
+                    He leído y acepto los{" "}
+                    <Link
+                      href="/terminos-y-condiciones"
+                      target="_blank"
+                      className="font-bold underline text-electric-indigo"
+                    >
+                      Términos y Condiciones
+                    </Link>{" "}
+                    y las{" "}
+                    <Link
+                      href="/politicas-de-privacidad"
+                      target="_blank"
+                      className="font-bold underline text-electric-indigo"
+                    >
+                      Políticas de Privacidad
+                    </Link>
+                    .
                   </span>
-                  <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5 whitespace-nowrap">
-                    <span>
-                      ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
-                    </span>
-                    {appliedCoupon && (
-                      <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
-                        -{appliedCoupon.code}
-                      </span>
-                    )}
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+          {/* Lado Izquierdo: En Paso 2 muestra Resumen Expandible limpio (sin repetir el monto); en Paso 1 muestra el Total + toggle */}
+          {currentStep === 2 ? (
+            <button
+              type="button"
+              onClick={() => setIsMobileSummaryExpanded((prev) => !prev)}
+              aria-expanded={isMobileSummaryExpanded}
+              className="flex items-center gap-2 text-left py-1 pr-2 rounded-xl hover:bg-surface-gray/70 active:scale-[0.98] transition-all cursor-pointer min-w-0"
+            >
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-extrabold text-deep-slate flex items-center gap-1 whitespace-nowrap">
+                  <span>Detalle de orden</span>
+                  <span className="material-symbols-outlined text-[18px] text-electric-indigo">
+                    {isMobileSummaryExpanded ? "expand_more" : "expand_less"}
                   </span>
-                </div>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => totalTickets > 0 && setIsMobileSummaryExpanded((prev) => !prev)}
-                aria-expanded={isMobileSummaryExpanded}
-                className="flex flex-col text-left cursor-pointer min-w-0"
-              >
-                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1 whitespace-nowrap">
-                  <span>Total de la orden</span>
+                </span>
+                <span className="text-[11px] font-semibold text-on-surface-variant flex items-center gap-1.5 whitespace-nowrap">
+                  <span>
+                    ({totalTickets}{" "}
+                    {totalTickets === 1 ? "entrada" : "entradas"})
+                  </span>
                   {appliedCoupon && (
                     <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
                       -{appliedCoupon.code}
                     </span>
                   )}
-                  {totalTickets > 0 && (
-                    <span className="material-symbols-outlined text-[14px] text-electric-indigo">
-                      {isMobileSummaryExpanded ? "expand_more" : "expand_less"}
-                    </span>
-                  )}
                 </span>
-                <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-                  <span className="text-lg font-black text-electric-indigo tracking-tight tabular-nums">
-                    S/. {grandTotal.toFixed(2)}
+              </div>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                totalTickets > 0 &&
+                setIsMobileSummaryExpanded((prev) => !prev)
+              }
+              aria-expanded={isMobileSummaryExpanded}
+              className="flex flex-col text-left cursor-pointer min-w-0"
+            >
+              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1 whitespace-nowrap">
+                <span>Total de la orden</span>
+                {appliedCoupon && (
+                  <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                    -{appliedCoupon.code}
                   </span>
-                  {appliedCoupon && effectiveDiscountAmount > 0 && (
-                    <span className="text-[11px] text-platinum-silver line-through font-semibold">
-                      S/. {subtotal.toFixed(2)}
-                    </span>
-                  )}
-                  <span className="text-[11px] text-platinum-silver font-medium">
-                    ({totalTickets} {totalTickets === 1 ? "entrada" : "entradas"})
-                  </span>
-                </div>
-              </button>
-            )}
-
-            {/* Botón CTA en Móvil según el Paso Actual */}
-            {currentStep === 1 ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (totalTickets === 0) {
-                    const selector = document.getElementById("tickets-selector-section");
-                    if (selector) {
-                      selector.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }
-                    return;
-                  }
-                  setIsMobileSummaryExpanded(false);
-                  handleProceedToStep2();
-                }}
-                className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
-              >
-                <span>{totalTickets === 0 ? "Elegir entradas" : "Continuar"}</span>
-                <span className="material-symbols-outlined text-base">arrow_forward</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  if (!acceptedLegalTerms) {
-                    setIsMobileSummaryExpanded(true);
-                    return;
-                  }
-                  setIsMobileSummaryExpanded(false);
-                  handleSubmitPayment();
-                }}
-                disabled={isProcessing || Boolean(pendingAsyncOrder) || totalTickets === 0 || !acceptedLegalTerms}
-                className="px-4 py-3 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Procesando...</span>
-                  </>
-                ) : pendingAsyncOrder ? (
-                  <>
-                    <span className="material-symbols-outlined text-[16px]">hourglass_top</span>
-                    <span>En espera...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-[16px]">lock</span>
-                    <span>Pagar S/. {grandTotal.toFixed(2)}</span>
-                  </>
                 )}
-              </button>
-            )}
-          </div>
+                {totalTickets > 0 && (
+                  <span className="material-symbols-outlined text-[14px] text-electric-indigo">
+                    {isMobileSummaryExpanded ? "expand_more" : "expand_less"}
+                  </span>
+                )}
+              </span>
+              <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                <span className="text-lg font-black text-electric-indigo tracking-tight tabular-nums">
+                  S/. {grandTotal.toFixed(2)}
+                </span>
+                {appliedCoupon && effectiveDiscountAmount > 0 && (
+                  <span className="text-[11px] text-platinum-silver line-through font-semibold">
+                    S/. {subtotal.toFixed(2)}
+                  </span>
+                )}
+                <span className="text-[11px] text-platinum-silver font-medium">
+                  ({totalTickets}{" "}
+                  {totalTickets === 1 ? "entrada" : "entradas"})
+                </span>
+              </div>
+            </button>
+          )}
+
+          {/* Botón CTA en Móvil según el Paso Actual */}
+          {currentStep === 1 ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (totalTickets === 0) {
+                  const selector = document.getElementById(
+                    "tickets-selector-section",
+                  );
+                  if (selector) {
+                    selector.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  }
+                  return;
+                }
+                setIsMobileSummaryExpanded(false);
+                handleProceedToStep2();
+              }}
+              className="px-4 py-2.5 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap"
+            >
+              <span>
+                {totalTickets === 0 ? "Elegir entradas" : "Continuar"}
+              </span>
+              <span className="material-symbols-outlined text-base">
+                arrow_forward
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (!acceptedLegalTerms) {
+                  setIsMobileSummaryExpanded(true);
+                  return;
+                }
+                setIsMobileSummaryExpanded(false);
+                handleSubmitPayment();
+              }}
+              disabled={
+                isProcessing ||
+                Boolean(pendingAsyncOrder) ||
+                totalTickets === 0 ||
+                !acceptedLegalTerms
+              }
+              className="px-4 py-3 rounded-xl bg-electric-indigo hover:bg-primary text-white font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-md shadow-electric-indigo/25 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Procesando...</span>
+                </>
+              ) : pendingAsyncOrder ? (
+                <>
+                  <span className="material-symbols-outlined text-[16px]">
+                    hourglass_top
+                  </span>
+                  <span>En espera...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[16px]">
+                    lock
+                  </span>
+                  <span>Pagar S/. {grandTotal.toFixed(2)}</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
-      </aside>
-    </div>
-  );
+      </div>
+    </aside>
+  </div>
+);
 }

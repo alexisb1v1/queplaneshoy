@@ -1,18 +1,21 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../services/api-client';
-import { getUserFavoriteIdsUseCase, toggleFavoriteUseCase } from '../../features/profile';
+import { useState, useEffect, useCallback } from "react";
+import { apiClient } from "../services/api-client";
+import {
+  getUserFavoriteIdsUseCase,
+  toggleFavoriteUseCase,
+} from "../../features/profile";
 
-const FAVORITES_EVENT_NAME = 'qph:favorites-updated';
-const LOCAL_STORAGE_CACHE_KEY = 'qph_cached_favorite_ids';
+const FAVORITES_EVENT_NAME = "qph:favorites-updated";
+const LOCAL_STORAGE_CACHE_KEY = "qph_cached_favorite_ids";
 
 let cachedIds: Set<string> = new Set();
 let isFetched = false;
 
 export function useFavorites() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem(LOCAL_STORAGE_CACHE_KEY);
         if (stored) {
@@ -34,7 +37,7 @@ export function useFavorites() {
     if (!token) {
       cachedIds = new Set();
       setFavoriteIds(new Set());
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         localStorage.removeItem(LOCAL_STORAGE_CACHE_KEY);
       }
       return;
@@ -46,20 +49,25 @@ export function useFavorites() {
       (data) => {
         const merged = new Set<string>();
         (data.favoriteIds || []).forEach((id) => merged.add(String(id)));
-        (data.favoritePublicUuids || []).forEach((uuid) => merged.add(String(uuid)));
+        (data.favoritePublicUuids || []).forEach((uuid) =>
+          merged.add(String(uuid)),
+        );
 
         cachedIds = merged;
         setFavoriteIds(new Set(merged));
         isFetched = true;
         setIsLoading(false);
 
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(LOCAL_STORAGE_CACHE_KEY, JSON.stringify(Array.from(merged)));
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            LOCAL_STORAGE_CACHE_KEY,
+            JSON.stringify(Array.from(merged)),
+          );
         }
       },
       () => {
         setIsLoading(false);
-      }
+      },
     );
   }, []);
 
@@ -91,14 +99,18 @@ export function useFavorites() {
       if (!id) return false;
       return favoriteIds.has(String(id));
     },
-    [favoriteIds]
+    [favoriteIds],
   );
 
   const toggle = useCallback(
     async (
       eventId: string,
-      publicUuid?: string
-    ): Promise<{ success: boolean; isFavorite: boolean; requiresAuth?: boolean }> => {
+      publicUuid?: string,
+    ): Promise<{
+      success: boolean;
+      isFavorite: boolean;
+      requiresAuth?: boolean;
+    }> => {
       const token = apiClient.getToken();
       if (!token) {
         return { success: false, isFavorite: false, requiresAuth: true };
@@ -107,7 +119,8 @@ export function useFavorites() {
       // Optimistic update
       const key1 = String(eventId);
       const key2 = publicUuid ? String(publicUuid) : null;
-      const currentlyFav = favoriteIds.has(key1) || (key2 ? favoriteIds.has(key2) : false);
+      const currentlyFav =
+        favoriteIds.has(key1) || (key2 ? favoriteIds.has(key2) : false);
       const nextFavState = !currentlyFav;
 
       const nextSet = new Set(favoriteIds);
@@ -122,12 +135,15 @@ export function useFavorites() {
       cachedIds = nextSet;
       setFavoriteIds(nextSet);
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(LOCAL_STORAGE_CACHE_KEY, JSON.stringify(Array.from(nextSet)));
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          LOCAL_STORAGE_CACHE_KEY,
+          JSON.stringify(Array.from(nextSet)),
+        );
         window.dispatchEvent(
           new CustomEvent(FAVORITES_EVENT_NAME, {
             detail: { favoriteIds: Array.from(nextSet) },
-          })
+          }),
         );
       }
 
@@ -147,12 +163,15 @@ export function useFavorites() {
           }
           cachedIds = confirmedSet;
           setFavoriteIds(confirmedSet);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(LOCAL_STORAGE_CACHE_KEY, JSON.stringify(Array.from(confirmedSet)));
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              LOCAL_STORAGE_CACHE_KEY,
+              JSON.stringify(Array.from(confirmedSet)),
+            );
             window.dispatchEvent(
               new CustomEvent(FAVORITES_EVENT_NAME, {
                 detail: { favoriteIds: Array.from(confirmedSet) },
-              })
+              }),
             );
           }
           return { success: true, isFavorite: data.isFavorite };
@@ -161,19 +180,22 @@ export function useFavorites() {
           // Rollback en caso de error
           cachedIds = favoriteIds;
           setFavoriteIds(favoriteIds);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(LOCAL_STORAGE_CACHE_KEY, JSON.stringify(Array.from(favoriteIds)));
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              LOCAL_STORAGE_CACHE_KEY,
+              JSON.stringify(Array.from(favoriteIds)),
+            );
             window.dispatchEvent(
               new CustomEvent(FAVORITES_EVENT_NAME, {
                 detail: { favoriteIds: Array.from(favoriteIds) },
-              })
+              }),
             );
           }
           return { success: false, isFavorite: currentlyFav };
-        }
+        },
       );
     },
-    [favoriteIds]
+    [favoriteIds],
   );
 
   return {
@@ -184,4 +206,3 @@ export function useFavorites() {
     isLoading,
   };
 }
-

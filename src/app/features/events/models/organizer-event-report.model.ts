@@ -12,7 +12,7 @@ export interface OrganizerEventReportEvent {
   city: string;
   imageUrl: string | null;
   hasLandingPage: boolean;
-  feeChargedTo: 'promoter' | 'buyer' | 'mixed';
+  feeChargedTo: "promoter" | "buyer" | "mixed";
   createdAt: string;
   settlementStatus: string | null;
   settlementStatusLabel: string | null;

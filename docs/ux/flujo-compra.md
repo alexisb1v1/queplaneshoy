@@ -135,7 +135,7 @@ flowchart TD
     subgraph S4 ["Paso 4: Procesamiento y Emisión Criptográfica"]
         LegalAccept --> ClickPay["Clic en 'Pagar y Confirmar'"]:::step
         ClickPay --> ProcessTransaction{"Respuesta Pasarela"}:::decision
-        
+
         ProcessTransaction -->|"Expiró Tiempo de Reserva"| Expired["Reserva Liberada<br/>(Retornar al catálogo)"]:::alert
         ProcessTransaction -->|"Rechazado por Banco"| Reject["Error de Tarjeta<br/>(Permite reintentar con otro medio)"]:::alert
         Reject --> PaymentMethod
@@ -152,7 +152,7 @@ flowchart TD
 1. **Sentido de Urgencia y Certeza (Fair Hold Timer):**
    - El temporizador regresivo de 10 minutos garantiza que nadie comprará el mismo boleto mientras el usuario llena sus datos, eliminando la frustración por colisiones de aforo.
 2. **Nominación Fluida sin Fricción:**
-   - La opción de un clic *"Copiar mis datos para el primer boleto"* ahorra hasta un 40% del tiempo de llenado en dispositivos móviles.
+   - La opción de un clic _"Copiar mis datos para el primer boleto"_ ahorra hasta un 40% del tiempo de llenado en dispositivos móviles.
 3. **Desglose de Costos Transparente (No Hidden Fees):**
    - El desglose lateral muestra con claridad el precio base, el cargo por servicio y el descuento exacto por cupones para generar confianza absoluta en el comprador.
 4. **Respaldo Inmediato Multi-Canal:**

@@ -8,14 +8,25 @@ declare global {
     umami?: {
       track: {
         (eventName: string, eventData?: Record<string, any>): void;
-        (customPayload: (defaultPayload: Record<string, any>) => Record<string, any>): void;
+        (
+          customPayload: (
+            defaultPayload: Record<string, any>,
+          ) => Record<string, any>,
+        ): void;
       };
     };
   }
 }
 
-export function trackUmamiEvent(eventName: string, eventData?: Record<string, any>) {
-  if (typeof window !== 'undefined' && window.umami && typeof window.umami.track === 'function') {
+export function trackUmamiEvent(
+  eventName: string,
+  eventData?: Record<string, any>,
+) {
+  if (
+    typeof window !== "undefined" &&
+    window.umami &&
+    typeof window.umami.track === "function"
+  ) {
     try {
       window.umami.track(eventName, eventData);
     } catch {

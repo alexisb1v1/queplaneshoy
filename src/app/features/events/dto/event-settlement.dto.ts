@@ -11,7 +11,8 @@ export interface EventSettlementDto {
   eventId: string;
   eventTitle?: string;
   eventCode?: string;
-  status: 'draft' | 'requested' | 'in_review' | 'approved' | 'paid' | 'rejected';
+  status:
+    "draft" | "requested" | "in_review" | "approved" | "paid" | "rejected";
   statusLabel: string;
   isSettlementRequested: boolean;
   totalTicketsSold: number;

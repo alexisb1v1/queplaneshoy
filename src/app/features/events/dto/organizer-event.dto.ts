@@ -40,7 +40,7 @@ export interface OrganizerEventDto {
   statusLabel: string;
   hasLandingPage: boolean;
   feeIncluded?: boolean;
-  feeChargedTo?: 'buyer' | 'promoter' | 'mixed';
+  feeChargedTo?: "buyer" | "promoter" | "mixed";
   imageUrl: string | null;
   venue: string | null;
   city: string;
@@ -61,4 +61,3 @@ export interface OrganizerEventDto {
   draftChecklist: OrganizerDraftChecklistDto;
   zones: OrganizerEventZoneDto[];
 }
-

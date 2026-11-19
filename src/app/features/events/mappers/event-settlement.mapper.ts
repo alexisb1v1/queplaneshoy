@@ -1,14 +1,16 @@
-import { EventSettlementDto } from '../dto/event-settlement.dto';
-import { EventSettlementModel } from '../models/event-settlement.model';
+import { EventSettlementDto } from "../dto/event-settlement.dto";
+import { EventSettlementModel } from "../models/event-settlement.model";
 
-export function eventSettlementDtoToModel(dto: EventSettlementDto): EventSettlementModel {
+export function eventSettlementDtoToModel(
+  dto: EventSettlementDto,
+): EventSettlementModel {
   return {
-    publicUuid: dto.publicUuid || '',
-    eventId: dto.eventId || '',
-    eventTitle: dto.eventTitle || 'Evento',
-    eventCode: dto.eventCode || '',
-    status: dto.status || 'draft',
-    statusLabel: dto.statusLabel || 'Disponible para Liquidación',
+    publicUuid: dto.publicUuid || "",
+    eventId: dto.eventId || "",
+    eventTitle: dto.eventTitle || "Evento",
+    eventCode: dto.eventCode || "",
+    status: dto.status || "draft",
+    statusLabel: dto.statusLabel || "Disponible para Liquidación",
     isSettlementRequested: Boolean(dto.isSettlementRequested),
     totalTicketsSold: Number(dto.totalTicketsSold) || 0,
     grossAmount: Number(dto.grossAmount) || 0,
@@ -32,7 +34,7 @@ export function eventSettlementDtoToModel(dto: EventSettlementDto): EventSettlem
     notes: dto.notes || null,
     breakdownByZone: (dto.breakdownByZone || []).map((z) => ({
       zoneId: String(z.zoneId),
-      zoneName: z.zoneName || 'Zona',
+      zoneName: z.zoneName || "Zona",
       ticketsSold: Number(z.ticketsSold) || 0,
       revenue: Number(z.revenue) || 0,
       serviceFee: Number(z.serviceFee) || 0,

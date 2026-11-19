@@ -40,7 +40,7 @@ flowchart TD
         H --> K{"Modo de Validación"}:::decision
         K -->|"Online"| L1["Consulta API <code>POST /tickets/validate</code><br/>Bloqueo atómico distribuido"]:::step
         K -->|"Offline"| L2["Valida firma digital Ed25519 con clave pública local<br/>Registra marca de tiempo en cola IndexedDB"]:::step
-        
+
         L1 --> M{"Comprobación de Estado"}:::decision
         L2 --> M
         J --> M

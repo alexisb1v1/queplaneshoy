@@ -29,7 +29,15 @@ export function EventLandingView({ event }: EventLandingViewProps) {
       venue: event.venue || "",
       city: event.city,
     });
-  }, [event.publicUuid, event.id, event.slug, event.name, event.category, event.venue, event.city]);
+  }, [
+    event.publicUuid,
+    event.id,
+    event.slug,
+    event.name,
+    event.category,
+    event.venue,
+    event.city,
+  ]);
 
   // Simular precarga suave de la experiencia (500ms)
   useEffect(() => {
@@ -62,16 +70,18 @@ export function EventLandingView({ event }: EventLandingViewProps) {
   const hasSocials = Boolean(
     (footer.instagramUrl && footer.instagramUrl.trim().length > 0) ||
     (footer.tiktokUrl && footer.tiktokUrl.trim().length > 0) ||
-    (footer.facebookUrl && footer.facebookUrl.trim().length > 0)
+    (footer.facebookUrl && footer.facebookUrl.trim().length > 0),
   );
 
   const hasFooterImage = Boolean(
-    footer.footerImageUrl && footer.footerImageUrl.trim().length > 0
+    footer.footerImageUrl && footer.footerImageUrl.trim().length > 0,
   );
 
   // Estilo de fondo personalizado del promotor (color sólido, patrón repetido o imagen fija full-width/height)
-  const isFixedBg = theme.backgroundType === "fixed" && Boolean(theme.backgroundPatternUrl);
-  const isPatternBg = theme.backgroundType === "pattern" && Boolean(theme.backgroundPatternUrl);
+  const isFixedBg =
+    theme.backgroundType === "fixed" && Boolean(theme.backgroundPatternUrl);
+  const isPatternBg =
+    theme.backgroundType === "pattern" && Boolean(theme.backgroundPatternUrl);
 
   const backgroundStyle: React.CSSProperties = {
     backgroundColor: theme.backgroundColor || "#0F172A",
@@ -84,23 +94,20 @@ export function EventLandingView({ event }: EventLandingViewProps) {
           backgroundSize: "cover",
         }
       : isPatternBg
-      ? {
-          backgroundImage: `url("${theme.backgroundPatternUrl}")`,
-          backgroundRepeat: "repeat",
-        }
-      : {}),
+        ? {
+            backgroundImage: `url("${theme.backgroundPatternUrl}")`,
+            backgroundRepeat: "repeat",
+          }
+        : {}),
   };
 
   const zoneMapImage = event.zoneMapUrl || null;
   const bodyPromoImage =
     body.bodyImageUrl ||
-    (event.landingConfig?.body as Record<string, any>)?.bodyImageUrl ||
+    (event.landingConfig?.body as Record<string, unknown>)?.bodyImageUrl as string ||
     null;
 
-  const heroImage =
-    header.headerImageUrl ||
-    event.bannerUrl ||
-    null;
+  const heroImage = header.headerImageUrl || event.bannerUrl || null;
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -199,7 +206,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                   className="absolute bottom-16 right-6 sm:right-10 z-20 flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-black/75 hover:bg-black text-white font-bold text-xs uppercase tracking-wider backdrop-blur-md border border-white/20 transition-all hover:scale-105 shadow-xl cursor-pointer"
                   title="Reproducir Video Promocional"
                 >
-                  <span className="material-symbols-outlined text-lg text-vip-gold">play_circle</span>
+                  <span className="material-symbols-outlined text-lg text-vip-gold">
+                    play_circle
+                  </span>
                   <span>Ver Video Teaser</span>
                 </button>
               )}
@@ -222,17 +231,20 @@ export function EventLandingView({ event }: EventLandingViewProps) {
            ============================================================== */}
         <section className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10">
           <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden divide-y divide-white/10">
-            
             {/* Fila 1: Resumen de las 4 Métricas Clave */}
             <div className="p-5 sm:p-6 lg:p-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              
               {/* Métrica 1: Fecha & Hora */}
               <div className="flex items-center gap-3.5">
                 <div
-                  style={{ backgroundColor: `${theme.primaryColor}20`, color: theme.primaryColor }}
+                  style={{
+                    backgroundColor: `${theme.primaryColor}20`,
+                    color: theme.primaryColor,
+                  }}
                   className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-white/5"
                 >
-                  <span className="material-symbols-outlined text-2xl">calendar_today</span>
+                  <span className="material-symbols-outlined text-2xl">
+                    calendar_today
+                  </span>
                 </div>
                 <div>
                   <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
@@ -242,7 +254,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     {formattedShowDate}
                   </p>
                   {formattedShowTime && (
-                    <p className="text-xs text-slate-400">Apertura: {formattedShowTime} hrs</p>
+                    <p className="text-xs text-slate-400">
+                      Apertura: {formattedShowTime} hrs
+                    </p>
                   )}
                 </div>
               </div>
@@ -250,7 +264,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
               {/* Métrica 2: Lugar del Recinto */}
               <div className="flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0 border border-white/5">
-                  <span className="material-symbols-outlined text-2xl">location_on</span>
+                  <span className="material-symbols-outlined text-2xl">
+                    location_on
+                  </span>
                 </div>
                 <div>
                   <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
@@ -272,10 +288,10 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     ageBadge.variant === "green"
                       ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20"
                       : ageBadge.variant === "amber"
-                      ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
-                      : ageBadge.variant === "indigo"
-                      ? "bg-electric-indigo/20 text-electric-indigo border-electric-indigo/30"
-                      : "bg-white/10 text-white border-white/10"
+                        ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
+                        : ageBadge.variant === "indigo"
+                          ? "bg-electric-indigo/20 text-electric-indigo border-electric-indigo/30"
+                          : "bg-white/10 text-white border-white/10"
                   }`}
                 >
                   <span className="material-symbols-outlined text-2xl">
@@ -298,7 +314,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
               {/* Métrica 4: Entradas Desde */}
               <div className="flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 border border-white/5">
-                  <span className="material-symbols-outlined text-2xl">payments</span>
+                  <span className="material-symbols-outlined text-2xl">
+                    payments
+                  </span>
                 </div>
                 <div>
                   <span className="block text-[11px] uppercase tracking-wider font-bold text-slate-400">
@@ -308,12 +326,15 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     style={{ color: theme.primaryColor }}
                     className="font-extrabold text-base sm:text-lg mt-0.5"
                   >
-                    {minPrice > 0 ? `S/. ${Number(minPrice).toFixed(2)}` : "Entrada Oficial"}
+                    {minPrice > 0
+                      ? `S/. ${Number(minPrice).toFixed(2)}`
+                      : "Entrada Oficial"}
                   </p>
-                  <p className="text-xs text-slate-400">Emisión Inmediata QPH</p>
+                  <p className="text-xs text-slate-400">
+                    Emisión Inmediata QPH
+                  </p>
                 </div>
               </div>
-
             </div>
 
             {/* Fila 2: Descripción / Detalles del Show (Pegado abajo de la barra, mismo ancho, mismo color) */}
@@ -330,7 +351,6 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                 </p>
               </div>
             )}
-
           </div>
         </section>
 
@@ -347,8 +367,8 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     highlights.length === 1
                       ? "grid-cols-1"
                       : highlights.length === 2
-                      ? "grid-cols-1 sm:grid-cols-2"
-                      : "grid-cols-1 sm:grid-cols-3"
+                        ? "grid-cols-1 sm:grid-cols-2"
+                        : "grid-cols-1 sm:grid-cols-3"
                   }`}
                 >
                   {highlights.map((item, idx) => (
@@ -404,13 +424,17 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     Distribución Oficial
                   </span>
                   <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-2xl" style={{ color: theme.primaryColor }}>
+                    <span
+                      className="material-symbols-outlined text-2xl"
+                      style={{ color: theme.primaryColor }}
+                    >
                       stadium
                     </span>
                     <span>Plano del Escenario y Zonas</span>
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                    Revisa la ubicación de cada sector frente al escenario antes de elegir tu entrada.
+                    Revisa la ubicación de cada sector frente al escenario antes
+                    de elegir tu entrada.
                   </p>
                 </div>
 
@@ -423,7 +447,8 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     className="w-full h-auto object-contain max-h-[550px] rounded-xl"
                   />
                   <p className="text-[11px] text-slate-400 text-center mt-3">
-                    Plano referencial sujeto a aforo oficial autorizado por las autoridades locales.
+                    Plano referencial sujeto a aforo oficial autorizado por las
+                    autoridades locales.
                   </p>
                 </div>
               </div>
@@ -441,7 +466,6 @@ export function EventLandingView({ event }: EventLandingViewProps) {
         >
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="w-full rounded-3xl bg-zinc-950/95 backdrop-blur-xl border border-white/15 shadow-2xl p-6 sm:p-10 text-white">
-              
               {/* Encabezado Transaccional */}
               <div className="text-center max-w-2xl mx-auto mb-10">
                 <span
@@ -454,7 +478,8 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                   Selecciona tu Entrada
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                  Elige tu sector y asegura tu acceso directo con emisión digital inmediata.
+                  Elige tu sector y asegura tu acceso directo con emisión
+                  digital inmediata.
                 </p>
               </div>
 
@@ -463,7 +488,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                 <div className="flex items-center justify-between pb-2 border-b border-white/15 text-xs font-bold uppercase tracking-wider text-slate-300">
                   <span>Sectores Habilitados</span>
                   <span className="text-emerald-400 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">lock</span>
+                    <span className="material-symbols-outlined text-[14px]">
+                      lock
+                    </span>
                     Emisión Inmediata
                   </span>
                 </div>
@@ -487,11 +514,12 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                           <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/15">
                             {zone.activeTierName}
                           </span>
-                          {zone.remainingTickets <= 30 && zone.remainingTickets > 0 && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30">
-                              Últimos {zone.remainingTickets} cupos
-                            </span>
-                          )}
+                          {zone.remainingTickets <= 30 &&
+                            zone.remainingTickets > 0 && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30">
+                                Últimos {zone.remainingTickets} cupos
+                              </span>
+                            )}
                           {zone.isSoldOut && (
                             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-zinc-700 text-zinc-300 border border-zinc-600">
                               Agotado
@@ -499,7 +527,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                           )}
                         </div>
                         {zone.benefits && (
-                          <p className="text-xs text-slate-300 line-clamp-1">{zone.benefits}</p>
+                          <p className="text-xs text-slate-300 line-clamp-1">
+                            {zone.benefits}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -538,7 +568,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                           className="px-6 py-3 rounded-xl text-white font-extrabold text-xs uppercase tracking-wide hover:opacity-95 hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
                         >
                           <span>Comprar</span>
-                          <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                          <span className="material-symbols-outlined text-sm">
+                            arrow_forward
+                          </span>
                         </Link>
                       )}
                     </div>
@@ -582,9 +614,13 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-electric-indigo/20 hover:bg-electric-indigo/30 border border-electric-indigo/40 text-white font-bold text-xs uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shrink-0 self-start sm:self-auto"
                   >
-                    <span className="material-symbols-outlined text-base text-electric-indigo">description</span>
+                    <span className="material-symbols-outlined text-base text-electric-indigo">
+                      description
+                    </span>
                     <span>Ver Bases Legales Oficiales (PDF)</span>
-                    <span className="material-symbols-outlined text-xs">open_in_new</span>
+                    <span className="material-symbols-outlined text-xs">
+                      open_in_new
+                    </span>
                   </a>
                 )}
               </div>
@@ -592,41 +628,56 @@ export function EventLandingView({ event }: EventLandingViewProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-300">
                 <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
                   <span className="font-bold text-white flex items-center gap-1.5 text-xs">
-                    <span className="material-symbols-outlined text-emerald-400 text-base">verified_user</span>
+                    <span className="material-symbols-outlined text-emerald-400 text-base">
+                      verified_user
+                    </span>
                     Entradas Digitales con Código QR Único
                   </span>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
-                    Cada boleto cuenta con código QR digital único de alta seguridad. El acceso es al portador y se valida directamente escaneando el código en puerta.
+                    Cada boleto cuenta con código QR digital único de alta
+                    seguridad. El acceso es al portador y se valida directamente
+                    escaneando el código en puerta.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
                   <span className="font-bold text-white flex items-center gap-1.5 text-xs">
-                    <span className="material-symbols-outlined text-amber-400 text-base">info</span>
+                    <span className="material-symbols-outlined text-amber-400 text-base">
+                      info
+                    </span>
                     Restricción de Acceso: {ageBadge.label}
                   </span>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
-                    {ageBadge.description || "Ingreso con código QR oficial según disposición del recinto y normativa del espectáculo."}
+                    {ageBadge.description ||
+                      "Ingreso con código QR oficial según disposición del recinto y normativa del espectáculo."}
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
                   <span className="font-bold text-white flex items-center gap-1.5 text-xs">
-                    <span className="material-symbols-outlined text-electric-indigo text-base">credit_card</span>
+                    <span className="material-symbols-outlined text-electric-indigo text-base">
+                      credit_card
+                    </span>
                     Compras y Emisión Garantizada
                   </span>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
-                    Procesamiento seguro mediante pasarela certificada PCI-DSS con emisión inmediata de comprobante electrónico a tu correo registrado.
+                    Procesamiento seguro mediante pasarela certificada PCI-DSS
+                    con emisión inmediata de comprobante electrónico a tu correo
+                    registrado.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 space-y-1">
                   <span className="font-bold text-white flex items-center gap-1.5 text-xs">
-                    <span className="material-symbols-outlined text-slate-400 text-base">policy</span>
+                    <span className="material-symbols-outlined text-slate-400 text-base">
+                      policy
+                    </span>
                     Política de Cambios y Devoluciones
                   </span>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
-                    No se admiten cancelaciones voluntarias. En caso de postergación o cancelación oficial del espectáculo, el promotor informará el cronograma de devolución.
+                    No se admiten cancelaciones voluntarias. En caso de
+                    postergación o cancelación oficial del espectáculo, el
+                    promotor informará el cronograma de devolución.
                   </p>
                 </div>
               </div>
@@ -635,8 +686,12 @@ export function EventLandingView({ event }: EventLandingViewProps) {
               <div className="pt-6 border-t border-white/10 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-electric-indigo text-xl">help</span>
-                    <h4 className="text-sm sm:text-base font-bold text-white">Preguntas Frecuentes (FAQs)</h4>
+                    <span className="material-symbols-outlined text-electric-indigo text-xl">
+                      help
+                    </span>
+                    <h4 className="text-sm sm:text-base font-bold text-white">
+                      Preguntas Frecuentes (FAQs)
+                    </h4>
                   </div>
                   <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
                     Dudas Rápidas
@@ -644,21 +699,24 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                 </div>
 
                 <div className="space-y-2">
-                  {((event.faqs && event.faqs.length > 0)
+                  {(event.faqs && event.faqs.length > 0
                     ? event.faqs
                     : [
                         {
-                          question: "¿Cómo y cuándo recibo mis entradas digitales?",
+                          question:
+                            "¿Cómo y cuándo recibo mis entradas digitales?",
                           answer:
                             "Inmediatamente tras confirmar tu pago, tus boletos electrónicos con código QR único de alta seguridad se envían a tu correo y quedan disponibles en tu cuenta de queplanhoy.",
                         },
                         {
-                          question: "¿Es necesario imprimir mi entrada para el ingreso?",
+                          question:
+                            "¿Es necesario imprimir mi entrada para el ingreso?",
                           answer:
                             "No. Puedes presentar tu código QR directamente desde la pantalla de tu teléfono móvil. Asegúrate de tener buen nivel de brillo al momento del escaneo.",
                         },
                         {
-                          question: "¿Puedo ingresar con alimentos, bebidas o mochilas grandes?",
+                          question:
+                            "¿Puedo ingresar con alimentos, bebidas o mochilas grandes?",
                           answer:
                             "Por disposición de seguridad del recinto, no se permite el ingreso con bebidas alcohólicas, envases de vidrio, alimentos externos ni objetos punzocortantes.",
                         },
@@ -713,7 +771,6 @@ export function EventLandingView({ event }: EventLandingViewProps) {
            ============================================================== */}
         <footer className="w-full py-12 bg-black/90 text-center flex flex-col items-center gap-6 border-t border-white/10">
           <div className="max-w-5xl mx-auto px-4 flex flex-col items-center gap-6">
-            
             {/* Imagen de Auspiciadores si existe */}
             {hasFooterImage && (
               <div className="w-full max-w-2xl rounded-2xl overflow-hidden border border-white/10 shadow-lg bg-black/40 p-2">
@@ -736,7 +793,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white transition-all hover:scale-110"
                     title="Instagram Oficial"
                   >
-                    <span className="material-symbols-outlined text-lg">photo_camera</span>
+                    <span className="material-symbols-outlined text-lg">
+                      photo_camera
+                    </span>
                   </a>
                 )}
                 {footer.tiktokUrl && (
@@ -747,7 +806,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white transition-all hover:scale-110"
                     title="TikTok Oficial"
                   >
-                    <span className="material-symbols-outlined text-lg">music_video</span>
+                    <span className="material-symbols-outlined text-lg">
+                      music_video
+                    </span>
                   </a>
                 )}
                 {footer.facebookUrl && (
@@ -758,7 +819,9 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                     className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white transition-all hover:scale-110"
                     title="Facebook Oficial"
                   >
-                    <span className="material-symbols-outlined text-lg">thumb_up</span>
+                    <span className="material-symbols-outlined text-lg">
+                      thumb_up
+                    </span>
                   </a>
                 )}
               </div>
@@ -776,9 +839,10 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                   queplan<span className="text-electric-indigo">hoy</span>
                 </span>
               </div>
-              <span>Boletería digital oficial con código QR único de alta seguridad</span>
+              <span>
+                Boletería digital oficial con código QR único de alta seguridad
+              </span>
             </div>
-
           </div>
         </footer>
 
@@ -791,20 +855,23 @@ export function EventLandingView({ event }: EventLandingViewProps) {
               {event.name}
             </span>
             <span className="text-sm font-black text-white">
-              {minPrice > 0 ? `Desde S/ ${Number(minPrice).toFixed(2)}` : 'Entrada Oficial'}
+              {minPrice > 0
+                ? `Desde S/ ${Number(minPrice).toFixed(2)}`
+                : "Entrada Oficial"}
             </span>
           </div>
 
           <button
-            onClick={() => scrollToSection('zonas-entradas')}
+            onClick={() => scrollToSection("zonas-entradas")}
             style={{ backgroundColor: theme.primaryColor }}
             className="px-5 py-2.5 rounded-xl text-white font-extrabold text-xs uppercase tracking-wider shrink-0 shadow-lg active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <span>Comprar</span>
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            <span className="material-symbols-outlined text-sm">
+              arrow_forward
+            </span>
           </button>
         </div>
-
       </div>
     </>
   );

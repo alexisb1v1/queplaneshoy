@@ -1,26 +1,26 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { getCurrentUserUseCase } from '@/app/features/auth';
-import { UserModel } from '@/app/features/auth/models/user.model';
+import React, { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getCurrentUserUseCase } from "@/app/features/auth";
+import { UserModel } from "@/app/features/auth/models/user.model";
 import {
   getOrganizerEventReportUseCase,
   OrganizerEventReportModel,
   OrganizerEventReportDailySales,
   OrganizerEventReportZone,
-} from '@/app/features/events';
-import { getCategoryById } from '../constants/eventConstants';
-import { OrganizerSidebar } from './components/organizer-sidebar';
-import { SettlementRequestDrawer } from './components/settlement-request-drawer';
+} from "@/app/features/events";
+import { getCategoryById } from "../constants/eventConstants";
+import { OrganizerSidebar } from "./components/organizer-sidebar";
+import { SettlementRequestDrawer } from "./components/settlement-request-drawer";
 
 interface OrganizerEventDetailScreenProps {
   eventId: string;
 }
 
 function formatSoles(amount: number): string {
-  return (Number(amount) || 0).toLocaleString('es-PE', {
+  return (Number(amount) || 0).toLocaleString("es-PE", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -33,7 +33,7 @@ function MultiZoneSalesLineChart({
   dailySales: OrganizerEventReportDailySales[];
   zones: OrganizerEventReportZone[];
 }) {
-  const [metric, setMetric] = useState<'tickets' | 'revenue'>('tickets');
+  const [metric, setMetric] = useState<"tickets" | "revenue">("tickets");
   const [activeZoneIds, setActiveZoneIds] = useState<Set<string>>(
     () => new Set(zones.map((z) => z.id)),
   );
@@ -71,12 +71,12 @@ function MultiZoneSalesLineChart({
     let m = 0;
     dataPoints.forEach((d) => {
       if (showTotal) {
-        const val = metric === 'tickets' ? d.ticketsSold : d.revenue;
+        const val = metric === "tickets" ? d.ticketsSold : d.revenue;
         if (val > m) m = val;
       }
       d.zones.forEach((zd) => {
         if (activeZoneIds.has(zd.zoneId)) {
-          const zVal = metric === 'tickets' ? zd.ticketsSold : zd.revenue;
+          const zVal = metric === "tickets" ? zd.ticketsSold : zd.revenue;
           if (zVal > m) m = zVal;
         }
       });
@@ -96,26 +96,27 @@ function MultiZoneSalesLineChart({
   const yTicks = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal];
 
   const totalPoints = dataPoints.map((d, i) => {
-    const val = metric === 'tickets' ? d.ticketsSold : d.revenue;
+    const val = metric === "tickets" ? d.ticketsSold : d.revenue;
     return `${getX(i)},${getY(val)}`;
   });
-  const totalPolyline = totalPoints.join(' ');
+  const totalPolyline = totalPoints.join(" ");
 
   const zoneSeries = zones.map((zone) => {
     const pts = dataPoints.map((d, i) => {
       const zd = d.zones.find((z) => z.zoneId === zone.id);
-      const val = zd ? (metric === 'tickets' ? zd.ticketsSold : zd.revenue) : 0;
+      const val = zd ? (metric === "tickets" ? zd.ticketsSold : zd.revenue) : 0;
       return { x: getX(i), y: getY(val), val };
     });
     return {
       zone,
-      points: pts.map((p) => `${p.x},${p.y}`).join(' '),
+      points: pts.map((p) => `${p.x},${p.y}`).join(" "),
       rawPoints: pts,
       visible: activeZoneIds.has(zone.id),
     };
   });
 
-  const activeHoverDay = hoverIndex !== null && hoverIndex < n ? dataPoints[hoverIndex] : null;
+  const activeHoverDay =
+    hoverIndex !== null && hoverIndex < n ? dataPoints[hoverIndex] : null;
 
   return (
     <div className="space-y-4">
@@ -137,22 +138,22 @@ function MultiZoneSalesLineChart({
         <div className="flex items-center gap-1 bg-surface-gray p-1 rounded-xl border border-surface-variant">
           <button
             type="button"
-            onClick={() => setMetric('tickets')}
+            onClick={() => setMetric("tickets")}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              metric === 'tickets'
-                ? 'bg-white text-electric-indigo shadow-xs'
-                : 'text-on-surface-variant hover:text-deep-slate'
+              metric === "tickets"
+                ? "bg-white text-electric-indigo shadow-xs"
+                : "text-on-surface-variant hover:text-deep-slate"
             }`}
           >
             Boletos Vendidos
           </button>
           <button
             type="button"
-            onClick={() => setMetric('revenue')}
+            onClick={() => setMetric("revenue")}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              metric === 'revenue'
-                ? 'bg-white text-electric-indigo shadow-xs'
-                : 'text-on-surface-variant hover:text-deep-slate'
+              metric === "revenue"
+                ? "bg-white text-electric-indigo shadow-xs"
+                : "text-on-surface-variant hover:text-deep-slate"
             }`}
           >
             Recaudación (S/.)
@@ -167,8 +168,8 @@ function MultiZoneSalesLineChart({
           onClick={() => setShowTotal((prev) => !prev)}
           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
             showTotal
-              ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-              : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+              ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+              : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
           }`}
         >
           <span className="w-2.5 h-0.5 bg-current border-t border-dashed" />
@@ -184,8 +185,8 @@ function MultiZoneSalesLineChart({
               onClick={() => toggleZone(zone.id)}
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-white text-deep-slate shadow-xs'
-                  : 'bg-surface-gray/50 text-slate-400 border-dashed border-slate-200 opacity-60'
+                  ? "bg-white text-deep-slate shadow-xs"
+                  : "bg-surface-gray/50 text-slate-400 border-dashed border-slate-200 opacity-60"
               }`}
               style={{
                 borderColor: isActive ? zone.color : undefined,
@@ -207,9 +208,12 @@ function MultiZoneSalesLineChart({
           <span className="material-symbols-outlined text-3xl text-slate-400 mb-1">
             query_stats
           </span>
-          <p className="text-xs font-bold text-deep-slate">Aún no hay compras registradas</p>
+          <p className="text-xs font-bold text-deep-slate">
+            Aún no hay compras registradas
+          </p>
           <p className="text-[11px] text-on-surface-variant">
-            Las ventas diarias por zona aparecerán en cuanto los asistentes comiencen a comprar.
+            Las ventas diarias por zona aparecerán en cuanto los asistentes
+            comiencen a comprar.
           </p>
         </div>
       ) : (
@@ -239,7 +243,9 @@ function MultiZoneSalesLineChart({
                     textAnchor="end"
                     className="text-[10px] font-bold fill-slate-400"
                   >
-                    {metric === 'tickets' ? Math.round(tick) : `S/.${Math.round(tick)}`}
+                    {metric === "tickets"
+                      ? Math.round(tick)
+                      : `S/.${Math.round(tick)}`}
                   </text>
                 </g>
               );
@@ -286,7 +292,7 @@ function MultiZoneSalesLineChart({
                   points={totalPolyline}
                 />
                 {dataPoints.map((d, i) => {
-                  const val = metric === 'tickets' ? d.ticketsSold : d.revenue;
+                  const val = metric === "tickets" ? d.ticketsSold : d.revenue;
                   return (
                     <circle
                       key={`total-${i}`}
@@ -362,7 +368,7 @@ function MultiZoneSalesLineChart({
               <div className="font-extrabold text-[11px] text-electric-indigo border-b border-slate-700/80 pb-1 flex items-center justify-between gap-4">
                 <span>📅 {activeHoverDay.date}</span>
                 <span className="text-white font-black">
-                  {metric === 'tickets'
+                  {metric === "tickets"
                     ? `${activeHoverDay.ticketsSold} entradas`
                     : `S/. ${formatSoles(activeHoverDay.revenue)}`}
                 </span>
@@ -373,13 +379,16 @@ function MultiZoneSalesLineChart({
                   <div className="flex items-center justify-between gap-4 font-bold text-slate-300 text-[10px]">
                     <span>Total Global:</span>
                     <span>
-                      {activeHoverDay.ticketsSold} pases • S/. {formatSoles(activeHoverDay.revenue)}
+                      {activeHoverDay.ticketsSold} pases • S/.{" "}
+                      {formatSoles(activeHoverDay.revenue)}
                     </span>
                   </div>
                 )}
 
                 {zones.map((zone) => {
-                  const zd = activeHoverDay.zones.find((z) => z.zoneId === zone.id);
+                  const zd = activeHoverDay.zones.find(
+                    (z) => z.zoneId === zone.id,
+                  );
                   const sold = zd?.ticketsSold || 0;
                   const rev = zd?.revenue || 0;
                   return (
@@ -409,7 +418,9 @@ function MultiZoneSalesLineChart({
   );
 }
 
-export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDetailScreenProps) {
+export default function OrganizerEventDetailScreen({
+  eventId,
+}: OrganizerEventDetailScreenProps) {
   const router = useRouter();
 
   const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
@@ -418,8 +429,12 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'zones' | 'shows' | 'orders' | 'timeline' | 'funnel'>('zones');
-  const [selectedUtmChannel, setSelectedUtmChannel] = useState<'instagram' | 'facebook' | 'tiktok' | 'whatsapp'>('instagram');
+  const [activeTab, setActiveTab] = useState<
+    "zones" | "shows" | "orders" | "timeline" | "funnel"
+  >("zones");
+  const [selectedUtmChannel, setSelectedUtmChannel] = useState<
+    "instagram" | "facebook" | "tiktok" | "whatsapp"
+  >("instagram");
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isSettlementDrawerOpen, setIsSettlementDrawerOpen] = useState(false);
   const tabsContainerRef = React.useRef<HTMLDivElement>(null);
@@ -435,31 +450,31 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
 
   useEffect(() => {
     checkTabsScroll();
-    window.addEventListener('resize', checkTabsScroll);
-    return () => window.removeEventListener('resize', checkTabsScroll);
+    window.addEventListener("resize", checkTabsScroll);
+    return () => window.removeEventListener("resize", checkTabsScroll);
   }, [report]);
 
-  const scrollTabs = (direction: 'left' | 'right') => {
+  const scrollTabs = (direction: "left" | "right") => {
     const el = tabsContainerRef.current;
     if (!el) return;
     const scrollAmount = 220;
     el.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth',
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
     });
   };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('#export-report-dropdown')) {
+      if (!target.closest("#export-report-dropdown")) {
         setIsExportMenuOpen(false);
       }
     };
     if (isExportMenuOpen) {
-      document.addEventListener('click', handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
     }
-    return () => document.removeEventListener('click', handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [isExportMenuOpen]);
 
   const showToast = (msg: string) => {
@@ -487,7 +502,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
       (err) => {
         setErrorMsg(
           err.message ||
-            'No se pudo cargar el reporte del evento. Verifica que tengas los permisos correspondientes.',
+            "No se pudo cargar el reporte del evento. Verifica que tengas los permisos correspondientes.",
         );
         setIsLoading(false);
       },
@@ -503,51 +518,52 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
   // Generar y descargar Manifiesto de Asistentes en CSV (Optimizado para Excel en español con separador ;)
   const handleDownloadAttendeesCsv = () => {
     if (!report || report.recentOrders.length === 0) {
-      showToast('Aún no hay compras registradas para este evento.');
+      showToast("Aún no hay compras registradas para este evento.");
       return;
     }
 
     const headers = [
-      'Código de Orden',
-      'Fecha y Hora',
-      'Comprador',
-      'Email',
-      'Detalle de Entradas',
-      'Cantidad',
-      'Cupón Aplicado',
-      'Total Pagado (S/.)',
-      'Método de Pago',
-      'Estado',
+      "Código de Orden",
+      "Fecha y Hora",
+      "Comprador",
+      "Email",
+      "Detalle de Entradas",
+      "Cantidad",
+      "Cupón Aplicado",
+      "Total Pagado (S/.)",
+      "Método de Pago",
+      "Estado",
     ];
 
     const rows = report.recentOrders.map((o) => [
       `"${o.orderCode}"`,
-      `"${new Date(o.createdAt).toLocaleString('es-PE')}"`,
+      `"${new Date(o.createdAt).toLocaleString("es-PE")}"`,
       `"${o.buyerName.replace(/"/g, '""')}"`,
       `"${o.buyerEmail}"`,
       `"${o.zonesSummary.replace(/"/g, '""')}"`,
       o.ticketsCount,
-      `"${o.couponCode || 'Sin cupón'}"`,
+      `"${o.couponCode || "Sin cupón"}"`,
       o.totalAmount.toFixed(2),
-      `"${o.paymentMethod.replace('culqi_', '').toUpperCase()}"`,
-      `"${o.status === 'paid' ? 'PAGADO' : o.status.toUpperCase()}"`,
+      `"${o.paymentMethod.replace("culqi_", "").toUpperCase()}"`,
+      `"${o.status === "paid" ? "PAGADO" : o.status.toUpperCase()}"`,
     ]);
 
     const csvContent =
-      '\uFEFFsep=;\r\n' + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      "\uFEFFsep=;\r\n" +
+      [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
     link.setAttribute(
-      'download',
-      `asistentes-${report.event.eventCode.replace('#', '')}-${report.event.slug}.csv`,
+      "download",
+      `asistentes-${report.event.eventCode.replace("#", "")}-${report.event.slug}.csv`,
     );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    showToast('Manifiesto CSV de asistentes descargado exitosamente.');
+    showToast("Manifiesto CSV de asistentes descargado exitosamente.");
   };
 
   // Generar y descargar Resumen Contable en CSV (Tabular y formateado para Excel en español)
@@ -555,29 +571,55 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
     if (!report) return;
 
     const lines: string[] = [];
-    lines.push('sep=;');
+    lines.push("sep=;");
     lines.push(`"REPORTE CONTABLE Y RESUMEN FINANCIERO DE TAQUILLA";""`);
     lines.push(`"Ticketera:";"Qué Planes Hoy"`);
     lines.push(`"Evento:";"${report.event.name.replace(/"/g, '""')}"`);
     lines.push(`"Código Oficial:";"${report.event.eventCode}"`);
-    lines.push(`"Recinto / Local:";"${(report.event.venue || 'No especificado').replace(/"/g, '""')} - ${report.event.city}"`);
+    lines.push(
+      `"Recinto / Local:";"${(report.event.venue || "No especificado").replace(/"/g, '""')} - ${report.event.city}"`,
+    );
     lines.push(`"Estado del Evento:";"${report.event.statusLabel}"`);
-    lines.push(`"Fecha de Emisión:";"${new Date().toLocaleString('es-PE')}"`);
+    lines.push(`"Fecha de Emisión:";"${new Date().toLocaleString("es-PE")}"`);
     lines.push(`"";""`);
 
     lines.push(`"RESUMEN EJECUTIVO DE VENTAS";"VALOR";"OBSERVACIONES"`);
-    lines.push(`"Aforo Total Habilitado";${report.summary.totalCapacity};"Capacidad total sumada de zonas"`);
-    lines.push(`"Boletos Vendidos Confirmados";${report.summary.ticketsSold};"Pases pagados emitidos"`);
-    lines.push(`"Boletos Escaneados en Puerta";${report.summary.ticketsUsed};"Asistentes validados con QR"`);
-    lines.push(`"Boletos Disponibles Restantes";${report.summary.ticketsRemaining};"Entradas aún en venta"`);
-    lines.push(`"Porcentaje de Ocupación";"${report.summary.occupancyPercentage}%";"Tasa de llenado del local"`);
-    lines.push(`"Porcentaje de Asistencia";"${report.summary.checkInPercentage}%";"% de compradores ingresados"`);
-    lines.push(`"Recaudación Bruta (S/.)";${report.summary.grossRevenue.toFixed(2)};"Ventas nominales de tickets"`);
-    lines.push(`"Descuentos por Cupones (S/.)";${report.summary.couponsDiscountAmount.toFixed(2)};"Rebajas otorgadas por promociones"`);
-    lines.push(`"Recaudación Neta en Custodia (S/.)";${report.summary.netSalesRevenue.toFixed(2)};"Monto neto final de taquilla"`);
-    lines.push(`"Comisiones Acumuladas Ticketera (S/.)";${report.summary.totalServiceFee.toFixed(2)};"Cargos por servicio aplicados"`);
-    lines.push(`"Ticket Promedio (S/.)";${report.summary.averageTicketPrice.toFixed(2)};"Gasto medio por entrada"`);
-    lines.push(`"Total de Órdenes Pagadas";${report.summary.totalOrdersCount};"Transacciones únicas aprobadas"`);
+    lines.push(
+      `"Aforo Total Habilitado";${report.summary.totalCapacity};"Capacidad total sumada de zonas"`,
+    );
+    lines.push(
+      `"Boletos Vendidos Confirmados";${report.summary.ticketsSold};"Pases pagados emitidos"`,
+    );
+    lines.push(
+      `"Boletos Escaneados en Puerta";${report.summary.ticketsUsed};"Asistentes validados con QR"`,
+    );
+    lines.push(
+      `"Boletos Disponibles Restantes";${report.summary.ticketsRemaining};"Entradas aún en venta"`,
+    );
+    lines.push(
+      `"Porcentaje de Ocupación";"${report.summary.occupancyPercentage}%";"Tasa de llenado del local"`,
+    );
+    lines.push(
+      `"Porcentaje de Asistencia";"${report.summary.checkInPercentage}%";"% de compradores ingresados"`,
+    );
+    lines.push(
+      `"Recaudación Bruta (S/.)";${report.summary.grossRevenue.toFixed(2)};"Ventas nominales de tickets"`,
+    );
+    lines.push(
+      `"Descuentos por Cupones (S/.)";${report.summary.couponsDiscountAmount.toFixed(2)};"Rebajas otorgadas por promociones"`,
+    );
+    lines.push(
+      `"Recaudación Neta en Custodia (S/.)";${report.summary.netSalesRevenue.toFixed(2)};"Monto neto final de taquilla"`,
+    );
+    lines.push(
+      `"Comisiones Acumuladas Ticketera (S/.)";${report.summary.totalServiceFee.toFixed(2)};"Cargos por servicio aplicados"`,
+    );
+    lines.push(
+      `"Ticket Promedio (S/.)";${report.summary.averageTicketPrice.toFixed(2)};"Gasto medio por entrada"`,
+    );
+    lines.push(
+      `"Total de Órdenes Pagadas";${report.summary.totalOrdersCount};"Transacciones únicas aprobadas"`,
+    );
     lines.push(`"";"";""`);
 
     lines.push(
@@ -596,33 +638,34 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
       sumRev += z.revenue;
 
       const feePolicy = z.feeIncluded
-        ? 'Fee Incluido (Asumido por Promotor)'
-        : '+Fee (Cobrado al Comprador)';
+        ? "Fee Incluido (Asumido por Promotor)"
+        : "+Fee (Cobrado al Comprador)";
 
       lines.push(
         `"${z.name.replace(/"/g, '""')}";${z.capacity};${z.soldCount};${z.remainingTickets};"${z.occupancyPercentage}%";${z.regularPrice.toFixed(2)};${z.activePrice.toFixed(2)};${z.revenue.toFixed(2)};"${feePolicy}"`,
       );
     });
 
-    const globalOcc = sumCap > 0 ? ((sumSold / sumCap) * 100).toFixed(1) : '0.0';
+    const globalOcc =
+      sumCap > 0 ? ((sumSold / sumCap) * 100).toFixed(1) : "0.0";
     lines.push(
       `"TOTAL CONSOLIDADO";${sumCap};${sumSold};${sumRem};"${globalOcc}%";"-";"-";${sumRev.toFixed(2)};"-"`,
     );
 
-    const csvContent = '\uFEFF' + lines.join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = "\uFEFF" + lines.join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
     link.setAttribute(
-      'download',
-      `reporte-contable-${report.event.eventCode.replace('#', '')}-${report.event.slug}.csv`,
+      "download",
+      `reporte-contable-${report.event.eventCode.replace("#", "")}-${report.event.slug}.csv`,
     );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    showToast('Reporte contable CSV descargado exitosamente.');
+    showToast("Reporte contable CSV descargado exitosamente.");
   };
 
   const categoryMeta = useMemo(() => {
@@ -655,7 +698,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                 href="/organizer/events"
                 className="inline-flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-electric-indigo transition-colors"
               >
-                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  arrow_back
+                </span>
                 <span>Volver al listado de eventos</span>
               </Link>
 
@@ -670,7 +715,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                   >
                     <span
                       className={`material-symbols-outlined text-[16px] ${
-                        isLoading ? 'animate-spin text-electric-indigo' : 'text-slate-500'
+                        isLoading
+                          ? "animate-spin text-electric-indigo"
+                          : "text-slate-500"
                       }`}
                     >
                       refresh
@@ -697,7 +744,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
             {!isLoading && errorMsg && (
               <div className="bg-red-50 border border-red-200 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-red-600 text-[24px]">error</span>
+                  <span className="material-symbols-outlined text-red-600 text-[24px]">
+                    error
+                  </span>
                   <div>
                     <h3 className="text-sm font-bold text-red-900">
                       No pudimos cargar el reporte del evento
@@ -748,11 +797,11 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                         <div className="flex flex-wrap items-center gap-2">
                           <span
                             className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide ${
-                              report.event.status === 'published'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : report.event.status === 'completed'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'bg-slate-100 text-slate-700 border border-slate-200'
+                              report.event.status === "published"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : report.event.status === "completed"
+                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                  : "bg-slate-100 text-slate-700 border border-slate-200"
                             }`}
                           >
                             {report.event.statusLabel}
@@ -799,7 +848,12 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                             <span className="material-symbols-outlined text-[15px] text-electric-indigo">
                               confirmation_number
                             </span>
-                            <span>Capacidad: {report.summary.totalCapacity.toLocaleString('es-PE')}</span>
+                            <span>
+                              Capacidad:{" "}
+                              {report.summary.totalCapacity.toLocaleString(
+                                "es-PE",
+                              )}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -813,18 +867,23 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                           type="button"
                           onClick={() => setIsSettlementDrawerOpen(true)}
                           className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer shadow-xs hover:shadow active:scale-95 ${
-                            report.event.settlementStatus === 'paid'
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200'
-                              : report.event.settlementStatus === 'approved'
-                              ? 'bg-indigo-100 text-indigo-800 border border-indigo-300 hover:bg-indigo-200'
-                              : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
+                            report.event.settlementStatus === "paid"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200"
+                              : report.event.settlementStatus === "approved"
+                                ? "bg-indigo-100 text-indigo-800 border border-indigo-300 hover:bg-indigo-200"
+                                : "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200"
                           }`}
                           title="Consultar estado de la liquidación y comprobantes"
                         >
                           <span className="material-symbols-outlined text-[16px]">
-                            {report.event.settlementStatus === 'paid' ? 'verified' : 'schedule'}
+                            {report.event.settlementStatus === "paid"
+                              ? "verified"
+                              : "schedule"}
                           </span>
-                          <span>{report.event.settlementStatusLabel || 'Ver Liquidación'}</span>
+                          <span>
+                            {report.event.settlementStatusLabel ||
+                              "Ver Liquidación"}
+                          </span>
                         </button>
                       ) : (
                         <button
@@ -832,7 +891,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                           onClick={() => setIsSettlementDrawerOpen(true)}
                           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all cursor-pointer shadow-sm hover:shadow active:scale-95"
                         >
-                          <span className="material-symbols-outlined text-[16px]">account_balance_wallet</span>
+                          <span className="material-symbols-outlined text-[16px]">
+                            account_balance_wallet
+                          </span>
                           <span>Solicitar Liquidación</span>
                         </button>
                       )}
@@ -864,7 +925,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                           <span>Descargar Reportes</span>
                           <span
                             className={`material-symbols-outlined text-[16px] text-slate-500 transition-transform ${
-                              isExportMenuOpen ? 'rotate-180' : ''
+                              isExportMenuOpen ? "rotate-180" : ""
                             }`}
                           >
                             arrow_drop_down
@@ -931,39 +992,49 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                     <div className="flex items-start sm:items-center gap-3.5">
                       <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
                         <span className="material-symbols-outlined text-[24px]">
-                          {report.event.settlementStatus === 'paid' ? 'verified' : 'account_balance'}
+                          {report.event.settlementStatus === "paid"
+                            ? "verified"
+                            : "account_balance"}
                         </span>
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-black uppercase tracking-wider text-amber-900">
-                            {report.event.settlementStatus === 'paid'
-                              ? 'Liquidación Completada y Pagada'
-                              : 'Liquidación de Fondos en Trámite'}
+                            {report.event.settlementStatus === "paid"
+                              ? "Liquidación Completada y Pagada"
+                              : "Liquidación de Fondos en Trámite"}
                           </span>
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
-                              report.event.settlementStatus === 'paid'
-                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                : 'bg-amber-100 text-amber-800 border-amber-300'
+                              report.event.settlementStatus === "paid"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : "bg-amber-100 text-amber-800 border-amber-300"
                             }`}
                           >
                             {report.event.settlementStatusLabel}
                           </span>
                         </div>
                         <p className="text-xs text-amber-950/80 mt-1">
-                          Solicitud por{' '}
+                          Solicitud por{" "}
                           <strong className="text-deep-slate font-extrabold">
-                            S/. {formatSoles(report.event.settlementAmount || report.summary.netSalesRevenue)}
+                            S/.{" "}
+                            {formatSoles(
+                              report.event.settlementAmount ||
+                                report.summary.netSalesRevenue,
+                            )}
                           </strong>
-                          {report.event.settlementBankName ? ` destinada a tu cuenta ${report.event.settlementBankName}` : ''}
+                          {report.event.settlementBankName
+                            ? ` destinada a tu cuenta ${report.event.settlementBankName}`
+                            : ""}
                           {report.event.settlementRequestedAt
-                            ? ` enviada el ${new Date(report.event.settlementRequestedAt).toLocaleDateString('es-PE', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
+                            ? ` enviada el ${new Date(
+                                report.event.settlementRequestedAt,
+                              ).toLocaleDateString("es-PE", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
                               })}`
-                            : ''}
+                            : ""}
                           . Plazo estimado de transferencia: 24h a 72h hábiles.
                         </p>
                       </div>
@@ -974,7 +1045,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                       onClick={() => setIsSettlementDrawerOpen(true)}
                       className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-amber-300/80 hover:bg-amber-50 text-amber-900 font-bold text-xs transition-all shadow-xs cursor-pointer shrink-0 active:scale-95"
                     >
-                      <span className="material-symbols-outlined text-[16px]">visibility</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        visibility
+                      </span>
                       <span>Ver Comprobante y Detalle</span>
                     </button>
                   </div>
@@ -1002,7 +1075,8 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                         Bruto: S/. {formatSoles(report.summary.grossRevenue)}
                         {report.summary.couponsDiscountAmount > 0 && (
                           <span className="text-emerald-700 block text-[9px] sm:text-[10px]">
-                            Cupones: -S/. {formatSoles(report.summary.couponsDiscountAmount)}
+                            Cupones: -S/.{" "}
+                            {formatSoles(report.summary.couponsDiscountAmount)}
                           </span>
                         )}
                       </p>
@@ -1023,9 +1097,10 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                     </div>
                     <div>
                       <div className="text-lg sm:text-2xl font-black text-deep-slate tracking-tight">
-                        {report.summary.ticketsSold.toLocaleString('es-PE')}
+                        {report.summary.ticketsSold.toLocaleString("es-PE")}
                         <span className="text-[10px] sm:text-xs font-normal text-on-surface-variant ml-1">
-                          / {report.summary.totalCapacity.toLocaleString('es-PE')}
+                          /{" "}
+                          {report.summary.totalCapacity.toLocaleString("es-PE")}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
@@ -1067,7 +1142,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                         <div className="pt-0.5">
                           <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200">
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                            <span className="truncate">Se activará el día del evento</span>
+                            <span className="truncate">
+                              Se activará el día del evento
+                            </span>
                           </span>
                         </div>
                       </div>
@@ -1086,7 +1163,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                       </div>
                       <div>
                         <div className="text-lg sm:text-2xl font-black text-deep-slate tracking-tight">
-                          {report.summary.ticketsUsed.toLocaleString('es-PE')}
+                          {report.summary.ticketsUsed.toLocaleString("es-PE")}
                           <span className="text-[10px] sm:text-xs font-normal text-on-surface-variant ml-1">
                             ingresados
                           </span>
@@ -1127,11 +1204,13 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                   {canScrollLeft && (
                     <button
                       type="button"
-                      onClick={() => scrollTabs('left')}
+                      onClick={() => scrollTabs("left")}
                       aria-label="Ver pestañas anteriores"
                       className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white shadow-md border border-surface-variant flex items-center justify-center text-deep-slate hover:bg-surface-gray transition-all cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        chevron_left
+                      </span>
                     </button>
                   )}
 
@@ -1145,71 +1224,85 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                     ref={tabsContainerRef}
                     onScroll={checkTabsScroll}
                     className="flex items-center gap-1 sm:gap-2 overflow-x-auto scroll-smooth px-1 scrollbar-none"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                   >
                     <button
                       type="button"
-                      onClick={() => setActiveTab('zones')}
+                      onClick={() => setActiveTab("zones")}
                       className={`px-3.5 py-3 font-bold text-xs border-b-2 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                        activeTab === 'zones'
-                          ? 'border-electric-indigo text-electric-indigo'
-                          : 'border-transparent text-on-surface-variant hover:text-deep-slate'
+                        activeTab === "zones"
+                          ? "border-electric-indigo text-electric-indigo"
+                          : "border-transparent text-on-surface-variant hover:text-deep-slate"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[17px]">analytics</span>
+                      <span className="material-symbols-outlined text-[17px]">
+                        analytics
+                      </span>
                       <span>Zonas y Preventas ({report.zones.length})</span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setActiveTab('shows')}
+                      onClick={() => setActiveTab("shows")}
                       className={`px-3.5 py-3 font-bold text-xs border-b-2 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                        activeTab === 'shows'
-                          ? 'border-electric-indigo text-electric-indigo'
-                          : 'border-transparent text-on-surface-variant hover:text-deep-slate'
+                        activeTab === "shows"
+                          ? "border-electric-indigo text-electric-indigo"
+                          : "border-transparent text-on-surface-variant hover:text-deep-slate"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[17px]">event</span>
+                      <span className="material-symbols-outlined text-[17px]">
+                        event
+                      </span>
                       <span>Funciones ({report.shows.length})</span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setActiveTab('orders')}
+                      onClick={() => setActiveTab("orders")}
                       className={`px-3.5 py-3 font-bold text-xs border-b-2 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                        activeTab === 'orders'
-                          ? 'border-electric-indigo text-electric-indigo'
-                          : 'border-transparent text-on-surface-variant hover:text-deep-slate'
+                        activeTab === "orders"
+                          ? "border-electric-indigo text-electric-indigo"
+                          : "border-transparent text-on-surface-variant hover:text-deep-slate"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[17px]">receipt_long</span>
-                      <span>Últimas Órdenes ({report.recentOrders.length})</span>
+                      <span className="material-symbols-outlined text-[17px]">
+                        receipt_long
+                      </span>
+                      <span>
+                        Últimas Órdenes ({report.recentOrders.length})
+                      </span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setActiveTab('timeline')}
+                      onClick={() => setActiveTab("timeline")}
                       className={`px-3.5 py-3 font-bold text-xs border-b-2 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                        activeTab === 'timeline'
-                          ? 'border-electric-indigo text-electric-indigo'
-                          : 'border-transparent text-on-surface-variant hover:text-deep-slate'
+                        activeTab === "timeline"
+                          ? "border-electric-indigo text-electric-indigo"
+                          : "border-transparent text-on-surface-variant hover:text-deep-slate"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[17px]">show_chart</span>
+                      <span className="material-symbols-outlined text-[17px]">
+                        show_chart
+                      </span>
                       <span>Ventas por Día ({report.dailySales.length})</span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setActiveTab('funnel')}
+                      onClick={() => setActiveTab("funnel")}
                       className={`px-3.5 py-3 font-bold text-xs border-b-2 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                        activeTab === 'funnel'
-                          ? 'border-electric-indigo text-electric-indigo'
-                          : 'border-transparent text-on-surface-variant hover:text-deep-slate'
+                        activeTab === "funnel"
+                          ? "border-electric-indigo text-electric-indigo"
+                          : "border-transparent text-on-surface-variant hover:text-deep-slate"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[17px]">insights</span>
-                      <span>Embudo y Redes ({report.funnel?.uniqueVisitors || 0})</span>
+                      <span className="material-symbols-outlined text-[17px]">
+                        insights
+                      </span>
+                      <span>
+                        Embudo y Redes ({report.funnel?.uniqueVisitors || 0})
+                      </span>
                     </button>
                   </div>
 
@@ -1219,18 +1312,20 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                       <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-surface via-surface/80 to-transparent z-10" />
                       <button
                         type="button"
-                        onClick={() => scrollTabs('right')}
+                        onClick={() => scrollTabs("right")}
                         aria-label="Ver más pestañas a la derecha"
                         className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white shadow-md border border-surface-variant flex items-center justify-center text-electric-indigo hover:bg-surface-gray transition-all cursor-pointer animate-pulse"
                       >
-                        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                        <span className="material-symbols-outlined text-[16px]">
+                          chevron_right
+                        </span>
                       </button>
                     </>
                   )}
                 </div>
 
                 {/* CONTENIDO TAB 1: ZONAS Y PREVENTAS */}
-                {activeTab === 'zones' && (
+                {activeTab === "zones" && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {report.zones.map((zone) => (
@@ -1254,16 +1349,18 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                 <span
                                   className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
                                     zone.feeIncluded
-                                      ? 'bg-emerald-50 text-emerald-700'
-                                      : 'bg-indigo-50 text-electric-indigo'
+                                      ? "bg-emerald-50 text-emerald-700"
+                                      : "bg-indigo-50 text-electric-indigo"
                                   }`}
                                   title={
                                     zone.feeIncluded
-                                      ? 'Comisión incluida (asumida por promotor)'
-                                      : 'Comisión al comprador'
+                                      ? "Comisión incluida (asumida por promotor)"
+                                      : "Comisión al comprador"
                                   }
                                 >
-                                  {zone.feeIncluded ? 'Fee Inc.' : '+Fee al Comprador'}
+                                  {zone.feeIncluded
+                                    ? "Fee Inc."
+                                    : "+Fee al Comprador"}
                                 </span>
                               </div>
                             </div>
@@ -1274,7 +1371,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                   Aforo
                                 </span>
                                 <span className="text-sm font-extrabold text-deep-slate">
-                                  {zone.capacity.toLocaleString('es-PE')}
+                                  {zone.capacity.toLocaleString("es-PE")}
                                 </span>
                               </div>
                               <div>
@@ -1282,7 +1379,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                   Vendidos
                                 </span>
                                 <span className="text-sm font-extrabold text-electric-indigo">
-                                  {zone.soldCount.toLocaleString('es-PE')}
+                                  {zone.soldCount.toLocaleString("es-PE")}
                                 </span>
                               </div>
                               <div>
@@ -1290,7 +1387,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                   En Puerta
                                 </span>
                                 <span className="text-sm font-extrabold text-emerald-600">
-                                  {zone.usedCount.toLocaleString('es-PE')}
+                                  {zone.usedCount.toLocaleString("es-PE")}
                                 </span>
                               </div>
                             </div>
@@ -1302,7 +1399,8 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                   Ocupación
                                 </span>
                                 <span className="font-bold text-deep-slate">
-                                  {zone.occupancyPercentage}% ({zone.remainingTickets} libres)
+                                  {zone.occupancyPercentage}% (
+                                  {zone.remainingTickets} libres)
                                 </span>
                               </div>
                               <div className="h-2 rounded-full bg-surface-gray overflow-hidden">
@@ -1327,15 +1425,17 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                     key={`${zone.id}-tier-${tier.tierNumber}`}
                                     className={`p-2 rounded-lg text-xs flex items-center justify-between border ${
                                       tier.isActive
-                                        ? 'bg-indigo-50/50 border-indigo-200 text-deep-slate'
-                                        : 'bg-white border-surface-variant/40 text-slate-500'
+                                        ? "bg-indigo-50/50 border-indigo-200 text-deep-slate"
+                                        : "bg-white border-surface-variant/40 text-slate-500"
                                     }`}
                                   >
                                     <div className="flex items-center gap-1.5">
                                       {tier.isActive && (
                                         <span className="w-1.5 h-1.5 rounded-full bg-electric-indigo animate-pulse" />
                                       )}
-                                      <span className="font-bold">{tier.name}</span>
+                                      <span className="font-bold">
+                                        {tier.name}
+                                      </span>
                                       {tier.isActive && (
                                         <span className="text-[9px] px-1 py-0.2 rounded bg-electric-indigo text-white font-extrabold uppercase">
                                           Activo
@@ -1344,7 +1444,10 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className="text-[11px] font-medium">
-                                        {tier.soldCount} {tier.capacity ? `/ ${tier.capacity}` : ''}{' '}
+                                        {tier.soldCount}{" "}
+                                        {tier.capacity
+                                          ? `/ ${tier.capacity}`
+                                          : ""}{" "}
                                         tickets
                                       </span>
                                       <span className="font-black text-deep-slate">
@@ -1372,7 +1475,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                 )}
 
                 {/* CONTENIDO TAB 2: FUNCIONES / SHOWS */}
-                {activeTab === 'shows' && (
+                {activeTab === "shows" && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {report.shows.map((show) => (
@@ -1400,7 +1503,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                               <span className="material-symbols-outlined text-[16px] text-electric-indigo">
                                 timer
                               </span>
-                              <span>Duración estimada: {show.durationHours} horas</span>
+                              <span>
+                                Duración estimada: {show.durationHours} horas
+                              </span>
                             </div>
                           </div>
 
@@ -1429,14 +1534,15 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                 )}
 
                 {/* CONTENIDO TAB 3: ÓRDENES Y COMPRADORES */}
-                {activeTab === 'orders' && (
+                {activeTab === "orders" && (
                   <div className="bg-white rounded-2xl border border-surface-variant shadow-xs overflow-hidden">
                     <div className="p-4 border-b border-surface-variant flex items-center justify-between">
                       <h3 className="text-sm font-extrabold text-deep-slate">
                         Historial de Compras Aprobadas
                       </h3>
                       <span className="text-xs text-on-surface-variant font-medium">
-                        Mostrando las {report.recentOrders.length} compras más recientes
+                        Mostrando las {report.recentOrders.length} compras más
+                        recientes
                       </span>
                     </div>
 
@@ -1459,20 +1565,28 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                           </thead>
                           <tbody className="divide-y divide-surface-variant/60">
                             {report.recentOrders.map((ord) => (
-                              <tr key={ord.publicUuid} className="hover:bg-surface-gray/40">
+                              <tr
+                                key={ord.publicUuid}
+                                className="hover:bg-surface-gray/40"
+                              >
                                 <td className="px-4 py-3 font-mono font-bold text-electric-indigo">
                                   {ord.orderCode}
                                 </td>
                                 <td className="px-4 py-3 text-on-surface-variant whitespace-nowrap">
-                                  {new Date(ord.createdAt).toLocaleString('es-PE', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
+                                  {new Date(ord.createdAt).toLocaleString(
+                                    "es-PE",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )}
                                 </td>
                                 <td className="px-4 py-3">
-                                  <div className="font-bold text-deep-slate">{ord.buyerName}</div>
+                                  <div className="font-bold text-deep-slate">
+                                    {ord.buyerName}
+                                  </div>
                                   <div className="text-[11px] text-on-surface-variant">
                                     {ord.buyerEmail}
                                   </div>
@@ -1483,13 +1597,14 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                   </span>
                                   {ord.couponCode && (
                                     <span className="text-[10px] text-emerald-700 font-bold">
-                                      Cupón: {ord.couponCode} (-S/. {formatSoles(ord.discountAmount)})
+                                      Cupón: {ord.couponCode} (-S/.{" "}
+                                      {formatSoles(ord.discountAmount)})
                                     </span>
                                   )}
                                 </td>
                                 <td className="px-4 py-3">
                                   <span className="px-2 py-0.5 rounded bg-surface-gray border border-surface-variant/60 font-semibold text-deep-slate text-[10px] uppercase">
-                                    {ord.paymentMethod.replace('culqi_', '')}
+                                    {ord.paymentMethod.replace("culqi_", "")}
                                   </span>
                                 </td>
                                 <td className="px-4 py-3 text-right font-black text-deep-slate">
@@ -1505,7 +1620,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                 )}
 
                 {/* CONTENIDO TAB 4: CRONOLOGÍA DE VENTAS MULTI-ZONA */}
-                {activeTab === 'timeline' && (
+                {activeTab === "timeline" && (
                   <div className="bg-white rounded-2xl border border-surface-variant shadow-xs p-6 space-y-6">
                     <MultiZoneSalesLineChart
                       dailySales={report.dailySales}
@@ -1529,7 +1644,8 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                   {d.date}
                                 </span>
                                 <span className="text-[11px] text-on-surface-variant font-semibold">
-                                  {d.ticketsSold} {d.ticketsSold === 1 ? 'boleto' : 'boletos'}
+                                  {d.ticketsSold}{" "}
+                                  {d.ticketsSold === 1 ? "boleto" : "boletos"}
                                 </span>
                               </div>
                               <span className="text-sm font-extrabold text-electric-indigo">
@@ -1544,7 +1660,7 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                 )}
 
                 {/* CONTENIDO TAB 5: EMBUDO DE CONVERSIÓN Y REDES SOCIALES (UMAMI ANALYTICS) */}
-                {activeTab === 'funnel' && (
+                {activeTab === "funnel" && (
                   <div className="space-y-6">
                     {/* Tarjeta de Métricas Rápidas del Embudo (Compacto en Mobile 2x2) */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
@@ -1555,15 +1671,22 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                             Visitantes Únicos
                           </span>
                           <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-indigo-50 text-electric-indigo flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">visibility</span>
+                            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">
+                              visibility
+                            </span>
                           </span>
                         </div>
                         <div>
                           <div className="text-lg sm:text-2xl font-black text-deep-slate tracking-tight truncate">
-                            {(report.funnel?.uniqueVisitors || 0).toLocaleString('es-PE')}
+                            {(
+                              report.funnel?.uniqueVisitors || 0
+                            ).toLocaleString("es-PE")}
                           </div>
                           <p className="text-[10px] sm:text-[11px] font-semibold text-on-surface-variant mt-0.5 truncate">
-                            {(report.funnel?.pageviews || 0).toLocaleString('es-PE')} páginas vistas
+                            {(report.funnel?.pageviews || 0).toLocaleString(
+                              "es-PE",
+                            )}{" "}
+                            páginas vistas
                           </p>
                         </div>
                       </div>
@@ -1575,12 +1698,16 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                             Inicios Checkout
                           </span>
                           <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">shopping_cart_checkout</span>
+                            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">
+                              shopping_cart_checkout
+                            </span>
                           </span>
                         </div>
                         <div>
                           <div className="text-lg sm:text-2xl font-black text-deep-slate tracking-tight truncate">
-                            {(report.funnel?.checkoutInitiated || 0).toLocaleString('es-PE')}
+                            {(
+                              report.funnel?.checkoutInitiated || 0
+                            ).toLocaleString("es-PE")}
                           </div>
                           <p className="text-[10px] sm:text-[11px] font-semibold text-on-surface-variant mt-0.5 truncate">
                             Selección de entradas
@@ -1595,12 +1722,16 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                             Órdenes Pagadas
                           </span>
                           <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">verified</span>
+                            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">
+                              verified
+                            </span>
                           </span>
                         </div>
                         <div>
                           <div className="text-lg sm:text-2xl font-black text-emerald-600 tracking-tight truncate">
-                            {(report.funnel?.ordersPaid || 0).toLocaleString('es-PE')}
+                            {(report.funnel?.ordersPaid || 0).toLocaleString(
+                              "es-PE",
+                            )}
                           </div>
                           <p className="text-[10px] sm:text-[11px] font-semibold text-on-surface-variant mt-0.5 truncate">
                             Compras exitosas
@@ -1615,7 +1746,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                             Conversión
                           </span>
                           <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">trending_up</span>
+                            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">
+                              trending_up
+                            </span>
                           </span>
                         </div>
                         <div>
@@ -1637,7 +1770,8 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                             Embudo de Conversión de Taquilla
                           </h3>
                           <p className="text-[11px] sm:text-xs text-on-surface-variant mt-0.5">
-                            Seguimiento de la retención de usuarios desde que aterrizan en la landing hasta que pagan sus boletos.
+                            Seguimiento de la retención de usuarios desde que
+                            aterrizan en la landing hasta que pagan sus boletos.
                           </p>
                         </div>
                         <span className="self-start sm:self-auto inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] sm:text-[11px] font-bold border border-emerald-200">
@@ -1649,7 +1783,8 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                       <div className="space-y-4">
                         {(report.funnel?.steps || []).map((step, idx) => {
                           const isFirst = idx === 0;
-                          const isLast = idx === (report.funnel?.steps.length || 0) - 1;
+                          const isLast =
+                            idx === (report.funnel?.steps.length || 0) - 1;
 
                           return (
                             <div key={step.step} className="space-y-2">
@@ -1658,10 +1793,10 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                   <span
                                     className={`w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-sm shrink-0 ${
                                       isFirst
-                                        ? 'bg-indigo-100 text-electric-indigo'
+                                        ? "bg-indigo-100 text-electric-indigo"
                                         : isLast
-                                        ? 'bg-emerald-100 text-emerald-700'
-                                        : 'bg-purple-100 text-purple-700'
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : "bg-purple-100 text-purple-700"
                                     }`}
                                   >
                                     {idx + 1}
@@ -1671,7 +1806,8 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                       {step.step}
                                     </h4>
                                     <p className="text-xs text-on-surface-variant font-medium">
-                                      {step.count.toLocaleString('es-PE')} personas
+                                      {step.count.toLocaleString("es-PE")}{" "}
+                                      personas
                                     </p>
                                   </div>
                                 </div>
@@ -1704,12 +1840,14 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                 <div
                                   className={`h-full transition-all rounded-full ${
                                     isFirst
-                                      ? 'bg-electric-indigo'
+                                      ? "bg-electric-indigo"
                                       : isLast
-                                      ? 'bg-emerald-500'
-                                      : 'bg-purple-500'
+                                        ? "bg-emerald-500"
+                                        : "bg-purple-500"
                                   }`}
-                                  style={{ width: `${Math.max(5, step.percentage)}%` }}
+                                  style={{
+                                    width: `${Math.max(5, step.percentage)}%`,
+                                  }}
                                 />
                               </div>
                             </div>
@@ -1731,7 +1869,8 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                           </h3>
                         </div>
 
-                        {(!report.funnel?.trafficSources || report.funnel.trafficSources.length === 0) ? (
+                        {!report.funnel?.trafficSources ||
+                        report.funnel.trafficSources.length === 0 ? (
                           <div className="p-6 sm:p-8 text-center bg-surface-gray/50 rounded-xl space-y-2">
                             <span className="material-symbols-outlined text-2xl sm:text-3xl text-slate-400">
                               hourglass_empty
@@ -1740,34 +1879,39 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                               Aún no se ha registrado tráfico con UTMs
                             </p>
                             <p className="text-[11px] text-on-surface-variant max-w-sm mx-auto">
-                              Comparte tu enlace de evento en redes sociales usando el generador de la derecha para medir tus campañas.
+                              Comparte tu enlace de evento en redes sociales
+                              usando el generador de la derecha para medir tus
+                              campañas.
                             </p>
                           </div>
                         ) : (
                           <div className="space-y-2.5 sm:space-y-3">
                             {report.funnel.trafficSources.map((source) => {
                               const sLower = source.source.toLowerCase();
-                              let iconBg = 'bg-slate-100 text-slate-700';
-                              let iconName = 'language';
+                              let iconBg = "bg-slate-100 text-slate-700";
+                              let iconName = "language";
 
-                              if (sLower.includes('instagram')) {
-                                iconBg = 'bg-pink-100 text-pink-600';
-                                iconName = 'photo_camera';
-                              } else if (sLower.includes('facebook')) {
-                                iconBg = 'bg-blue-100 text-blue-600';
-                                iconName = 'thumb_up';
-                              } else if (sLower.includes('tiktok')) {
-                                iconBg = 'bg-slate-900 text-white';
-                                iconName = 'music_note';
-                              } else if (sLower.includes('whatsapp')) {
-                                iconBg = 'bg-emerald-100 text-emerald-600';
-                                iconName = 'chat';
-                              } else if (sLower.includes('google')) {
-                                iconBg = 'bg-amber-100 text-amber-700';
-                                iconName = 'search';
-                              } else if (sLower.includes('directo') || sLower.includes('navegación')) {
-                                iconBg = 'bg-slate-100 text-slate-700';
-                                iconName = 'explore';
+                              if (sLower.includes("instagram")) {
+                                iconBg = "bg-pink-100 text-pink-600";
+                                iconName = "photo_camera";
+                              } else if (sLower.includes("facebook")) {
+                                iconBg = "bg-blue-100 text-blue-600";
+                                iconName = "thumb_up";
+                              } else if (sLower.includes("tiktok")) {
+                                iconBg = "bg-slate-900 text-white";
+                                iconName = "music_note";
+                              } else if (sLower.includes("whatsapp")) {
+                                iconBg = "bg-emerald-100 text-emerald-600";
+                                iconName = "chat";
+                              } else if (sLower.includes("google")) {
+                                iconBg = "bg-amber-100 text-amber-700";
+                                iconName = "search";
+                              } else if (
+                                sLower.includes("directo") ||
+                                sLower.includes("navegación")
+                              ) {
+                                iconBg = "bg-slate-100 text-slate-700";
+                                iconName = "explore";
                               }
 
                               return (
@@ -1791,7 +1935,10 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
 
                                     <div className="text-right">
                                       <span className="font-bold text-xs text-deep-slate block">
-                                        {source.visitors.toLocaleString('es-PE')} visitas
+                                        {source.visitors.toLocaleString(
+                                          "es-PE",
+                                        )}{" "}
+                                        visitas
                                       </span>
                                       <span className="text-[10px] font-black text-electric-indigo">
                                         {source.percentage}%
@@ -1802,7 +1949,9 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                   <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
                                     <div
                                       className="h-full bg-electric-indigo rounded-full"
-                                      style={{ width: `${Math.max(4, source.percentage)}%` }}
+                                      style={{
+                                        width: `${Math.max(4, source.percentage)}%`,
+                                      }}
                                     />
                                   </div>
                                 </div>
@@ -1822,17 +1971,35 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                             <span>Generador de Enlaces UTM para Campañas</span>
                           </h3>
                           <p className="text-xs text-on-surface-variant">
-                            Selecciona la red social donde publicarás tu evento. Al usar este enlace, Umami registrará cada clic y venta atribuida a esa red.
+                            Selecciona la red social donde publicarás tu evento.
+                            Al usar este enlace, Umami registrará cada clic y
+                            venta atribuida a esa red.
                           </p>
 
                           {/* Selector de Canal */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                             {(
                               [
-                                { id: 'instagram', label: 'Instagram', icon: 'photo_camera' },
-                                { id: 'facebook', label: 'Facebook', icon: 'thumb_up' },
-                                { id: 'tiktok', label: 'TikTok', icon: 'music_note' },
-                                { id: 'whatsapp', label: 'WhatsApp', icon: 'chat' },
+                                {
+                                  id: "instagram",
+                                  label: "Instagram",
+                                  icon: "photo_camera",
+                                },
+                                {
+                                  id: "facebook",
+                                  label: "Facebook",
+                                  icon: "thumb_up",
+                                },
+                                {
+                                  id: "tiktok",
+                                  label: "TikTok",
+                                  icon: "music_note",
+                                },
+                                {
+                                  id: "whatsapp",
+                                  label: "WhatsApp",
+                                  icon: "chat",
+                                },
                               ] as const
                             ).map((ch) => (
                               <button
@@ -1841,8 +2008,8 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                                 onClick={() => setSelectedUtmChannel(ch.id)}
                                 className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
                                   selectedUtmChannel === ch.id
-                                    ? 'bg-electric-indigo text-white border-electric-indigo shadow-xs'
-                                    : 'bg-surface-gray text-deep-slate border-surface-variant hover:bg-surface-variant/50'
+                                    ? "bg-electric-indigo text-white border-electric-indigo shadow-xs"
+                                    : "bg-surface-gray text-deep-slate border-surface-variant hover:bg-surface-variant/50"
                                 }`}
                               >
                                 <span className="material-symbols-outlined text-[14px]">
@@ -1856,11 +2023,12 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                           {/* Enlace generado */}
                           <div className="space-y-1.5 pt-2">
                             <label className="text-[10px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
-                              Enlace con Etiqueta UTM ({selectedUtmChannel.toUpperCase()})
+                              Enlace con Etiqueta UTM (
+                              {selectedUtmChannel.toUpperCase()})
                             </label>
                             <div className="flex items-center gap-2 p-2.5 rounded-xl bg-surface-gray border border-surface-variant text-xs text-deep-slate font-mono break-all select-all">
                               <span>
-                                {typeof window !== 'undefined'
+                                {typeof window !== "undefined"
                                   ? `${window.location.origin}/e/${report.event.slug}?utm_source=${selectedUtmChannel}&utm_medium=social&utm_campaign=taquilla`
                                   : `https://queplanhoy.com/e/${report.event.slug}?utm_source=${selectedUtmChannel}&utm_medium=social&utm_campaign=taquilla`}
                               </span>
@@ -1872,17 +2040,27 @@ export default function OrganizerEventDetailScreen({ eventId }: OrganizerEventDe
                           <button
                             type="button"
                             onClick={() => {
-                              const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://queplanhoy.com';
+                              const baseUrl =
+                                typeof window !== "undefined"
+                                  ? window.location.origin
+                                  : "https://queplanhoy.com";
                               const url = `${baseUrl}/e/${report.event.slug}?utm_source=${selectedUtmChannel}&utm_medium=social&utm_campaign=taquilla`;
                               if (navigator.clipboard) {
                                 void navigator.clipboard.writeText(url);
-                                showToast(`Enlace de ${selectedUtmChannel.toUpperCase()} copiado al portapapeles.`);
+                                showToast(
+                                  `Enlace de ${selectedUtmChannel.toUpperCase()} copiado al portapapeles.`,
+                                );
                               }
                             }}
                             className="w-full py-2.5 px-4 rounded-xl bg-deep-slate hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
                           >
-                            <span className="material-symbols-outlined text-[16px]">content_copy</span>
-                            <span>Copiar Enlace para {selectedUtmChannel.toUpperCase()}</span>
+                            <span className="material-symbols-outlined text-[16px]">
+                              content_copy
+                            </span>
+                            <span>
+                              Copiar Enlace para{" "}
+                              {selectedUtmChannel.toUpperCase()}
+                            </span>
                           </button>
                         </div>
                       </div>

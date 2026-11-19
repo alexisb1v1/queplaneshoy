@@ -1,6 +1,6 @@
 export interface LandingTheme {
   primaryColor: string;
-  backgroundType: 'color' | 'pattern' | 'fixed';
+  backgroundType: "color" | "pattern" | "fixed";
   backgroundColor: string;
   backgroundPatternUrl?: string | null;
 }
@@ -81,4 +81,3 @@ export interface EventLandingModel {
   faqs?: Array<{ question: string; answer: string }>;
   isPreview?: boolean;
 }
-

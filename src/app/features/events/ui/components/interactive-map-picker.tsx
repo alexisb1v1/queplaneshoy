@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import 'leaflet/dist/leaflet.css';
+import React, { useEffect, useRef, useState } from "react";
+import "leaflet/dist/leaflet.css";
 
 export interface DetectedAddress {
   road?: string;
@@ -30,7 +30,9 @@ export function InteractiveMapPicker({
   const markerRef = useRef<any>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const [inputVal, setInputVal] = useState<string>(value || '-12.046374, -77.042793');
+  const [inputVal, setInputVal] = useState<string>(
+    value || "-12.046374, -77.042793",
+  );
   const [isLocating, setIsLocating] = useState(false);
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
 
@@ -49,11 +51,11 @@ export function InteractiveMapPicker({
         {
           signal: controller.signal,
           headers: {
-            Accept: 'application/json',
+            Accept: "application/json",
           },
-        }
+        },
       );
-      if (!res.ok) throw new Error('Nominatim error');
+      if (!res.ok) throw new Error("Nominatim error");
       const data = await res.json();
       const addr = data.address || {};
 
@@ -64,12 +66,18 @@ export function InteractiveMapPicker({
         addr.cycleway ||
         addr.path ||
         addr.square ||
-        '';
-      const houseNumber = addr.house_number || '';
-      const suburb = addr.suburb || addr.neighbourhood || addr.residential || '';
+        "";
+      const houseNumber = addr.house_number || "";
+      const suburb =
+        addr.suburb || addr.neighbourhood || addr.residential || "";
       const district =
-        addr.city_district || addr.district || addr.suburb || addr.town || addr.city || '';
-      const city = addr.city || addr.town || addr.state || '';
+        addr.city_district ||
+        addr.district ||
+        addr.suburb ||
+        addr.town ||
+        addr.city ||
+        "";
+      const city = addr.city || addr.town || addr.state || "";
 
       let streetLine = road;
       if (streetLine && houseNumber) {
@@ -77,8 +85,8 @@ export function InteractiveMapPicker({
       }
 
       const fullAddress = streetLine
-        ? `${streetLine}${suburb ? `, ${suburb}` : ''}${district ? `, ${district}` : ''}`
-        : data.display_name || '';
+        ? `${streetLine}${suburb ? `, ${suburb}` : ""}${district ? `, ${district}` : ""}`
+        : data.display_name || "";
 
       if (streetLine || fullAddress) {
         const result: DetectedAddress = {
@@ -94,7 +102,7 @@ export function InteractiveMapPicker({
         }
       }
     } catch (e: any) {
-      if (e.name !== 'AbortError') {
+      if (e.name !== "AbortError") {
         // Ignorar fallos de red puntuales
       }
     } finally {
@@ -104,7 +112,7 @@ export function InteractiveMapPicker({
 
   // Parsear lat y lng
   const parseCoords = (coordStr: string): [number, number] => {
-    const parts = coordStr.split(',').map((p) => parseFloat(p.trim()));
+    const parts = coordStr.split(",").map((p) => parseFloat(p.trim()));
     if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
       return [parts[0], parts[1]];
     }
@@ -113,12 +121,12 @@ export function InteractiveMapPicker({
   };
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !mapContainerRef.current) return;
+    if (typeof window === "undefined" || !mapContainerRef.current) return;
 
     let isMounted = true;
 
     // Carga dinámica de Leaflet
-    import('leaflet').then((L) => {
+    import("leaflet").then((L) => {
       if (!isMounted || !mapContainerRef.current) return;
 
       // Si ya hay una instancia previa, destruirla antes de reiniciar
@@ -131,7 +139,7 @@ export function InteractiveMapPicker({
 
       // Icono de Pin Personalizado (sin depender de assets externos)
       const customPinIcon = L.divIcon({
-        className: 'custom-qph-map-pin',
+        className: "custom-qph-map-pin",
         html: `
           <div style="
             background: #6366f1;
@@ -159,8 +167,9 @@ export function InteractiveMapPicker({
         zoomControl: true,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
       }).addTo(map);
 
@@ -170,7 +179,7 @@ export function InteractiveMapPicker({
       }).addTo(map);
 
       // Evento: Al arrastrar el pin
-      marker.on('dragend', () => {
+      marker.on("dragend", () => {
         const pos = marker.getLatLng();
         const formatted = `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
         setInputVal(formatted);
@@ -179,7 +188,7 @@ export function InteractiveMapPicker({
       });
 
       // Evento: Al hacer clic en cualquier lugar del mapa
-      map.on('click', (e: any) => {
+      map.on("click", (e: any) => {
         const { lat, lng } = e.latlng;
         marker.setLatLng([lat, lng]);
         const formatted = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -200,7 +209,7 @@ export function InteractiveMapPicker({
     });
 
     let observer: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+    if (typeof ResizeObserver !== "undefined" && mapContainerRef.current) {
       observer = new ResizeObserver(() => {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.invalidateSize();
@@ -237,7 +246,7 @@ export function InteractiveMapPicker({
   // Geolocalización GPS del Navegador
   const handleCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert('Tu navegador no soporta geolocalización GPS.');
+      alert("Tu navegador no soporta geolocalización GPS.");
       return;
     }
 
@@ -258,9 +267,9 @@ export function InteractiveMapPicker({
       },
       () => {
         setIsLocating(false);
-        alert('No se pudo obtener tu ubicación actual.');
+        alert("No se pudo obtener tu ubicación actual.");
       },
-      { timeout: 8000 }
+      { timeout: 8000 },
     );
   };
 
@@ -269,10 +278,12 @@ export function InteractiveMapPicker({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex-1 space-y-1">
           <label className="text-xs font-bold text-deep-slate block">
-            Coordenadas GPS (Latitud, Longitud)<span className="text-red-500 ml-0.5">*</span>
+            Coordenadas GPS (Latitud, Longitud)
+            <span className="text-red-500 ml-0.5">*</span>
           </label>
           <p className="text-[11px] text-slate-500">
-            Se utiliza para mostrar la ubicación exacta del evento en el mapa interactivo de la ficha pública.
+            Se utiliza para mostrar la ubicación exacta del evento en el mapa
+            interactivo de la ficha pública.
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -289,15 +300,22 @@ export function InteractiveMapPicker({
               title="Detectar mi ubicación actual"
               className="px-3 py-2 rounded-xl bg-surface-gray hover:bg-slate-200 text-deep-slate text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer border border-surface-variant/60"
             >
-              <span className="material-symbols-outlined text-[16px] text-electric-indigo">my_location</span>
-              <span className="hidden sm:inline">{isLocating ? 'Detectando...' : 'Mi GPS'}</span>
+              <span className="material-symbols-outlined text-[16px] text-electric-indigo">
+                my_location
+              </span>
+              <span className="hidden sm:inline">
+                {isLocating ? "Detectando..." : "Mi GPS"}
+              </span>
             </button>
           </div>
         </div>
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-on-surface-variant">
-        <span>Haz clic en el mapa o arrastra el marcador para fijar la ubicación del recinto.</span>
+        <span>
+          Haz clic en el mapa o arrastra el marcador para fijar la ubicación del
+          recinto.
+        </span>
         {isResolvingAddress && (
           <span className="text-electric-indigo font-semibold flex items-center gap-1 animate-pulse">
             <span className="w-1.5 h-1.5 rounded-full bg-electric-indigo animate-ping inline-block" />
@@ -310,10 +328,9 @@ export function InteractiveMapPicker({
       <div
         ref={mapContainerRef}
         className={`w-full rounded-2xl overflow-hidden border border-surface-variant/60 shadow-xs z-10 ${
-          mapHeight || 'h-80 sm:h-96 min-h-[350px]'
+          mapHeight || "h-80 sm:h-96 min-h-[350px]"
         }`}
       />
     </div>
   );
 }
-

@@ -1,7 +1,7 @@
-import { ResultAsync } from 'neverthrow';
-import { EventRepository } from '../repositories/event.repository';
-import { EventSettlementModel } from '../models/event-settlement.model';
-import { DomainError } from '../../../common/errors/domain-error';
+import { ResultAsync } from "neverthrow";
+import { EventRepository } from "../repositories/event.repository";
+import { EventSettlementModel } from "../models/event-settlement.model";
+import { DomainError } from "../../../common/errors/domain-error";
 
 export class GetEventSettlementUseCase {
   constructor(private readonly eventRepository: EventRepository) {}

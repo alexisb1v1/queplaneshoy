@@ -31,7 +31,7 @@ export default function VenueZonesMap({
   occupancyPercentage = 0,
 }: VenueZonesMapProps) {
   const [activeTab, setActiveTab] = useState<"schematic" | "official">(
-    zoneMapImageUrl ? "official" : "schematic"
+    zoneMapImageUrl ? "official" : "schematic",
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -133,7 +133,9 @@ export default function VenueZonesMap({
                 onClick={() => setIsModalOpen(true)}
                 className="absolute bottom-3 right-3 bg-deep-slate/85 hover:bg-deep-slate text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-md backdrop-blur-xs transition-all cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[16px]">zoom_in</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  zoom_in
+                </span>
                 <span>Ampliar plano</span>
               </button>
             </div>
@@ -148,7 +150,12 @@ export default function VenueZonesMap({
             >
               <defs>
                 <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.08" />
+                  <feDropShadow
+                    dx="0"
+                    dy="2"
+                    stdDeviation="2"
+                    floodOpacity="0.08"
+                  />
                 </filter>
               </defs>
 
@@ -202,7 +209,9 @@ export default function VenueZonesMap({
                     fontWeight="600"
                     textAnchor="middle"
                   >
-                    {sortedZones[0].available ? "ZONA GENERAL DISPONIBLE" : "AGOTADO"}
+                    {sortedZones[0].available
+                      ? "ZONA GENERAL DISPONIBLE"
+                      : "AGOTADO"}
                   </text>
                 </g>
               )}
@@ -300,7 +309,9 @@ export default function VenueZonesMap({
                       fillOpacity="0.14"
                       stroke={sortedZones[0].colorHex}
                       strokeWidth="2"
-                      strokeDasharray={sortedZones[0].available ? "none" : "4 3"}
+                      strokeDasharray={
+                        sortedZones[0].available ? "none" : "4 3"
+                      }
                     />
                     <text
                       x="250"
@@ -374,7 +385,8 @@ export default function VenueZonesMap({
                       fontWeight="800"
                       textAnchor="middle"
                     >
-                      ★ {sortedZones[sortedZones.length - 1].name.toUpperCase()} ★
+                      ★ {sortedZones[sortedZones.length - 1].name.toUpperCase()}{" "}
+                      ★
                     </text>
                     <text
                       x="250"
@@ -445,9 +457,12 @@ export default function VenueZonesMap({
         {/* Barra Inferior Informativa Real del Recinto y Aforo */}
         <div className="mt-2.5 pt-2.5 border-t border-surface-variant/70 flex flex-wrap items-center justify-between w-full text-xs text-on-surface-variant px-1 gap-2">
           <span className="flex items-center gap-1.5 font-medium min-w-0 max-w-full sm:max-w-[65%]">
-            <span className="material-symbols-outlined text-[15px] text-electric-indigo shrink-0">info</span>
+            <span className="material-symbols-outlined text-[15px] text-electric-indigo shrink-0">
+              info
+            </span>
             <span className="truncate">
-              {selectedZoneNote || `Croquis referencial de localidades • ${venueName}`}
+              {selectedZoneNote ||
+                `Croquis referencial de localidades • ${venueName}`}
             </span>
           </span>
           <span className="text-electric-indigo font-bold flex items-center gap-1.5 shrink-0">
@@ -501,4 +516,3 @@ export default function VenueZonesMap({
     </div>
   );
 }
-

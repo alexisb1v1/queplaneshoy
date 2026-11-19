@@ -58,7 +58,9 @@ export function HeroCarousel() {
               const categoryInfo = getCategoryById(item.category);
               const secureId = item.publicUuid || item.slug || item.id;
               const targetUrl =
-                item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${secureId}`;
+                item.hasLandingPage && item.slug
+                  ? `/e/${item.slug}`
+                  : `/events/${secureId}`;
 
               return {
                 id: item.id,
@@ -69,13 +71,15 @@ export function HeroCarousel() {
                   "Asegura tus entradas oficiales para este gran evento antes de que se agoten.",
                 imageUrl: item.bannerUrl || DEFAULT_FALLBACK_IMAGE,
                 altText: item.title,
-                ctaText: item.hasLandingPage ? "Ver Experiencia" : "Comprar Entradas",
+                ctaText: item.hasLandingPage
+                  ? "Ver Experiencia"
+                  : "Comprar Entradas",
                 targetUrl,
               };
             });
           }
         },
-        () => {}
+        () => {},
       );
 
       // 2. Si no hay destacados, fallback dinámico a los primeros eventos próximos en BD
@@ -88,7 +92,9 @@ export function HeroCarousel() {
                 const categoryInfo = getCategoryById(item.category);
                 const secureId = item.publicUuid || item.slug || item.id;
                 const targetUrl =
-                  item.hasLandingPage && item.slug ? `/e/${item.slug}` : `/events/${secureId}`;
+                  item.hasLandingPage && item.slug
+                    ? `/e/${item.slug}`
+                    : `/events/${secureId}`;
 
                 return {
                   id: item.id,
@@ -99,13 +105,15 @@ export function HeroCarousel() {
                     "Asegura tus entradas oficiales para este gran evento antes de que se agoten.",
                   imageUrl: item.imageUrl || DEFAULT_FALLBACK_IMAGE,
                   altText: item.title,
-                  ctaText: item.hasLandingPage ? "Ver Experiencia" : "Comprar Entradas",
+                  ctaText: item.hasLandingPage
+                    ? "Ver Experiencia"
+                    : "Comprar Entradas",
                   targetUrl,
                 };
               });
             }
           },
-          () => {}
+          () => {},
         );
       }
 
@@ -215,7 +223,9 @@ export function HeroCarousel() {
               key={index}
               aria-label={`Ir al slide ${index + 1}`}
               className={`w-2 h-8 rounded-full transition-all duration-300 cursor-pointer ${
-                currentSlide === index ? "bg-white w-3 shadow-md" : "bg-white/50 hover:bg-white"
+                currentSlide === index
+                  ? "bg-white w-3 shadow-md"
+                  : "bg-white/50 hover:bg-white"
               }`}
               onClick={() => scrollToSlide(index)}
             ></button>
