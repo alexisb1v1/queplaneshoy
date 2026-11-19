@@ -44,6 +44,6 @@ export interface RequestEventSettlementParams {
   documentType?: string;
   documentNumber?: string;
   accountNumber: string;
-  accountCci: string;
+  accountCci?: string;
   notes?: string;
 }

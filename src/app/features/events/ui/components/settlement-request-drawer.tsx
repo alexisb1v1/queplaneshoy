@@ -7,6 +7,7 @@ import {
   EventSettlementModel,
   RequestEventSettlementParams,
 } from '@/app/features/events';
+import { isValidRuc, isValidDni } from '@/app/common/utils/sunat-validators';
 
 interface SettlementRequestDrawerProps {
   isOpen: boolean;
@@ -20,9 +21,7 @@ const PERU_BANKS = [
   'BCP',
   'BBVA',
   'Interbank',
-  'Scotiabank',
-  'Banco de la Nación',
-  'Otro banco / entidad',
+  'Scotiabank'
 ];
 
 function formatSoles(amount: number): string {
@@ -115,13 +114,39 @@ export function SettlementRequestDrawer({
       setError('Por favor ingresa el nombre o razón social del titular de la cuenta.');
       return;
     }
+
+    // Validación de documento fiscal según algoritmo SUNAT
+    const cleanDoc = documentNumber.trim();
+    if (documentType === 'RUC') {
+      if (!cleanDoc) {
+        setError('Por favor ingresa el número de RUC del titular de la cuenta.');
+        return;
+      }
+      if (!isValidRuc(cleanDoc)) {
+        setError('El RUC ingresado no es válido según el algoritmo oficial de SUNAT (Módulo 11). Verifica los 11 dígitos.');
+        return;
+      }
+    } else if (documentType === 'DNI') {
+      if (cleanDoc && !isValidDni(cleanDoc)) {
+        setError('El DNI debe contener exactamente 8 dígitos numéricos.');
+        return;
+      }
+    }
+
     if (!accountNumber.trim()) {
       setError('Por favor ingresa el número de cuenta bancaria.');
       return;
     }
+    const isBcp = bankName.trim().toUpperCase() === 'BCP';
     const cleanCci = accountCci.replace(/\D/g, '');
-    if (cleanCci.length !== 20) {
-      setError('El Código de Cuenta Interbancario (CCI) debe tener exactamente 20 dígitos numéricos.');
+
+    if (!isBcp) {
+      if (cleanCci.length !== 20) {
+        setError('Para bancos distintos al BCP, el Código de Cuenta Interbancario (CCI) es obligatorio y debe tener exactamente 20 dígitos numéricos.');
+        return;
+      }
+    } else if (cleanCci.length > 0 && cleanCci.length !== 20) {
+      setError('Si ingresas el CCI para BCP, debe contener exactamente 20 dígitos numéricos.');
       return;
     }
 
@@ -134,7 +159,7 @@ export function SettlementRequestDrawer({
       documentType,
       documentNumber: documentNumber.trim() || undefined,
       accountNumber: accountNumber.trim(),
-      accountCci: cleanCci,
+      accountCci: cleanCci.length === 20 ? cleanCci : undefined,
       notes: notes.trim() || undefined,
     };
 
@@ -187,13 +212,12 @@ export function SettlementRequestDrawer({
                   </h2>
                   {settlementData && (
                     <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                        isAlreadyRequested
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${isAlreadyRequested
                           ? settlementData.status === 'paid'
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                             : 'bg-amber-100 text-amber-800 border border-amber-300'
                           : 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                      }`}
+                        }`}
                     >
                       {settlementData.statusLabel}
                     </span>
@@ -425,11 +449,10 @@ export function SettlementRequestDrawer({
                             type="button"
                             key={type}
                             onClick={() => setAccountType(type)}
-                            className={`py-2 px-3 text-xs font-bold rounded-xl border transition ${
-                              accountType === type
+                            className={`py-2 px-3 text-xs font-bold rounded-xl border transition ${accountType === type
                                 ? 'bg-primary text-white border-primary shadow-sm'
                                 : 'bg-surface-gray/50 text-on-surface-variant border-surface-border hover:bg-surface-gray'
-                            }`}
+                              }`}
                           >
                             {type}
                           </button>
@@ -469,15 +492,37 @@ export function SettlementRequestDrawer({
                         </select>
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-xs font-bold text-deep-slate mb-1">
-                          N° de Documento
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-deep-slate">
+                            N° de Documento <span className="text-rose-500">*</span>
+                          </label>
+                          {documentType === 'RUC' && documentNumber.trim().length === 11 && (
+                            <span
+                              className={`text-[10px] font-bold inline-flex items-center gap-1 ${
+                                isValidRuc(documentNumber)
+                                  ? 'text-emerald-700'
+                                  : 'text-rose-600'
+                              }`}
+                            >
+                              <span className="material-symbols-outlined text-[13px]">
+                                {isValidRuc(documentNumber) ? 'verified' : 'error'}
+                              </span>
+                              <span>{isValidRuc(documentNumber) ? 'RUC Válido SUNAT' : 'RUC Inválido'}</span>
+                            </span>
+                          )}
+                        </div>
                         <input
                           type="text"
+                          maxLength={documentType === 'RUC' ? 11 : documentType === 'DNI' ? 8 : 15}
                           value={documentNumber}
-                          onChange={(e) => setDocumentNumber(e.target.value)}
-                          placeholder="Ej: 20601234567 / 45892134"
-                          className="w-full text-xs sm:text-sm border border-surface-border rounded-xl px-3.5 py-2.5 bg-white text-deep-slate placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                          onChange={(e) => setDocumentNumber(e.target.value.replace(/\D/g, ''))}
+                          placeholder={documentType === 'RUC' ? '20601234567 (11 dígitos)' : '45892134 (8 dígitos)'}
+                          className={`w-full text-xs sm:text-sm font-mono border rounded-xl px-3.5 py-2.5 bg-white text-deep-slate placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 transition ${
+                            documentType === 'RUC' && documentNumber.trim().length === 11 && !isValidRuc(documentNumber)
+                              ? 'border-rose-400 focus:ring-rose-200'
+                              : 'border-surface-border focus:ring-primary/20 focus:border-primary'
+                          }`}
+                          required
                         />
                       </div>
                     </div>
@@ -500,14 +545,22 @@ export function SettlementRequestDrawer({
                     {/* Código CCI (20 Dígitos) */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold text-deep-slate">
-                          Código de Cuenta Interbancario (CCI){' '}
-                          <span className="text-rose-500">*</span>
+                        <label className="text-xs font-bold text-deep-slate flex items-center gap-1.5">
+                          <span>Código de Cuenta Interbancario (CCI)</span>
+                          {bankName.trim().toUpperCase() === 'BCP' ? (
+                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              Opcional para BCP
+                            </span>
+                          ) : (
+                            <span className="text-rose-500">*</span>
+                          )}
                         </label>
                         <span
                           className={`text-[11px] font-mono font-bold ${
                             accountCci.replace(/\D/g, '').length === 20
                               ? 'text-emerald-600'
+                              : accountCci.replace(/\D/g, '').length > 0
+                              ? 'text-amber-600'
                               : 'text-on-surface-variant'
                           }`}
                         >
@@ -519,16 +572,22 @@ export function SettlementRequestDrawer({
                         maxLength={20}
                         value={accountCci}
                         onChange={(e) => setAccountCci(e.target.value.replace(/\D/g, ''))}
-                        placeholder="00219300987654320112"
+                        placeholder={
+                          bankName.trim().toUpperCase() === 'BCP'
+                            ? '002193... (Opcional para BCP)'
+                            : '00219300987654320112 (Obligatorio)'
+                        }
                         className={`w-full text-xs sm:text-sm font-mono tracking-widest border rounded-xl px-3.5 py-2.5 bg-white text-deep-slate placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 transition ${
                           accountCci.length > 0 && accountCci.length !== 20
                             ? 'border-amber-400 focus:ring-amber-200'
                             : 'border-surface-border focus:ring-primary/20 focus:border-primary'
                         }`}
-                        required
+                        required={bankName.trim().toUpperCase() !== 'BCP'}
                       />
                       <p className="text-[11px] text-on-surface-variant mt-1">
-                        Indispensable para transferencias interbancarias inmediatas en Soles.
+                        {bankName.trim().toUpperCase() === 'BCP'
+                          ? 'Opcional si tu cuenta es BCP (la transferencia se efectúa directa entre cuentas BCP con tu número de cuenta).'
+                          : 'Indispensable para transferencias interbancarias inmediatas en Soles.'}
                       </p>
                     </div>
 
@@ -551,11 +610,10 @@ export function SettlementRequestDrawer({
                       <button
                         type="submit"
                         disabled={submitting || (Number(settlementData?.netPayoutAmount) || 0) <= 0}
-                        className={`w-full py-3.5 px-6 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition active:scale-[0.99] ${
-                          (Number(settlementData?.netPayoutAmount) || 0) <= 0
+                        className={`w-full py-3.5 px-6 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition active:scale-[0.99] ${(Number(settlementData?.netPayoutAmount) || 0) <= 0
                             ? 'bg-gray-400 cursor-not-allowed shadow-none'
                             : 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-emerald-600/20'
-                        }`}
+                          }`}
                       >
                         {submitting ? (
                           <>

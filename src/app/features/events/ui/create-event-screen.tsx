@@ -26,6 +26,7 @@ import {
 } from '../constants/eventConstants';
 
 import { UbigeoSelector } from './components/ubigeo-selector';
+import { isValidRuc, isValidDni } from '@/app/common/utils/sunat-validators';
 import { ShowsManager, ShowItem } from './components/shows-manager';
 import { ZonesManager, ZoneConfigItem } from './components/zones-manager';
 import { CouponsManager, CouponFormItem } from './components/coupons-manager';
@@ -648,7 +649,24 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
         return { valid: false, message: 'Ingresa la razón social o nombre comercial de la productora.' };
       }
       if (!organizerDocumentNumber.trim()) {
-        return { valid: false, message: 'Ingresa el número de documento de la productora.' };
+        return { valid: false, message: 'Ingresa el número de documento de la productora.', focusId: 'organizer-doc-number-input' };
+      }
+      if (organizerDocumentType === 'RUC') {
+        if (!isValidRuc(organizerDocumentNumber.trim())) {
+          return {
+            valid: false,
+            message: 'El RUC ingresado no es válido según el algoritmo oficial de SUNAT (Módulo 11). Verifica los 11 dígitos.',
+            focusId: 'organizer-doc-number-input',
+          };
+        }
+      } else if (organizerDocumentType === 'DNI') {
+        if (!isValidDni(organizerDocumentNumber.trim())) {
+          return {
+            valid: false,
+            message: 'El DNI debe contener exactamente 8 dígitos numéricos.',
+            focusId: 'organizer-doc-number-input',
+          };
+        }
       }
       if (!venueName.trim()) {
         return { valid: false, message: 'Ingresa el nombre del recinto o local del evento.' };
@@ -1723,16 +1741,37 @@ export default function CreateEventScreen({ initialEventId }: CreateEventScreenP
                             </select>
                           </div>
                           <div className="space-y-1 col-span-2">
-                            <label className="font-bold text-xs text-deep-slate">
-                              Número<span className="text-red-500 ml-0.5">*</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label className="font-bold text-xs text-deep-slate">
+                                Número<span className="text-red-500 ml-0.5">*</span>
+                              </label>
+                              {organizerDocumentType === 'RUC' && organizerDocumentNumber.trim().length === 11 && (
+                                <span
+                                  className={`text-[10px] font-bold inline-flex items-center gap-1 ${
+                                    isValidRuc(organizerDocumentNumber)
+                                      ? 'text-emerald-700'
+                                      : 'text-rose-600'
+                                  }`}
+                                >
+                                  <span className="material-symbols-outlined text-[13px]">
+                                    {isValidRuc(organizerDocumentNumber) ? 'verified' : 'error'}
+                                  </span>
+                                  <span>{isValidRuc(organizerDocumentNumber) ? 'RUC Válido SUNAT' : 'RUC Inválido'}</span>
+                                </span>
+                              )}
+                            </div>
                             <input
+                              id="organizer-doc-number-input"
                               type="text"
                               value={organizerDocumentNumber}
-                              onChange={(e) => setOrganizerDocumentNumber(e.target.value)}
-                              placeholder="Ej: 20601234567"
-                              maxLength={20}
-                              className="w-full px-4 py-2.5 rounded-xl bg-surface-gray border border-surface-variant/60 text-xs text-deep-slate outline-none focus:border-electric-indigo"
+                              onChange={(e) => setOrganizerDocumentNumber(e.target.value.replace(/\D/g, ''))}
+                              placeholder={organizerDocumentType === 'RUC' ? 'Ej: 20601234567 (11 dígitos)' : 'Ej: 45892134 (8 dígitos)'}
+                              maxLength={organizerDocumentType === 'RUC' ? 11 : organizerDocumentType === 'DNI' ? 8 : 20}
+                              className={`w-full px-4 py-2.5 rounded-xl bg-surface-gray border text-xs text-deep-slate font-mono outline-none transition ${
+                                organizerDocumentType === 'RUC' && organizerDocumentNumber.trim().length === 11 && !isValidRuc(organizerDocumentNumber)
+                                  ? 'border-rose-400 focus:border-rose-500'
+                                  : 'border-surface-variant/60 focus:border-electric-indigo'
+                              }`}
                             />
                           </div>
                         </div>
