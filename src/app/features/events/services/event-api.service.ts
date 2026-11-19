@@ -1,5 +1,7 @@
 import { EventDto, CreateEventParams } from '../dto/event.dto';
 import { OrganizerEventDto } from '../dto/organizer-event.dto';
+import { OrganizerEventReportDto } from '../dto/organizer-event-report.dto';
+import { EventSettlementDto, RequestEventSettlementParams } from '../dto/event-settlement.dto';
 import { SearchEventsResponse, PublishedCity, SearchEventItem } from '../models/search-event.model';
 import { HomeEventCardItem } from '../models/home-event-card.model';
 import { EventLandingModel } from '../models/event-landing.model';
@@ -63,6 +65,10 @@ export class EventApiService {
     return apiClient.get<any>(`/events/organizer/${eventId}/edit`);
   }
 
+  async getOrganizerEventReport(identifier: string): Promise<OrganizerEventReportDto> {
+    return apiClient.get<OrganizerEventReportDto>(`/events/organizer/${identifier}/report`);
+  }
+
   async publishEvent(eventId: string): Promise<EventDto> {
     return apiClient.post<EventDto>(`/events/${eventId}/publish`, {});
   }
@@ -103,5 +109,16 @@ export class EventApiService {
 
     const queryString = query.toString();
     return apiClient.get<SearchEventsResponse>(`/search/events${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getOrganizerEventSettlement(identifier: string): Promise<EventSettlementDto> {
+    return apiClient.get<EventSettlementDto>(`/events/organizer/${identifier}/settlement`);
+  }
+
+  async requestOrganizerEventSettlement(
+    identifier: string,
+    data: RequestEventSettlementParams,
+  ): Promise<EventSettlementDto> {
+    return apiClient.post<EventSettlementDto>(`/events/organizer/${identifier}/settlement`, data);
   }
 }

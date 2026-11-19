@@ -13,6 +13,7 @@ import {
 } from '@/app/features/events';
 import { getCategoryById } from '../constants/eventConstants';
 import { OrganizerSidebar } from './components/organizer-sidebar';
+import { SettlementRequestDrawer } from './components/settlement-request-drawer';
 
 type FilterState = 'all' | 'on_sale' | 'sold_out' | 'draft' | 'in_review' | 'observed' | 'completed' | 'inactive';
 type PeriodFilter = '3m' | '6m' | '12m' | 'all';
@@ -112,6 +113,7 @@ export default function OrganizerEventsScreen() {
   const [pendingVerifyEventTitle, setPendingVerifyEventTitle] = useState<string>('');
   const [isResending, setIsResending] = useState(false);
   const [resendFeedback, setResendFeedback] = useState<string | null>(null);
+  const [settlementDrawerEvent, setSettlementDrawerEvent] = useState<{ id: string; name: string } | null>(null);
 
 
 
@@ -280,10 +282,10 @@ export default function OrganizerEventsScreen() {
   if (isLoading) {
     return (
       <div className="bg-surface min-h-screen py-8">
-        <div className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="hidden lg:block lg:col-span-3 h-[540px] rounded-2xl bg-white border border-surface-variant animate-pulse" />
-            <div className="lg:col-span-9 space-y-6">
+        <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+            <div className="hidden lg:block w-[280px] h-[540px] rounded-2xl bg-white border border-surface-variant animate-pulse" />
+            <div className="min-w-0 space-y-6">
               <div className="h-24 rounded-2xl bg-white border border-surface-variant animate-pulse" />
               <div className="h-64 rounded-2xl bg-white border border-surface-variant animate-pulse" />
               <div className="h-64 rounded-2xl bg-white border border-surface-variant animate-pulse" />
@@ -420,8 +422,8 @@ export default function OrganizerEventsScreen() {
         </div>
       </div>
 
-      <div className="max-w-container-max mx-auto px-4 sm:px-6 md:px-8 py-6 md:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-10 py-6 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
           <OrganizerSidebar
             activeSection="events"
             isMobileMenuOpen={isMobileMenuOpen}
@@ -431,7 +433,7 @@ export default function OrganizerEventsScreen() {
             }
           />
 
-          <main className="lg:col-span-9 space-y-6 md:space-y-8">
+          <main className="min-w-0 space-y-6 md:space-y-8">
             {/* Encabezado */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-variant/40 pb-5">
               <div className="space-y-1">
@@ -1147,30 +1149,27 @@ export default function OrganizerEventsScreen() {
                                 <span>Ver Ventas y Reporte</span>
                               </Link>
 
-                              {/* Si el evento está completado (sus shows concluyeron): Se activa Liquidación Final */}
-                              {isCompleted && (
-                                <Link
-                                  href={`/organizer/settlement?eventId=${event.publicUuid}&mode=liquidacion`}
-                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs transition-all cursor-pointer"
+                              {/* Botón de Liquidación de Fondos */}
+                              {!isDraft && !isObserved && !isCancelled && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSettlementDrawerEvent({
+                                      id: event.publicUuid,
+                                      name: event.name,
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
                                 >
                                   <span className="material-symbols-outlined text-[18px]">
-                                    receipt_long
+                                    account_balance_wallet
                                   </span>
-                                  <span>{getSettlementLabel(event.settlementStatus)}</span>
-                                </Link>
-                              )}
-
-                              {/* Si el evento está en venta (published): Se activa Solicitar Adelanto de Liquidación */}
-                              {event.status === 'published' && !isCompleted && !isCancelled && (
-                                <Link
-                                  href={`/organizer/settlement?eventId=${event.publicUuid}&mode=adelanto`}
-                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary-container/50 hover:bg-secondary-container text-primary font-bold text-xs transition-all cursor-pointer"
-                                >
-                                  <span className="material-symbols-outlined text-[18px]">
-                                    payments
+                                  <span>
+                                    {event.settlementStatus
+                                      ? getSettlementLabel(event.settlementStatus)
+                                      : 'Solicitar Liquidación'}
                                   </span>
-                                  <span>Solicitar Adelanto</span>
-                                </Link>
+                                </button>
                               )}
 
                               {/* Si el evento está publicado: La edición está bloqueada para proteger las entradas emitidas */}
@@ -1215,6 +1214,19 @@ export default function OrganizerEventsScreen() {
           </main>
         </div>
       </div>
+
+      {/* Drawer Lateral de Liquidación de Fondos */}
+      {settlementDrawerEvent && (
+        <SettlementRequestDrawer
+          isOpen={Boolean(settlementDrawerEvent)}
+          onClose={() => setSettlementDrawerEvent(null)}
+          eventIdentifier={settlementDrawerEvent.id}
+          eventName={settlementDrawerEvent.name}
+          onSuccess={() => {
+            void loadOrganizerPanel();
+          }}
+        />
+      )}
     </div>
   );
 }

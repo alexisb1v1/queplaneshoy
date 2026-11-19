@@ -14,6 +14,9 @@ import { GetWeekendEventsUseCase } from './use-cases/get-weekend-events.use-case
 import { GetEventLandingUseCase } from './use-cases/get-event-landing.use-case';
 import { GetEventDetailUseCase } from './use-cases/get-event-detail.use-case';
 import { GetOrganizerEventsUseCase } from './use-cases/get-organizer-events.use-case';
+import { GetOrganizerEventReportUseCase } from './use-cases/get-organizer-event-report.use-case';
+import { GetEventSettlementUseCase } from './use-cases/get-event-settlement.use-case';
+import { RequestEventSettlementUseCase } from './use-cases/request-event-settlement.use-case';
 
 // Instanciamos el servicio e infraestructura
 const eventApiService = new EventApiService();
@@ -22,6 +25,9 @@ const eventRepository = new EventRepositoryImpl(eventApiService);
 // Exportamos los casos de uso instanciados para ser consumidos en la UI
 export const getEventsUseCase = new GetEventsUseCase(eventRepository);
 export const getOrganizerEventsUseCase = new GetOrganizerEventsUseCase(eventRepository);
+export const getOrganizerEventReportUseCase = new GetOrganizerEventReportUseCase(eventRepository);
+export const getEventSettlementUseCase = new GetEventSettlementUseCase(eventRepository);
+export const requestEventSettlementUseCase = new RequestEventSettlementUseCase(eventRepository);
 export const createEventUseCase = new CreateEventUseCase(eventRepository);
 export const updateEventUseCase = new UpdateEventUseCase(eventRepository);
 export const getOrganizerEventForEditUseCase = new GetOrganizerEventForEditUseCase(eventRepository);
@@ -40,4 +46,7 @@ export * from './models/home-event-card.model';
 export * from './models/event-landing.model';
 export * from './models/event-detail.model';
 export * from './models/organizer-event.model';
+export * from './models/organizer-event-report.model';
+export * from './models/event-settlement.model';
+export * from './dto/event-settlement.dto';
 

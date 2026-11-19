@@ -10,9 +10,9 @@ import { SearchInstantDropdown } from "../../features/events/ui/components/searc
 function DesktopHeaderFallback() {
   return (
     <header className="hidden md:block w-full sticky top-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border-b border-outline-variant/10">
-      <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-20 gap-4">
+      <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-16 gap-4">
         <Link href="/" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
-          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
+          <img src="/logo-qph.svg" className="w-7 h-7 rounded-md object-contain" alt="queplanhoy logo" />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
             queplan<span className="text-electric-indigo">hoy</span>
           </span>
@@ -102,8 +102,8 @@ function DesktopHeaderContent() {
       const searchSection = document.getElementById("hero-search-container");
       if (searchSection) {
         const rect = searchSection.getBoundingClientRect();
-        // Se activa cuando la parte superior de la sección de búsqueda topa el header (80px)
-        setIsSearchSticky(rect.top <= 80);
+        // Se activa cuando la parte superior de la sección de búsqueda topa el header (64px)
+        setIsSearchSticky(rect.top <= 64);
       } else {
         setIsSearchSticky(window.scrollY > 360);
       }
@@ -132,11 +132,11 @@ function DesktopHeaderContent() {
 
   return (
     <header className="hidden md:block w-full sticky top-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border-b border-outline-variant/10 transition-colors duration-300">
-      <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-20 gap-4">
+      <div className="flex justify-between items-center w-full px-6 sm:px-8 lg:px-12 h-16 gap-4">
         
         {/* Brand Logo (Izquierda) */}
         <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0">
-          <img src="/logo-qph.svg" className="w-8 h-8 rounded-md object-contain" alt="queplanhoy logo" />
+          <img src="/logo-qph.svg" className="w-7 h-7 rounded-md object-contain" alt="queplanhoy logo" />
           <span className="font-extrabold text-xl tracking-tight text-deep-slate">
             queplan<span className="text-electric-indigo">hoy</span>
           </span>
