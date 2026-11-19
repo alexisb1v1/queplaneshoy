@@ -470,7 +470,7 @@ export default function CreateEventPageComponent() {
             ¡Tu evento ya está en vivo! 🎉
           </h1>
           <p className="text-sm text-on-surface-variant mb-8 leading-relaxed">
-            El evento <strong>"{title}"</strong> ha sido publicado exitosamente.
+            El evento <strong>&ldquo;{title}&rdquo;</strong> ha sido publicado exitosamente.
             Las entradas ya están disponibles para el público en Qué Planes Hoy.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

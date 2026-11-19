@@ -428,7 +428,7 @@ export async function authenticateWithCulqi3DS(
     const handle3DSMessage = (event: MessageEvent) => {
       if (!event.origin.includes("culqi.com")) return;
 
-      let payload: Record<string, unknown> | null = null;
+      let payload: any = null;
       if (event.data && typeof event.data === "object") {
         payload = event.data;
       } else if (typeof event.data === "string") {

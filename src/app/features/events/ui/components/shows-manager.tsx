@@ -428,7 +428,7 @@ function ModernTimePicker({
   const displayLabel = useMemo(() => {
     if (!value) return "Seleccionar hora";
     const parts = value.split(":");
-    let h = parseInt(parts[0], 10) || 0;
+    const h = parseInt(parts[0], 10) || 0;
     const m = parts[1]?.substring(0, 2) || "00";
     const period = h >= 12 ? "PM" : "AM";
     const h12 = h % 12 || 12;

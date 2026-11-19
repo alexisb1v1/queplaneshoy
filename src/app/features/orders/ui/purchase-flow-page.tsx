@@ -1045,7 +1045,6 @@ export default function PurchaseFlowPageComponent() {
         orderCode={
           checkoutResult
             ? checkoutResult.orderCode
-            : `#QPH-${Math.floor(100000 + Math.random() * 900000)}`
             : "#QPH-PROVISIONAL"
   }
   userEmail = { currentUser?.email || "comprador@queplanhoy.com"
@@ -1117,7 +1116,6 @@ paymentMethodText = { paymentMethodLabel }
 txCode = {
   checkoutResult
   ? checkoutResult.txCode
-            : `TX-${Math.floor(100000 + Math.random() * 900000)}`
             : "TX-PROVISIONAL"
         }
 qrPayload = {

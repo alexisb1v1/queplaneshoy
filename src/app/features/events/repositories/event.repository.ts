@@ -47,7 +47,7 @@ export abstract class EventRepository {
   ): ResultAsync<EventModel, DomainError>;
   abstract getOrganizerEventForEdit(
     eventId: string,
-  ): ResultAsync<Record<string, unknown>, DomainError>;
+  ): ResultAsync<any, DomainError>;
   abstract getOrganizerEventReport(
     identifier: string,
   ): ResultAsync<OrganizerEventReportModel, DomainError>;
