@@ -589,7 +589,7 @@ export default function TicketsTab() {
           orderNumber={printOrder.orderId}
           orderRef={printOrder.txCode || `TX-${printOrder.orderId}`}
           eventName={printOrder.eventTitle}
-          eventSubtitle={`${printOrder.category} · Boletería Oficial QPH`}
+          eventSubtitle={`${printOrder.category === "CONCERTS" ? "Conciertos" : printOrder.category} · Boletería Oficial QPH`}
           eventDate={printOrder.eventDateFormatted}
           eventTime={printOrder.eventTimeFormatted}
           eventVenue={printOrder.venueName}

@@ -12,6 +12,7 @@ import {
 } from "../index";
 import { EventDetailModel, EventZoneModel } from "../models/event-detail.model";
 import { formatAgeRestriction } from "../utils/age-restriction";
+import { EventCard } from "./components/event-card";
 import { VideoTeaserModal } from "./landing/components/video-teaser-modal";
 import { ShareSocialPopover } from "@/app/common/components/share-social-popover";
 import { trackUmamiEvent } from "@/app/common/utils/analytics";
@@ -274,6 +275,19 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
       })
     : null;
 
+  const showDay = firstShow
+    ? new Date(firstShow.startTime).toLocaleDateString("es-PE", {
+        day: "2-digit",
+      })
+    : null;
+
+  const showMonth = firstShow
+    ? new Date(firstShow.startTime)
+        .toLocaleDateString("es-PE", { month: "short" })
+        .toUpperCase()
+        .replace(".", "")
+    : null;
+
   // Cálculo de precio mínimo en soles (respetando si la comisión se suma o está incluida)
   const minPrice =
     (event.zones || []).length > 0
@@ -289,6 +303,8 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
   const eventBanner =
     event.bannerUrl ||
     "https://lh3.googleusercontent.com/aida-public/AB6AXuAvDbqbGnlbfqUeC8z7aI3S9qHtQrEg0HBuv40tjwOWpwyto7jUUN4aK6zHkyjFpgrQuCmYbnML65LyCOmt4qfAeTI0iyr2BVCmLgaCJy5sBpz6YzL3uZFZIH-KYQuDSVFbpbW2Y6TUpo9uKWoJ2zKmlgzeVlfID8YoiQklT8co4xHrZ6sDZeLPqiY-dRNUsdzl8wQ2M9YvHfLR7G5WFio3W-SCX1AidCHyLkxiMeElBOJP2LgUnEYlNJevy2WQSrRm2T5c0o7zVSlx";
+
+  const mobileDisplayImage = (event as any).flyerUrl || eventBanner;
 
   return (
     <div className="flex-1 w-full bg-background">
@@ -351,39 +367,41 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
           </ShareSocialPopover>
         </nav>
 
-        {/* Hero Section */}
-        <div className="relative w-full h-[50vh] min-h-[400px] mt-16">
-          <img
-            className="w-full h-full object-cover"
-            src={eventBanner}
-            alt={event.name}
-          />
-          <div className="absolute inset-0 qph-hero-gradient flex flex-col justify-end p-6 pb-12">
-            <div className="flex gap-2 mb-4">
-              <span className="bg-electric-indigo text-white font-semibold text-[10px] tracking-wider uppercase px-3 py-1 rounded-full qph-label-bold">
-                {event.category || "Espectáculo Oficial"}
-              </span>
-              <span className="bg-vip-gold text-white font-semibold text-[10px] tracking-wider px-3 py-1 rounded-full uppercase qph-label-bold">
-                Venta Oficial QPH
-              </span>
-            </div>
-            <h1 className="text-white qph-headline-lg text-[24px] mb-2 font-bold">
-              {event.name}
-            </h1>
-            <div className="flex items-center text-platinum-silver qph-label-bold text-sm">
-              <span className="material-symbols-outlined mr-2 text-[18px]">
-                calendar_today
-              </span>
-              <span className="capitalize">
-                {formattedShowDate}
-                {formattedShowTime ? ` • ${formattedShowTime} hrs` : ""}
-              </span>
-            </div>
+        {/* Hero Section Móvil (Opción A: Fondo Ambiental del Evento) */}
+        <div className="relative w-full pt-20 pb-4 px-4 overflow-hidden">
+          {/* Capa de fondo ambiental envolvente */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <img
+              className="w-full h-full object-cover scale-125 blur-3xl opacity-70 saturate-150 brightness-95"
+              src={mobileDisplayImage}
+              alt=""
+              aria-hidden="true"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-background" />
+          </div>
+
+          {/* Tarjeta Banner Redondeada (Prioriza flyer cuadrado en móvil) */}
+          <div className="relative w-full rounded-2xl overflow-hidden shadow-xl border border-white/20 aspect-square sm:aspect-[1900/550] flex items-center justify-center">
+            <img
+              className="w-full h-full object-cover sm:object-contain drop-shadow-xl"
+              src={mobileDisplayImage}
+              alt={event.name}
+            />
+
+            {/* Badge de fecha flotante en la esquina inferior izquierda (estilo Vaope) */}
+            {showDay && (
+              <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 bg-pink-600/95 text-white backdrop-blur-md px-3 py-1.5 rounded-xl shadow-lg font-black">
+                <span className="text-lg leading-none">{showDay}</span>
+                <span className="text-[10px] uppercase tracking-wider font-extrabold leading-tight text-pink-100 block">
+                  {showMonth}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Event Key Info */}
-        <div className="px-5 -mt-6 relative z-10">
+        <div className="px-4 mt-2 relative z-10">
           <div className="bg-white rounded-2xl shadow-xs p-6 flex flex-col gap-4 border border-surface-variant">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-surface-gray border border-surface-variant/40 flex items-center justify-center flex-shrink-0">
@@ -470,7 +488,8 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             {(event.zones || []).map((ticket) => (
               <div
                 key={ticket.id}
-                className="bg-white border border-surface-variant rounded-2xl p-5 shadow-xs flex flex-col gap-3"
+                className="bg-white border border-surface-variant rounded-2xl p-5 shadow-xs flex flex-col gap-3 border-l-4"
+                style={{ borderLeftColor: ticket.color || "#4F46E5" }}
               >
                 <div className="flex justify-between items-start">
                   <div>
@@ -494,13 +513,6 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                     <span className="text-electric-indigo qph-price-tag text-[22px] font-extrabold block">
                       S/. {getBuyerZonePrice(ticket).toFixed(2)}
                     </span>
-                    {!ticket.feeIncluded &&
-                      Number(ticket.serviceFee || 0) > 0 && (
-                        <span className="text-[10px] text-slate-500 block">
-                          Incluye S/. {Number(ticket.serviceFee).toFixed(2)}{" "}
-                          serv.
-                        </span>
-                      )}
                     {ticket.regularPrice > ticket.currentPrice && (
                       <span className="text-[11px] text-gray-400 line-through">
                         S/.{" "}
@@ -602,107 +614,144 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
       </div>
 
       {/* ========================================================================= */}
-      {/* VISTA ESCRITORIO (Original Adaptada a Datos Dinámicos) */}
+      {/* VISTA ESCRITORIO (Opción A: Fondo Ambiental con el Color del Evento) */}
       {/* ========================================================================= */}
       <div className="hidden lg:block bg-background min-h-screen pb-20">
-        {/* Hero Section Banner */}
-        <section className="relative w-full h-[600px]">
-          <img
-            className="w-full h-full object-cover"
-            src={eventBanner}
-            alt={event.name}
-          />
-          <div className="absolute inset-0 qph-hero-gradient flex flex-col justify-end pb-16 px-8 z-10">
-            <div className="max-w-container-max mx-auto w-full">
-              {/* Botón de retroceso */}
+        {/* Cabecera Opción A: Fondo Ambiental con el Color del Evento */}
+        <section className="relative w-full overflow-hidden pt-6 pb-6">
+          {/* Fondo ambiental envolvente (toma los colores exactos del banner: rojo, naranja, etc.) */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <img
+              className="w-full h-full object-cover scale-125 blur-3xl opacity-70 saturate-150 brightness-95"
+              src={eventBanner}
+              alt=""
+              aria-hidden="true"
+            />
+            {/* Degradado superior para contrastar y degradado inferior suave hacia el fondo blanco de la página */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-background" />
+          </div>
+
+          <div className="max-w-container-max mx-auto px-8 relative z-10">
+            {/* Barra superior con botón volver y categoría */}
+            <div className="flex items-center justify-between mb-4">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 text-white/90 hover:text-white mb-6 transition-colors text-sm font-semibold w-fit bg-black/40 hover:bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10"
+                className="inline-flex items-center gap-2 text-white hover:text-white transition-colors text-xs font-bold bg-black/40 hover:bg-black/60 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 shadow-xs active:scale-95"
               >
-                <span className="material-symbols-outlined text-sm">
+                <span className="material-symbols-outlined text-base">
                   arrow_back
                 </span>
                 <span>Volver a Cartelera</span>
               </Link>
-
-              <div className="flex flex-col gap-3 text-white">
-                <span className="font-semibold text-[14px] uppercase tracking-widest text-electric-indigo bg-white/10 backdrop-blur-md w-fit px-3 py-1 rounded-full qph-label-bold">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs uppercase tracking-wider text-white bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
                   {event.category || "Experiencia Oficial"}
                 </span>
-                <h1 className="qph-display-xl text-white max-w-3xl leading-tight">
+                <span className="bg-vip-gold/90 text-white font-bold text-xs tracking-wider px-3 py-1 rounded-full uppercase shadow-xs">
+                  Venta Oficial QPH
+                </span>
+              </div>
+            </div>
+
+            {/* Banner Panorámico Redondeado Flotante */}
+            <div className="relative w-full rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl border border-white/20 bg-black/10 aspect-[1900/550] max-h-[460px] flex items-center justify-center group">
+              <img
+                className="w-full h-full object-cover sm:object-contain drop-shadow-2xl"
+                src={eventBanner}
+                alt={event.name}
+              />
+
+              {/* Badge de fecha flotante en la esquina inferior izquierda (estilo Vaope) */}
+              {showDay && (
+                <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-pink-600/95 text-white backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl font-black">
+                  <span className="text-xl lg:text-2xl leading-none">
+                    {showDay}
+                  </span>
+                  <span className="text-xs uppercase tracking-wider font-extrabold leading-tight text-pink-100 block">
+                    {showMonth}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Fila de Datos del Evento Debajo del Banner (Sobre el desvanecimiento hacia el fondo) */}
+            <div className="mt-6 flex flex-col md:flex-row md:items-center justify-between gap-4 pt-3 border-t border-slate-900/10">
+              <div className="flex flex-col gap-1.5">
+                <h1 className="text-2xl lg:text-3xl font-extrabold text-deep-slate tracking-tight leading-tight">
                   {event.name}
                 </h1>
-                <div className="flex flex-wrap gap-8 items-center mt-4">
+                <div className="flex flex-wrap items-center gap-6 text-sm text-on-surface-variant font-medium">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-lg">
+                    <span className="material-symbols-outlined text-lg text-electric-indigo">
                       calendar_today
                     </span>
-                    <span className="qph-label-bold text-sm capitalize">
+                    <span className="capitalize font-semibold text-deep-slate">
                       {formattedShowDate}
                       {formattedShowTime ? ` • ${formattedShowTime} hrs` : ""}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-lg">
+                    <span className="material-symbols-outlined text-lg text-electric-indigo">
                       location_on
                     </span>
-                    <span className="qph-label-bold text-sm">
+                    <span className="font-semibold text-deep-slate">
                       {(event.venue || "Recinto Oficial").toUpperCase()},{" "}
                       {event.city.toUpperCase()}
                     </span>
                   </div>
-                  <button
-                    onClick={toggleFavorite}
-                    className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-lg px-6 py-3 rounded-xl transition-all border border-white/20 cursor-pointer active:scale-95"
-                  >
-                    <span
-                      className="material-symbols-outlined text-lg"
-                      style={{
-                        fontVariationSettings: isFavorite
-                          ? "'FILL' 1"
-                          : "'FILL' 0",
-                      }}
-                    >
-                      favorite
-                    </span>
-                    <span className="qph-label-bold text-sm">
-                      {isFavorite
-                        ? "Quitar de favoritos"
-                        : "Añadir a favoritos"}
-                    </span>
-                  </button>
-
-                  <ShareSocialPopover
-                    title={event.name}
-                    slug={event.slug}
-                    publicUuid={event.publicUuid || event.id}
-                    source="event_detail"
-                    theme="dark"
-                    align="center"
-                  >
-                    <button
-                      type="button"
-                      className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-lg px-6 py-3 rounded-xl transition-all border border-white/20 cursor-pointer active:scale-95"
-                    >
-                      <span className="material-symbols-outlined text-lg">
-                        share
-                      </span>
-                      <span className="qph-label-bold text-sm">Compartir</span>
-                    </button>
-                  </ShareSocialPopover>
-                  {event.promoVideoUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setIsVideoOpen(true)}
-                      className="flex items-center gap-2 bg-electric-indigo hover:bg-primary px-5 py-3 rounded-xl transition-all border border-white/20 cursor-pointer active:scale-95 shadow-lg"
-                    >
-                      <span className="material-symbols-outlined text-lg">
-                        play_circle
-                      </span>
-                      <span className="qph-label-bold text-sm">Ver Video</span>
-                    </button>
-                  )}
                 </div>
+              </div>
+
+              {/* Botones de acción a la derecha */}
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={toggleFavorite}
+                  className="flex items-center gap-2 bg-white/90 hover:bg-white text-deep-slate px-4 py-2.5 rounded-xl transition-all border border-surface-variant shadow-sm cursor-pointer active:scale-95 text-xs font-bold backdrop-blur-xs"
+                >
+                  <span
+                    className="material-symbols-outlined text-base text-pink-600"
+                    style={{
+                      fontVariationSettings: isFavorite
+                        ? "'FILL' 1"
+                        : "'FILL' 0",
+                    }}
+                  >
+                    favorite
+                  </span>
+                  <span>{isFavorite ? "Favorito" : "Guardar"}</span>
+                </button>
+
+                <ShareSocialPopover
+                  title={event.name}
+                  slug={event.slug}
+                  publicUuid={event.publicUuid || event.id}
+                  source="event_detail"
+                  theme="light"
+                  align="center"
+                >
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 bg-white/90 hover:bg-white text-deep-slate px-4 py-2.5 rounded-xl transition-all border border-surface-variant shadow-sm cursor-pointer active:scale-95 text-xs font-bold backdrop-blur-xs"
+                  >
+                    <span className="material-symbols-outlined text-base text-electric-indigo">
+                      share
+                    </span>
+                    <span>Compartir</span>
+                  </button>
+                </ShareSocialPopover>
+
+                {event.promoVideoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setIsVideoOpen(true)}
+                    className="flex items-center gap-2 bg-electric-indigo hover:bg-primary text-white px-4 py-2.5 rounded-xl transition-all border border-electric-indigo/20 cursor-pointer active:scale-95 text-xs font-bold shadow-md shadow-electric-indigo/20"
+                  >
+                    <span className="material-symbols-outlined text-base">
+                      play_circle
+                    </span>
+                    <span>Video</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -843,14 +892,16 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 {(event.zones || []).map((ticket) => (
                   <div
                     key={ticket.id}
-                    className="bg-white p-5 sm:p-6 rounded-2xl border border-surface-variant shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-electric-indigo/40 transition-all"
+                    className="bg-white p-5 sm:p-6 rounded-2xl border border-surface-variant shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-electric-indigo/40 transition-all border-l-4"
+                    style={{ borderLeftColor: ticket.color || "#4F46E5" }}
                   >
                     <div className="space-y-1.5 flex-1">
                       <div className="flex flex-wrap items-center gap-2.5">
-                        <span
-                          className="px-3 py-1 rounded-full text-[10px] font-label-bold uppercase tracking-wider shadow-xs text-white"
-                          style={{ backgroundColor: ticket.color || "#4F46E5" }}
-                        >
+                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold text-deep-slate bg-surface-gray border border-surface-variant/80">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: ticket.color || "#4F46E5" }}
+                          />
                           {ticket.name}
                         </span>
                         <h4 className="font-headline-md text-base sm:text-lg text-deep-slate font-bold">
@@ -897,13 +948,6 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                             </span>
                           )}
                         </div>
-                        {!ticket.feeIncluded &&
-                          Number(ticket.serviceFee || 0) > 0 && (
-                            <span className="text-[10px] text-slate-500 block">
-                              Incluye S/. {Number(ticket.serviceFee).toFixed(2)}{" "}
-                              de servicio
-                            </span>
-                          )}
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 mt-0.5">
                           <span className="material-symbols-outlined text-[13px]">
                             check_circle
@@ -956,29 +1000,6 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
             <div className="sticky top-28 flex flex-col gap-6">
               {/* Card donde se muestra el Monto (Purchase Card) */}
               <div className="bg-white rounded-2xl shadow-xs border border-surface-variant overflow-hidden">
-                {/* Mini Banner de la tarjeta */}
-                <div className="relative h-28 overflow-hidden">
-                  <img
-                    alt={event.name}
-                    className="w-full h-full object-cover"
-                    src={eventBanner}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-deep-slate via-deep-slate/40 to-transparent" />
-                  <div className="absolute bottom-3 left-4 right-4 text-white flex justify-between items-end">
-                    <div>
-                      <span className="inline-block bg-white/90 backdrop-blur-md text-deep-slate text-[9px] font-label-bold px-2 py-0.5 rounded-full uppercase mb-1 border border-surface-variant/40">
-                        {event.category || "Oficial"}
-                      </span>
-                      <h3 className="font-headline-md text-xs font-bold leading-tight line-clamp-1 text-white">
-                        {event.name}
-                      </h3>
-                    </div>
-                    <span className="text-[10px] text-white/80 font-label-bold truncate max-w-[120px]">
-                      {event.venue || event.city}
-                    </span>
-                  </div>
-                </div>
-
                 <div className="p-6">
                   {/* Encabezado de Precio */}
                   <div className="flex justify-between items-start mb-5 pb-4 border-b border-surface-variant">
@@ -1131,104 +1152,24 @@ export default function EventDetailPage({ id }: EventDetailPageProps) {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {similarEvents.map((sim) => {
-                    const isFav =
-                      checkFavorite(sim.id) ||
-                      (sim.publicUuid ? checkFavorite(sim.publicUuid) : false);
-                    const targetId = sim.slug || sim.publicUuid || sim.id;
-                    const ctaHref =
-                      sim.hasLandingPage && sim.slug
-                        ? `/e/${sim.slug}`
-                        : `/events/${targetId}`;
-                    const fallbackImg =
-                      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80";
-
-                    return (
-                      <div
-                        key={sim.id}
-                        className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer flex flex-col justify-between border border-surface-variant"
-                      >
-                        <div className="relative aspect-video overflow-hidden bg-surface-gray">
-                          <img
-                            className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-                            src={sim.bannerUrl || fallbackImg}
-                            alt={sim.title}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = fallbackImg;
-                            }}
-                          />
-                          <div className="absolute top-3 left-3 flex gap-2">
-                            <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
-                              {sim.category || "EVENTO"}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(e) =>
-                              toggleRecommendationFavorite(
-                                sim.id,
-                                sim.publicUuid,
-                                e,
-                              )
-                            }
-                            aria-label={
-                              isFav
-                                ? "Quitar de favoritos"
-                                : "Guardar en favoritos"
-                            }
-                            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-deep-slate/60 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95 z-10"
-                          >
-                            <span
-                              className="material-symbols-outlined text-[18px]"
-                              style={{
-                                fontVariationSettings: isFav
-                                  ? "'FILL' 1"
-                                  : "'FILL' 0",
-                                color: isFav ? "#e11d48" : "white",
-                              }}
-                            >
-                              favorite
-                            </span>
-                          </button>
-                        </div>
-
-                        <div className="p-5 flex flex-col flex-1 justify-between gap-4">
-                          <div>
-                            <p className="font-label-bold text-[11px] text-electric-indigo mb-1 uppercase tracking-wider">
-                              {formatSimilarDate(sim.date)} •{" "}
-                              {sim.venue || sim.city || "PERÚ"}
-                            </p>
-                            <Link href={ctaHref}>
-                              <h3 className="font-headline-md text-base text-deep-slate group-hover:text-electric-indigo transition-colors font-bold line-clamp-2 leading-snug">
-                                {sim.title}
-                              </h3>
-                            </Link>
-                          </div>
-
-                          <div className="flex justify-between items-center pt-3 border-t border-surface-variant/60">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] text-on-surface-variant uppercase font-label-bold">
-                                Precio
-                              </span>
-                              <span className="font-price-tag text-deep-slate font-extrabold text-sm sm:text-base">
-                                {sim.minPrice > 0
-                                  ? `Desde S/ ${sim.minPrice.toFixed(2)}`
-                                  : "Entrada Libre"}
-                              </span>
-                            </div>
-                            <Link
-                              href={ctaHref}
-                              className="px-3.5 py-2 bg-electric-indigo text-white rounded-xl font-label-bold text-[12px] hover:bg-primary active:scale-95 transition-all shadow-xs"
-                            >
-                              {sim.hasLandingPage && sim.slug
-                                ? "Ver Experiencia"
-                                : "Comprar"}
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {similarEvents.map((sim) => (
+                    <EventCard
+                      key={sim.id}
+                      id={sim.id}
+                      publicUuid={sim.publicUuid}
+                      slug={sim.slug}
+                      hasLandingPage={sim.hasLandingPage}
+                      title={sim.title}
+                      category={sim.category || "EVENTO"}
+                      imageUrl={
+                        sim.bannerUrl ||
+                        "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80"
+                      }
+                      date={formatSimilarDate(sim.date)}
+                      location={sim.venue || sim.city || "PERÚ"}
+                      price={sim.minPrice}
+                    />
+                  ))}
                 </div>
               )}
             </div>

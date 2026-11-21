@@ -58,14 +58,14 @@ const DEFAULT_SHOW_FUNCTIONS: ShowFunction[] = [
   {
     id: "f1",
     dateStr: "Viernes 14 Junio",
-    timeStr: "20:00h",
+    timeStr: "20:00",
     statusText: "Entradas disp.",
     statusType: "available",
   },
   {
     id: "f2",
     dateStr: "Sábado 15 Junio",
-    timeStr: "21:00h",
+    timeStr: "21:00",
     statusText: "¡Últimos pases!",
     statusType: "last_passes",
   },
@@ -248,11 +248,10 @@ export default function PurchaseFlowPageComponent() {
               day: "numeric",
               month: "long",
             });
-            const timeStr =
-              d.toLocaleTimeString("es-PE", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }) + "h";
+            const timeStr = d.toLocaleTimeString("es-PE", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
             return {
               id: show.publicUuid || show.id,
               dateStr: dateStr.charAt(0).toUpperCase() + dateStr.slice(1),
@@ -351,9 +350,14 @@ export default function PurchaseFlowPageComponent() {
     try {
       const storedValue = sessionStorage.getItem(checkoutTimerKey);
       const parsedExpiresAt = storedValue ? Number(storedValue) : NaN;
-      if (Number.isFinite(parsedExpiresAt) && parsedExpiresAt > 0) {
+      // Solo reutilizar el timestamp guardado si es válido y aún no ha expirado
+      if (
+        Number.isFinite(parsedExpiresAt) &&
+        parsedExpiresAt > Date.now()
+      ) {
         resolvedExpiresAt = parsedExpiresAt;
       } else {
+        // Si no existe o ya venció en una sesión anterior, inicializar nuevo ciclo de 15 min
         sessionStorage.setItem(checkoutTimerKey, String(resolvedExpiresAt));
       }
     } catch {
@@ -1054,8 +1058,8 @@ export default function PurchaseFlowPageComponent() {
         eventTitle={event ? event.name : "Evento Oficial"}
         categoryTag={
           event
-            ? `${event.category} • Venta Oficial`
-            : "Música en Vivo • Oficial"
+            ? `${event.category === "CONCERTS" ? "Conciertos" : event.category} • Venta Oficial`
+            : "Conciertos • Venta Oficial"
         }
         bannerImageUrl={
           event?.bannerUrl ||
@@ -1273,68 +1277,112 @@ export default function PurchaseFlowPageComponent() {
                 <>
                   {/* Selector de Fechas / Funciones */}
                   <div className="bg-white p-6 rounded-2xl border border-surface-variant shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 mb-4">
                       <h2 className="text-lg sm:text-xl font-bold text-deep-slate">
                         Selecciona tu Función
                       </h2>
-                      <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider truncate max-w-xs">
+                      <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider truncate max-w-full sm:max-w-xs">
                         {eventVenue}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {showFunctions.map((fn) => {
-                        const isSelected = selectedFunctionId === fn.id;
-                        return (
-                          <button
-                            key={fn.id}
-                            type="button"
-                            onClick={() => setSelectedFunctionId(fn.id)}
-                            className={`p-3.5 rounded-xl text-left transition-all relative cursor-pointer ${
-                              isSelected
-                                ? "border-2 border-electric-indigo bg-electric-indigo/5 shadow-md shadow-electric-indigo/10"
-                                : "border border-surface-variant hover:border-electric-indigo bg-surface-container-low/50 hover:bg-surface-gray"
-                            }`}
-                          >
-                            {isSelected && (
-                              <span className="absolute -top-2.5 right-3 bg-electric-indigo text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                                Seleccionado
-                              </span>
-                            )}
-                            <div
-                              className={`text-xs font-bold ${
+                    {showFunctions.length === 1 ? (
+                      /* Si hay una sola función, mostramos una tarjeta compacta para ahorrar scroll vertical */
+                      <div className="p-3.5 rounded-xl border-2 border-electric-indigo bg-electric-indigo/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
+                        <div className="flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-lg bg-electric-indigo/10 text-electric-indigo flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-[18px]">
+                              calendar_today
+                            </span>
+                          </span>
+                          <div>
+                            <div className="text-xs font-bold text-electric-indigo">
+                              {showFunctions[0].dateStr}
+                            </div>
+                            <div className="font-extrabold text-deep-slate text-base">
+                              {showFunctions[0].timeStr}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 self-start sm:self-center">
+                          <span className="text-[11px] font-medium flex items-center gap-1">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                showFunctions[0].statusType === "last_passes"
+                                  ? "bg-vip-gold"
+                                  : "bg-emerald-500"
+                              }`}
+                            />
+                            <span
+                              className={
+                                showFunctions[0].statusType === "last_passes"
+                                  ? "text-vip-gold"
+                                  : "text-platinum-silver"
+                              }
+                            >
+                              {showFunctions[0].statusText}
+                            </span>
+                          </span>
+                          <span className="bg-electric-indigo text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase shadow-xs">
+                            Función Única
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {showFunctions.map((fn) => {
+                          const isSelected = selectedFunctionId === fn.id;
+                          return (
+                            <button
+                              key={fn.id}
+                              type="button"
+                              onClick={() => setSelectedFunctionId(fn.id)}
+                              className={`p-3.5 rounded-xl text-left transition-all relative cursor-pointer ${
                                 isSelected
-                                  ? "text-electric-indigo"
-                                  : "text-on-surface-variant"
+                                  ? "border-2 border-electric-indigo bg-electric-indigo/5 shadow-md shadow-electric-indigo/10"
+                                  : "border border-surface-variant hover:border-electric-indigo bg-surface-container-low/50 hover:bg-surface-gray"
                               }`}
                             >
-                              {fn.dateStr}
-                            </div>
-                            <div className="font-extrabold text-deep-slate text-base mt-0.5">
-                              {fn.timeStr}
-                            </div>
-                            <div className="text-[11px] mt-1 flex items-center gap-1 font-medium">
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  fn.statusType === "last_passes"
-                                    ? "bg-vip-gold"
-                                    : "bg-emerald-500"
+                              {isSelected && (
+                                <span className="absolute -top-2.5 right-3 bg-electric-indigo text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                                  Seleccionado
+                                </span>
+                              )}
+                              <div
+                                className={`text-xs font-bold ${
+                                  isSelected
+                                    ? "text-electric-indigo"
+                                    : "text-on-surface-variant"
                                 }`}
-                              />
-                              <span
-                                className={
-                                  fn.statusType === "last_passes"
-                                    ? "text-vip-gold"
-                                    : "text-platinum-silver"
-                                }
                               >
-                                {fn.statusText}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                                {fn.dateStr}
+                              </div>
+                              <div className="font-extrabold text-deep-slate text-base mt-0.5">
+                                {fn.timeStr}
+                              </div>
+                              <div className="text-[11px] mt-1 flex items-center gap-1 font-medium">
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    fn.statusType === "last_passes"
+                                      ? "bg-vip-gold"
+                                      : "bg-emerald-500"
+                                  }`}
+                                />
+                                <span
+                                  className={
+                                    fn.statusType === "last_passes"
+                                      ? "text-vip-gold"
+                                      : "text-platinum-silver"
+                                  }
+                                >
+                                  {fn.statusText}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Mapa Esquemático del Recinto / Zonas y Localidades (Alineado con Stitch) */}
@@ -1363,6 +1411,18 @@ export default function PurchaseFlowPageComponent() {
                           return t;
                         }),
                       );
+                      // Scroll suave y enfoque a la sección de selección de entradas
+                      if (typeof document !== "undefined") {
+                        const targetElement =
+                          document.getElementById(`ticket-tier-${selectedId}`) ||
+                          document.getElementById("tickets-selector-section");
+                        if (targetElement) {
+                          targetElement.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                        }
+                      }
                     }}
                     occupancyPercentage={
                       event?.zones && event.zones.length > 0
@@ -1392,79 +1452,7 @@ export default function PurchaseFlowPageComponent() {
                     }
                   />
 
-                  {/* Banner Oficial de Límites por Persona / Antirreventa */}
-                  <div
-                    className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${
-                      remainingUserQuotaForEvent <= 0
-                        ? "bg-rose-50 border-rose-200 text-rose-900"
-                        : "bg-electric-indigo/5 border-electric-indigo/20 text-deep-slate"
-                    }`}
-                  >
-                    <span
-                      className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${
-                        remainingUserQuotaForEvent <= 0
-                          ? "text-rose-600"
-                          : "text-electric-indigo"
-                      }`}
-                    >
-                      {remainingUserQuotaForEvent <= 0
-                        ? "block"
-                        : "verified_user"}
-                    </span>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="font-bold">
-                          {remainingUserQuotaForEvent <= 0
-                            ? "Límite Oficial de Entradas Alcanzado"
-                            : "Política Oficial de Venta Antirreventa QPH"}
-                        </span>
-                        <span
-                          className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${
-                            remainingUserQuotaForEvent <= 0
-                              ? "bg-rose-100 text-rose-700"
-                              : "bg-electric-indigo/10 text-electric-indigo"
-                          }`}
-                        >
-                          Tope: {eventUserTicketLimit} entradas por persona
-                        </span>
-                      </div>
-                      <p className="text-on-surface-variant leading-relaxed">
-                        {remainingUserQuotaForEvent <= 0 ? (
-                          <strong className="text-rose-700 font-semibold block">
-                            Ya cuentas con {alreadyPurchasedTicketsCount}{" "}
-                            entrada(s) registrada(s) para este evento. Se ha
-                            alcanzado el tope máximo permitido por persona (
-                            {eventUserTicketLimit}).
-                          </strong>
-                        ) : alreadyPurchasedTicketsCount > 0 ? (
-                          <span>
-                            Ya cuentas con{" "}
-                            <strong>
-                              {alreadyPurchasedTicketsCount} entrada(s)
-                            </strong>{" "}
-                            registrada(s). En esta orden puedes adquirir hasta
-                            un máximo de{" "}
-                            <strong>
-                              {remainingUserQuotaForEvent} entrada(s) más
-                            </strong>
-                            .
-                          </span>
-                        ) : (
-                          <span>
-                            Para garantizar un acceso equitativo y evitar la
-                            reventa, cada cliente puede adquirir hasta un máximo
-                            de{" "}
-                            <strong>
-                              {eventUserTicketLimit} entradas oficiales
-                            </strong>{" "}
-                            para este evento.
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Selector de Tipos de Entradas y Cantidades */}
+                  {/* Selector de Tipos de Entradas y Cantidades (Inmediatamente pegado al Mapa) */}
                   <div id="tickets-selector-section" className="space-y-4">
                     <h3 className="text-lg font-bold text-deep-slate">
                       Selecciona tus Entradas
@@ -1481,7 +1469,8 @@ export default function PurchaseFlowPageComponent() {
                       return (
                         <div
                           key={tier.id}
-                          className={`p-5 rounded-2xl border-2 transition-all relative ${
+                          id={`ticket-tier-${tier.id}`}
+                          className={`p-5 rounded-2xl border-2 transition-all relative scroll-mt-24 ${
                             !tier.available
                               ? "bg-white/60 border-surface-variant/70 opacity-70"
                               : isSelected
@@ -1568,7 +1557,10 @@ export default function PurchaseFlowPageComponent() {
                                       {(tier.price * tier.quantity).toFixed(2)}
                                     </span>
                                     <span className="text-[11px] text-platinum-silver">
-                                      {tier.quantity} entradas
+                                      {tier.quantity}{" "}
+                                      {tier.quantity === 1
+                                        ? "entrada"
+                                        : "entradas"}
                                     </span>
                                   </div>
                                 </>
@@ -1582,6 +1574,78 @@ export default function PurchaseFlowPageComponent() {
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* Banner Oficial de Límites por Persona / Antirreventa (Ubicado debajo de las entradas) */}
+                  <div
+                    className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${
+                      remainingUserQuotaForEvent <= 0
+                        ? "bg-rose-50 border-rose-200 text-rose-900"
+                        : "bg-electric-indigo/5 border-electric-indigo/20 text-deep-slate"
+                    }`}
+                  >
+                    <span
+                      className={`material-symbols-outlined text-lg shrink-0 mt-0.5 ${
+                        remainingUserQuotaForEvent <= 0
+                          ? "text-rose-600"
+                          : "text-electric-indigo"
+                      }`}
+                    >
+                      {remainingUserQuotaForEvent <= 0
+                        ? "block"
+                        : "verified_user"}
+                    </span>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="font-bold">
+                          {remainingUserQuotaForEvent <= 0
+                            ? "Límite Oficial de Entradas Alcanzado"
+                            : "Política Oficial de Venta Antirreventa QPH"}
+                        </span>
+                        <span
+                          className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${
+                            remainingUserQuotaForEvent <= 0
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-electric-indigo/10 text-electric-indigo"
+                          }`}
+                        >
+                          Tope: {eventUserTicketLimit} entradas por persona
+                        </span>
+                      </div>
+                      <p className="text-on-surface-variant leading-relaxed">
+                        {remainingUserQuotaForEvent <= 0 ? (
+                          <strong className="text-rose-700 font-semibold block">
+                            Ya cuentas con {alreadyPurchasedTicketsCount}{" "}
+                            entrada(s) registrada(s) para este evento. Se ha
+                            alcanzado el tope máximo permitido por persona (
+                            {eventUserTicketLimit}).
+                          </strong>
+                        ) : alreadyPurchasedTicketsCount > 0 ? (
+                          <span>
+                            Ya cuentas con{" "}
+                            <strong>
+                              {alreadyPurchasedTicketsCount} entrada(s)
+                            </strong>{" "}
+                            registrada(s). En esta orden puedes adquirir hasta
+                            un máximo de{" "}
+                            <strong>
+                              {remainingUserQuotaForEvent} entrada(s) más
+                            </strong>
+                            .
+                          </span>
+                        ) : (
+                          <span>
+                            Para garantizar un acceso equitativo y evitar la
+                            reventa, cada cliente puede adquirir hasta un máximo
+                            de{" "}
+                            <strong>
+                              {eventUserTicketLimit} entradas oficiales
+                            </strong>{" "}
+                            para este evento.
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
@@ -2058,76 +2122,6 @@ export default function PurchaseFlowPageComponent() {
                     )}
                   </div>
 
-                  {/* Botón Principal de Acción en la Pasarela (Desktop / Tablet, estilo Stitch) */}
-                  <div className="hidden lg:block pt-2 space-y-3">
-                    {/* Checkbox Obligatorio Legal de Aceptación Expresa */}
-                    <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-left">
-                      <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          id="acceptTermsStep2Main"
-                          checked={acceptedLegalTerms}
-                          onChange={(e) =>
-                            setAcceptedLegalTerms(e.target.checked)
-                          }
-                          className="mt-0.5 rounded text-electric-indigo focus:ring-electric-indigo border-slate-300 cursor-pointer w-4 h-4 shrink-0"
-                        />
-                        <span className="text-[11px] text-slate-700 leading-tight">
-                          He leído y acepto los{" "}
-                          <Link
-                            href="/terminos-y-condiciones"
-                            target="_blank"
-                            className="font-bold text-electric-indigo underline hover:text-indigo-800"
-                          >
-                            Términos y Condiciones
-                          </Link>{" "}
-                          y las{" "}
-                          <Link
-                            href="/politicas-de-privacidad"
-                            target="_blank"
-                            className="font-bold text-electric-indigo underline hover:text-indigo-800"
-                          >
-                            Políticas de Privacidad
-                          </Link>{" "}
-                          de queplanhoy.
-                        </span>
-                      </label>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleSubmitPayment}
-                      disabled={
-                        isProcessing ||
-                        Boolean(pendingAsyncOrder) ||
-                        totalTickets === 0 ||
-                        !acceptedLegalTerms
-                      }
-                      className="w-full py-4 bg-electric-indigo hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-electric-indigo/25 active:scale-[0.99] cursor-pointer"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>{processingLabel}</span>
-                        </>
-                      ) : pendingAsyncOrder ? (
-                        <>
-                          <span className="material-symbols-outlined text-[20px]">
-                            hourglass_top
-                          </span>
-                          <span>Orden pendiente de confirmación...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-[20px]">
-                            lock
-                          </span>
-                          <span>Pagar Ahora • S/. {grandTotal.toFixed(2)}</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
                   {/* Trust Badges de Seguridad (Móvil: 2 arriba + 1 abajo centrados; Desktop: 3 en fila centrados) */}
                   <div className="pt-4 border-t border-surface-variant/60 text-on-surface-variant/80">
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-y-2.5 gap-x-6">
@@ -2505,26 +2499,28 @@ export default function PurchaseFlowPageComponent() {
                       )}
                     </div>
 
-                    {/* Métodos Aceptados */}
-                    <div className="mt-5 pt-4 border-t border-surface-variant">
-                      <div className="text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
-                        Métodos oficiales aceptados:
+                    {/* Métodos Aceptados (Solo visible en Paso 1) */}
+                    {currentStep === 1 && (
+                      <div className="mt-5 pt-4 border-t border-surface-variant">
+                        <div className="text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2.5">
+                          Métodos oficiales aceptados:
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <span className="px-2 py-1 bg-purple-50 rounded text-[10px] font-bold text-purple-700 border border-purple-200/70">
+                            Yape / Plin QR
+                          </span>
+                          <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
+                            💳 Visa / Mastercard
+                          </span>
+                          <span className="px-2 py-1 bg-amber-50 rounded text-[10px] font-bold text-amber-800 border border-amber-200/70">
+                            PagoEfectivo CIP
+                          </span>
+                          <span className="px-2 py-1 bg-sky-50 rounded text-[10px] font-bold text-sky-800 border border-sky-200/70">
+                            Cuotéalo BCP
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center justify-center gap-2">
-                        <span className="px-2 py-1 bg-purple-50 rounded text-[10px] font-bold text-purple-700 border border-purple-200/70">
-                          Yape / Plin QR
-                        </span>
-                        <span className="px-2 py-1 bg-surface-gray rounded text-[10px] font-bold text-deep-slate border border-surface-variant">
-                          💳 Visa / Mastercard
-                        </span>
-                        <span className="px-2 py-1 bg-amber-50 rounded text-[10px] font-bold text-amber-800 border border-amber-200/70">
-                          PagoEfectivo CIP
-                        </span>
-                        <span className="px-2 py-1 bg-sky-50 rounded text-[10px] font-bold text-sky-800 border border-sky-200/70">
-                          Cuotéalo BCP
-                        </span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

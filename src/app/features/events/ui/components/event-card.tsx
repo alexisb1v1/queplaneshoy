@@ -13,11 +13,13 @@ export interface EventCardProps {
   title: string;
   category: string;
   imageUrl: string;
+  bannerUrl?: string;
+  hasBannerText?: boolean;
   altText?: string;
   date: string;
   location: string;
   price: number;
-  ticketType: string;
+  ticketType?: string;
   ticketBadgeStyle?: "general" | "vip" | "platinum" | "error";
   description?: string;
   urgencyText?: string;
@@ -37,12 +39,6 @@ export function EventCard({
   date,
   location,
   price,
-  ticketType,
-  ticketBadgeStyle = "general",
-  description = "Acceso oficial garantizado para esta función en directo.",
-  urgencyText = "Aforo limitado",
-  urgencyIcon = "bolt",
-  urgencyType = "info",
 }: EventCardProps) {
   const router = useRouter();
   const { isFavorite: checkFavorite, toggle } = useFavorites();
@@ -61,75 +57,44 @@ export function EventCard({
     }
   };
 
-  const getBadgeClass = () => {
-    switch (ticketBadgeStyle) {
-      case "vip":
-        return "bg-vip-gold text-white";
-      case "platinum":
-        return "bg-slate-700 text-white";
-      case "error":
-        return "bg-rose-600 text-white";
-      case "general":
-      default:
-        return "bg-surface-gray text-electric-indigo border border-surface-variant/40";
-    }
-  };
-
-  const getUrgencyColorClass = () => {
-    switch (urgencyType) {
-      case "critical":
-        return "text-rose-600";
-      case "high_demand":
-        return "text-amber-500";
-      case "warning":
-        return "text-yellow-600";
-      case "info":
-      default:
-        return "text-rose-500";
-    }
-  };
-
   // Navegación inteligente y segura: si tiene landing va a /e/[slug], si no a /events/[publicUuid] (previniendo BOLA/IDOR)
   const secureIdentifier = publicUuid || slug || id;
   const ctaHref =
     hasLandingPage && slug ? `/e/${slug}` : `/events/${secureIdentifier}`;
-  const ctaText =
-    hasLandingPage && slug ? "Ver Experiencia" : "Comprar Entradas";
 
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all hover:-translate-y-1 flex flex-col justify-between border border-surface-variant">
-      {/* Media Area */}
-      <div className="aspect-video relative overflow-hidden">
-        <Link href={ctaHref} className="block w-full h-full">
-          <img
-            className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500 cursor-pointer"
-            src={imageUrl}
-            alt={altText}
-          />
-        </Link>
+    <Link
+      href={ctaHref}
+      className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between border border-surface-variant cursor-pointer"
+    >
+      {/* Media Area - Formato cuadrado óptimo para flyers oficiales (Estilo Spotify/Teleticket) */}
+      <div className="aspect-square relative overflow-hidden bg-surface-gray">
+        <img
+          className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
+          src={imageUrl}
+          alt={altText}
+        />
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex gap-2 pointer-events-none">
-          <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
-            {category}
-          </span>
-          <span
-            className={`px-2.5 py-1 rounded-full text-[10px] font-label-bold uppercase ${getBadgeClass()}`}
-          >
-            {ticketType}
-          </span>
-        </div>
+        {/* 1 Badge sutil de categoría (Máximo 1 para evitar saturación visual) */}
+        {category && (
+          <div className="absolute top-3 left-3 pointer-events-none">
+            <span className="px-2.5 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-bold text-deep-slate border border-black/5 shadow-xs uppercase tracking-wider">
+              {category}
+            </span>
+          </div>
+        )}
 
-        {/* Botón Favorito */}
+        {/* Botón Favorito discreto con stopPropagation para no activar navegación */}
         <button
+          type="button"
           onClick={toggleFavorite}
           aria-label={
             isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"
           }
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer"
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 hover:bg-white backdrop-blur-md flex items-center justify-center text-slate-700 hover:text-rose-600 transition-all shadow-xs cursor-pointer active:scale-90"
         >
           <span
-            className="material-symbols-outlined text-lg"
+            className="material-symbols-outlined text-[18px]"
             style={{
               fontVariationSettings: isFavorite ? "'FILL' 1" : "'FILL' 0",
               color: isFavorite ? "#e11d48" : "inherit",
@@ -140,48 +105,31 @@ export function EventCard({
         </button>
       </div>
 
-      {/* Contenido */}
-      <div className="p-5 flex-1 flex flex-col justify-between">
+      {/* Contenido limpio: Fecha/Ciudad -> Título -> Precio */}
+      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
         <div>
-          <p className="font-label-bold text-[12px] text-electric-indigo mb-1 uppercase">
-            {date} • {location}
+          {/* Fecha y Ciudad */}
+          <p className="font-semibold text-[11px] sm:text-[12px] text-electric-indigo uppercase tracking-wider mb-1.5 truncate">
+            {date}
+            {location ? ` • ${location}` : ""}
           </p>
-          <Link href={ctaHref} className="block">
-            <h3 className="font-headline-md text-headline-md group-hover:text-electric-indigo transition-colors leading-tight mb-2 cursor-pointer">
-              {title}
-            </h3>
-          </Link>
-          <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3">
-            {description}
-          </p>
-          <div
-            className={`flex items-center gap-1.5 ${getUrgencyColorClass()} mb-2`}
-          >
-            <span className="material-symbols-outlined text-sm">
-              {urgencyIcon}
-            </span>
-            <span className="font-label-bold text-[11px]">{urgencyText}</span>
-          </div>
+
+          {/* Título del Evento */}
+          <h3 className="font-bold text-[15px] sm:text-[16px] text-deep-slate group-hover:text-electric-indigo transition-colors leading-snug line-clamp-2">
+            {title}
+          </h3>
         </div>
 
-        {/* Footer de Card con borde uniforme y botón de compra inteligente */}
-        <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-outline uppercase font-label-bold">
-              Precio
-            </span>
-            <span className="font-price-tag text-price-tag text-deep-slate">
-              Desde S/. {price}
-            </span>
-          </div>
-          <Link
-            href={ctaHref}
-            className="px-3.5 py-2 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-xl font-label-bold text-[12px] transition-all shadow-sm shadow-rose-500/25 cursor-pointer"
-          >
-            {ctaText}
-          </Link>
+        {/* Bloque de Precio destacado en negrita, sin botón invasivo */}
+        <div className="pt-3 mt-3 border-t border-surface-variant/70 flex items-baseline justify-between">
+          <span className="text-[11px] text-on-surface-variant uppercase tracking-wider font-medium">
+            Precio
+          </span>
+          <span className="text-[15px] sm:text-base font-extrabold text-deep-slate tracking-tight">
+            {price > 0 ? `Desde S/ ${price}` : "Entrada Libre"}
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

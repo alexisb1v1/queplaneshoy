@@ -21,37 +21,37 @@ export const EVENT_CATEGORIES: EventCategoryItem[] = [
   {
     id: "CONCERTS",
     label: "Conciertos",
-    icon: "🎵",
+    icon: "music_note",
     badgeStyle: "bg-purple-100 text-purple-700",
   },
   {
     id: "THEATER",
     label: "Teatro & Musicales",
-    icon: "🎭",
+    icon: "theater_comedy",
     badgeStyle: "bg-orange-100 text-orange-700",
   },
   {
     id: "SPORTS",
     label: "Deportes",
-    icon: "⚽",
+    icon: "sports_soccer",
     badgeStyle: "bg-blue-100 text-blue-700",
   },
   {
     id: "FESTIVALS",
     label: "Festivales",
-    icon: "🎪",
+    icon: "festival",
     badgeStyle: "bg-pink-100 text-pink-700",
   },
   {
     id: "COMEDY",
     label: "Comedia & Stand Up",
-    icon: "🎤",
+    icon: "sentiment_very_satisfied",
     badgeStyle: "bg-yellow-100 text-yellow-700",
   },
   {
     id: "GASTRONOMY",
     label: "Gastronomía",
-    icon: "🍔",
+    icon: "restaurant",
     badgeStyle: "bg-green-100 text-green-700",
   },
 ];
@@ -70,9 +70,9 @@ export const EVENT_CITIES: EventCityItem[] = [
 ];
 
 export const AGE_RESTRICTIONS: AgeRestrictionItem[] = [
-  { id: "ALL_AGES", label: "Para toda la familia", icon: "👨👩👧👦" },
-  { id: "PLUS_14", label: "+14 Años", icon: "⚠️" },
-  { id: "PLUS_18", label: "Solo Mayores de 18", icon: "🔞" },
+  { id: "ALL_AGES", label: "Para toda la familia", icon: "family_restroom" },
+  { id: "PLUS_14", label: "+14 Años", icon: "info" },
+  { id: "PLUS_18", label: "Solo Mayores de 18", icon: "explicit" },
 ];
 
 // Helper rápido para cuando recibas el evento desde la base de datos

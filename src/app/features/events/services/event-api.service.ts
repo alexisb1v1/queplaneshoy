@@ -72,14 +72,16 @@ export class EventApiService {
   }
 
   async createEvent(params: CreateEventParams): Promise<EventDto> {
-    return apiClient.post<EventDto>("/events", params);
+    return apiClient.post<EventDto>("/events", params, { timeoutMs: 30000 });
   }
 
   async updateEvent(
     eventId: string,
     params: CreateEventParams,
   ): Promise<EventDto> {
-    return apiClient.put<EventDto>(`/events/${eventId}`, params);
+    return apiClient.put<EventDto>(`/events/${eventId}`, params, {
+      timeoutMs: 30000,
+    });
   }
 
   async getOrganizerEventForEdit(eventId: string): Promise<any> {
@@ -95,7 +97,11 @@ export class EventApiService {
   }
 
   async publishEvent(eventId: string): Promise<EventDto> {
-    return apiClient.post<EventDto>(`/events/${eventId}/publish`, {});
+    return apiClient.post<EventDto>(
+      `/events/${eventId}/publish`,
+      {},
+      { timeoutMs: 30000 },
+    );
   }
 
   async getPublishedCities(): Promise<PublishedCity[]> {

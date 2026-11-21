@@ -39,6 +39,10 @@ export interface EventDto {
   faqs?: Array<{ question: string; answer: string }>;
   hasLandingPage?: boolean;
   has_landing_page?: boolean;
+  hasBannerText?: boolean;
+  has_banner_text?: boolean;
+  flyerUrl?: string;
+  flyer_url?: string;
   landingConfig?: Record<string, any>;
   landing_config?: Record<string, any>;
   promoVideoUrl?: string | null;
@@ -89,6 +93,7 @@ export interface CreateEventParams {
   termsAndConditionsUrl?: string;
   faqs?: Array<{ question: string; answer: string }>;
   hasLandingPage?: boolean;
+  hasBannerText?: boolean;
   landingConfig?: Record<string, any>;
   promoVideoUrl?: string;
   socialLinks?: {

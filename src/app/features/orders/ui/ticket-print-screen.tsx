@@ -128,14 +128,14 @@ export default function TicketPrintScreen({
     tickets && tickets.length > 0
       ? tickets
       : Array.from({ length: Math.max(ticketCount, 1) }).map((_, idx) => ({
-          ticketId: String(idx + 1),
-          ticketUuid: `tck-${orderNumber}-${idx + 1}`,
-          ticketNumber: idx + 1,
-          zoneName: tierZone,
-          tierName: tierName,
-          unitPrice: unitPrice,
-          qrPayload: `QPH|ORD:${orderNumber}|TKT:${idx + 1}`,
-        }));
+        ticketId: String(idx + 1),
+        ticketUuid: `tck-${orderNumber}-${idx + 1}`,
+        ticketNumber: idx + 1,
+        zoneName: tierZone,
+        tierName: tierName,
+        unitPrice: unitPrice,
+        qrPayload: `QPH|ORD:${orderNumber}|TKT:${idx + 1}`,
+      }));
 
   const totalSheets = resolvedTickets.length;
 
@@ -275,10 +275,7 @@ export default function TicketPrintScreen({
     index: number,
   ) => {
     const ticketNum = ticket.ticketNumber || index + 1;
-    const isHolder = index === 0;
-    const ticketAttendee = isHolder
-      ? holderName || "PORTADOR DE LA ENTRADA"
-      : `ACOMPAÑANTE / PORTADOR`;
+    const ticketAttendee = holderName || "PORTADOR DE LA ENTRADA";
     const ticketDniDisplay = "Entrada al Portador • Código QR Oficial";
     const ticketDisplayId = ticket.ticketUuid
       ? `QPH-TCK-${ticket.ticketUuid.substring(0, 8).toUpperCase()}`
@@ -356,8 +353,8 @@ export default function TicketPrintScreen({
               qr_code_scanner
             </span>
             <span className="font-label-bold text-[11px] sm:text-xs font-semibold">
-              Pase digital oficial e intransferible. Muestre el código QR
-              directamente en los tornos o puertas de acceso.
+              Pase digital oficial al portador. Muestre el código QR
+              directamente en el control de acceso o puertas de ingreso.
             </span>
           </div>
           <span className="hidden md:inline-block font-label-bold text-[9px] uppercase tracking-widest text-on-surface-variant bg-white px-2 py-0.5 rounded border border-surface-variant font-bold">
@@ -398,7 +395,7 @@ export default function TicketPrintScreen({
                 {eventName}
               </h2>
               <p className="font-body-md text-on-surface-variant text-xs mt-0.5 line-clamp-1">
-                {eventSubtitle}
+                {eventSubtitle.replace("CONCERTS", "Conciertos")}
               </p>
             </div>
 
@@ -407,7 +404,7 @@ export default function TicketPrintScreen({
               {/* Asistente */}
               <div>
                 <span className="block font-label-bold text-[9px] uppercase text-on-surface-variant tracking-wider font-bold">
-                  {isHolder ? "Titular Nominal" : "Acompañante"}
+                  Comprador / Titular
                 </span>
                 <span className="font-headline-md text-xs sm:text-sm font-bold text-deep-slate uppercase block leading-snug">
                   {ticketAttendee}
@@ -542,7 +539,7 @@ export default function TicketPrintScreen({
             </div>
 
             <p className="text-[8px] text-on-surface-variant text-center leading-tight">
-              Acceso nominal 1 persona
+              Entrada al portador (1 uso)
             </p>
           </div>
         </section>
@@ -599,7 +596,7 @@ export default function TicketPrintScreen({
             </span>
             <div className="min-w-0">
               <span className="block text-[8px] font-bold text-on-surface-variant uppercase tracking-wider">
-                Tornos QR
+                Control QR
               </span>
               <span className="text-[10px] font-bold text-deep-slate truncate block">
                 Pase directo
@@ -630,8 +627,8 @@ export default function TicketPrintScreen({
                 <strong className="font-label-bold text-deep-slate">
                   Entrada al Portador:
                 </strong>{" "}
-                El acceso se concede al portador que presente el código QR
-                digital único oficial en los tornos o puertas.
+                El acceso es al portador y de un solo uso por entrada. El ingreso se valida
+                escaneando el código QR oficial en el control de acceso o puertas de ingreso.
               </p>
             </div>
 
@@ -682,18 +679,16 @@ export default function TicketPrintScreen({
   // Cabecera compartida (Barra de herramientas con Zoom, Cerrar e Imprimir)
   const renderHeader = (drawerMode: boolean) => (
     <header
-      className={`${
-        drawerMode
+      className={`${drawerMode
           ? "h-16 w-full shrink-0 bg-white/95 backdrop-blur-xl border-b border-surface-variant px-4 sm:px-6 flex items-center justify-between gap-3 shadow-2xs print:hidden z-20"
           : "sticky top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-surface-variant shadow-xs print:hidden"
-      }`}
+        }`}
     >
       <div
-        className={`${
-          drawerMode
+        className={`${drawerMode
             ? "w-full flex items-center justify-between gap-3"
             : "h-16 max-w-container-max mx-auto px-4 sm:px-6 flex items-center justify-between gap-4"
-        }`}
+          }`}
       >
         {/* Lado Izquierdo: Volver / Cerrar + Metadatos de la Orden */}
         <div className="flex items-center gap-3 min-w-0">

@@ -22,8 +22,21 @@ export function trackUmamiEvent(
   eventName: string,
   eventData?: Record<string, any>,
 ) {
+  if (typeof window === "undefined") return;
+
+  // 1. Exclusión de Modo Vista Previa (?previewTemp o indicador de borrador)
+  try {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (
+      searchParams.get("previewTemp") === "true" ||
+      searchParams.has("previewTemp") ||
+      eventData?.isPreview === true
+    ) {
+      return;
+    }
+  } catch {}
+
   if (
-    typeof window !== "undefined" &&
     window.umami &&
     typeof window.umami.track === "function"
   ) {

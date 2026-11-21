@@ -259,6 +259,8 @@ export default function CreateEventScreen({
 
   // Multimedia, Video y Redes Sociales
   const [mainBannerUrl, setMainBannerUrl] = useState("");
+  const [flyerUrl, setFlyerUrl] = useState("");
+  const [hasBannerText, setHasBannerText] = useState(false);
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [zoneMapUrl, setZoneMapUrl] = useState("");
   const [promoVideoUrl, setPromoVideoUrl] = useState("");
@@ -330,6 +332,8 @@ export default function CreateEventScreen({
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       handleAddTag();
+    } else if (e.key === "Backspace" && !newTagInput && tags.length > 0) {
+      handleRemoveTag(tags[tags.length - 1]);
     }
   };
 
@@ -432,6 +436,9 @@ export default function CreateEventScreen({
           );
         }
         if (data.bannerUrl) setMainBannerUrl(data.bannerUrl);
+        if (data.flyerUrl) setFlyerUrl(data.flyerUrl);
+        if (data.hasBannerText !== undefined)
+          setHasBannerText(Boolean(data.hasBannerText));
         if (data.zoneMapUrl) setZoneMapUrl(data.zoneMapUrl);
         if (data.galleryUrls && Array.isArray(data.galleryUrls))
           setGalleryUrls(data.galleryUrls);
@@ -641,7 +648,7 @@ export default function CreateEventScreen({
         venueName.trim() &&
         venueAddress.trim(),
       ),
-      multimedia: Boolean(mainBannerUrl && zoneMapUrl),
+      multimedia: Boolean(mainBannerUrl && flyerUrl && zoneMapUrl),
       funciones: shows.length > 0,
       localidades: zones.length > 0,
       landing: Boolean(hasDedicatedLanding && landingSlug.trim()),
@@ -655,6 +662,7 @@ export default function CreateEventScreen({
       venueName,
       venueAddress,
       mainBannerUrl,
+      flyerUrl,
       zoneMapUrl,
       shows.length,
       zones.length,
@@ -740,7 +748,14 @@ export default function CreateEventScreen({
         return {
           valid: false,
           message:
-            "Debes subir el Banner Principal / Hero del evento para continuar.",
+            "Debes subir el Banner Panorámico Web (Hero) del evento para continuar.",
+        };
+      }
+      if (!flyerUrl) {
+        return {
+          valid: false,
+          message:
+            "Debes subir el Flyer Oficial / Afiche Cuadrado (1:1) del evento para continuar.",
         };
       }
       if (!zoneMapUrl) {
@@ -905,6 +920,7 @@ export default function CreateEventScreen({
       price: Number(primaryZone.regularPrice) || 0,
       capacity: Number(totalCapacity) || 0,
       bannerUrl: mainBannerUrl || undefined,
+      hasBannerText,
       shows: shows.map((s) => ({
         name: s.name,
         startTime: s.startTime,
@@ -946,10 +962,13 @@ export default function CreateEventScreen({
         ...(mainBannerUrl
           ? [{ imageUrl: mainBannerUrl, imageType: "banner", sortOrder: 0 }]
           : []),
+        ...(flyerUrl
+          ? [{ imageUrl: flyerUrl, imageType: "flyer", sortOrder: 1 }]
+          : []),
         ...galleryUrls.map((url, i) => ({
           imageUrl: url,
           imageType: "gallery",
-          sortOrder: i + 1,
+          sortOrder: i + 2,
         })),
         ...(zoneMapUrl
           ? [{ imageUrl: zoneMapUrl, imageType: "zone_map", sortOrder: 99 }]
@@ -1721,11 +1740,11 @@ export default function CreateEventScreen({
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-surface-gray border border-surface-variant/60 text-sm font-semibold text-deep-slate focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo outline-none"
+                        className="w-full px-4 py-3 rounded-xl bg-surface-gray border border-surface-variant/60 text-sm font-semibold text-deep-slate focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo outline-none cursor-pointer"
                       >
                         {EVENT_CATEGORIES.map((cat) => (
                           <option key={cat.id} value={cat.id}>
-                            {cat.icon} {cat.label}
+                            {cat.label}
                           </option>
                         ))}
                       </select>
@@ -1739,11 +1758,11 @@ export default function CreateEventScreen({
                       <select
                         value={ageRestriction}
                         onChange={(e) => setAgeRestriction(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-surface-gray border border-surface-variant/60 text-sm font-semibold text-deep-slate focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo outline-none"
+                        className="w-full px-4 py-3 rounded-xl bg-surface-gray border border-surface-variant/60 text-sm font-semibold text-deep-slate focus:border-electric-indigo focus:ring-1 focus:ring-electric-indigo outline-none cursor-pointer"
                       >
                         {AGE_RESTRICTIONS.map((res) => (
                           <option key={res.id} value={res.id}>
-                            {res.icon} {res.label}
+                            {res.label}
                           </option>
                         ))}
                       </select>
@@ -1765,8 +1784,8 @@ export default function CreateEventScreen({
                     />
                   </div>
 
-                  {/* Etiquetas / Tags */}
-                  <div className="space-y-2.5 p-4 rounded-xl bg-surface-gray/50 border border-surface-variant/60">
+                  {/* Etiquetas / Tags (Chips integrados en el mismo contenedor estilo input moderno) */}
+                  <div className="space-y-2 p-3.5 sm:p-4 rounded-xl bg-surface-gray/50 border border-surface-variant/60">
                     <div className="flex items-center justify-between">
                       <label className="font-bold text-xs text-deep-slate flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-electric-indigo text-[16px]">
@@ -1779,51 +1798,51 @@ export default function CreateEventScreen({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">
-                          #
+                    {/* Contenedor interactivo unificado: Tags adentro + Input inline */}
+                    <div
+                      onClick={() => {
+                        const inputEl = document.getElementById("event-tags-input");
+                        if (inputEl) inputEl.focus();
+                      }}
+                      className="min-h-[46px] w-full p-2 rounded-xl bg-white border border-surface-variant/80 focus-within:border-electric-indigo focus-within:ring-1 focus-within:ring-electric-indigo transition-all flex flex-wrap items-center gap-1.5 cursor-text"
+                    >
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-electric-indigo/10 border border-electric-indigo/20 text-electric-indigo text-xs font-bold shadow-2xs select-none"
+                        >
+                          <span>#{tag}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveTag(tag);
+                            }}
+                            className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-electric-indigo/20 text-electric-indigo transition-colors cursor-pointer text-xs leading-none"
+                            title={`Eliminar #${tag}`}
+                          >
+                            ×
+                          </button>
                         </span>
-                        <input
-                          type="text"
-                          value={newTagInput}
-                          onChange={(e) => setNewTagInput(e.target.value)}
-                          onKeyDown={handleKeyDownTag}
-                          placeholder="Escribe una etiqueta y presiona Enter o coma (ej: Salsa, VIP)..."
-                          className="w-full pl-7 pr-3 py-2 rounded-xl bg-white border border-surface-variant/70 text-xs text-deep-slate outline-none focus:border-electric-indigo"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleAddTag()}
-                        className="px-4 py-2 rounded-xl bg-electric-indigo hover:bg-electric-indigo/90 text-white text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
-                      >
-                        + Añadir Tag
-                      </button>
+                      ))}
+
+                      <input
+                        id="event-tags-input"
+                        type="text"
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        onKeyDown={handleKeyDownTag}
+                        placeholder={
+                          tags.length === 0
+                            ? "Escribe una etiqueta y presiona Enter (ej: Salsa, VIP)..."
+                            : "Añadir más..."
+                        }
+                        className="flex-1 min-w-[140px] px-2 py-1 text-xs text-deep-slate outline-none bg-transparent"
+                      />
                     </div>
 
-                    {tags.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        {tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200/80 text-electric-indigo text-xs font-bold shadow-xs"
-                          >
-                            <span>#{tag}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveTag(tag)}
-                              className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-indigo-200/60 text-indigo-700 transition-colors cursor-pointer"
-                              title={`Eliminar #${tag}`}
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+                    {/* Sugerencias compactas */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px]">
                       <span className="text-slate-400 font-medium">
                         Sugerencias:
                       </span>
@@ -1840,7 +1859,7 @@ export default function CreateEventScreen({
                             className={`px-2 py-0.5 rounded-md border text-[10px] font-bold transition-all ${
                               isAlreadyAdded
                                 ? "bg-slate-100 text-slate-400 border-slate-200 cursor-default"
-                                : "bg-white text-slate-600 border-slate-200 hover:border-electric-indigo hover:text-electric-indigo cursor-pointer"
+                                : "bg-white text-slate-600 border-slate-200 hover:border-electric-indigo hover:text-electric-indigo cursor-pointer active:scale-95"
                             }`}
                           >
                             +{sug}
@@ -2279,29 +2298,84 @@ export default function CreateEventScreen({
             {activeStep === "multimedia" && (
               <section className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in duration-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Banner Principal / Hero */}
+                  {/* Banner Panorámico Web (Hero) */}
                   <div className="bg-surface-gray p-5 rounded-2xl border border-surface-variant/60 flex flex-col justify-between space-y-3">
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-bold text-sm text-deep-slate">
-                          Banner Principal / Hero
+                          Banner Panorámico Web (Hero)
                           <span className="text-red-500 ml-0.5">*</span>
                         </span>
                         <span className="text-[11px] font-bold text-electric-indigo bg-white px-2 py-0.5 rounded-md shadow-xs">
-                          1920x800 px (16:9)
+                          1920x600 o 1900x550 px
                         </span>
                       </div>
                       <p className="text-xs text-on-surface-variant mb-2">
-                        Cabecera oficial en la cartelera, ficha de compra y Hero
-                        del evento.
+                        Cabecera oficial en pantalla ancha (Desktop Hero y Ficha de Compra).
                       </p>
                     </div>
+
                     <ImageUploader
                       aspectRatio="banner"
                       folder="banners"
                       value={mainBannerUrl}
                       onChange={setMainBannerUrl}
-                      helpText="Resolución óptima: 1920x800 px o 1920x1080 px (JPG, PNG o WebP, máx. 5 MB)"
+                      helpText="Resolución óptima: 1920x600 px o 1900x550 px (JPG, PNG o WebP, máx. 5 MB)"
+                    />
+
+                    {/* Switch: ¿El banner ya incluye textos gráficos? */}
+                    <div className="mt-2 pt-3 border-t border-surface-variant/60 flex items-center justify-between gap-3">
+                      <div className="flex-1">
+                        <span className="font-bold text-xs text-deep-slate block">
+                          ¿Tu banner ya incluye textos y diseño oficial?
+                        </span>
+                        <p className="text-[11px] text-on-surface-variant leading-tight mt-0.5">
+                          {hasBannerText
+                            ? "Activado: Se ocultará la sobreimpresión de textos HTML para lucir tu arte gráfico."
+                            : "Desactivado: El sistema generará título, fecha y badges sobre la imagen."}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setHasBannerText(!hasBannerText)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          hasBannerText ? "bg-electric-indigo" : "bg-slate-300"
+                        }`}
+                        role="switch"
+                        aria-checked={hasBannerText}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                            hasBannerText ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Flyer Oficial / Afiche Cuadrado (Cartelera & Móvil) */}
+                  <div className="bg-surface-gray p-5 rounded-2xl border border-surface-variant/60 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-sm text-deep-slate">
+                          Flyer Oficial / Afiche Cuadrado
+                          <span className="text-red-500 ml-0.5">*</span>
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-600 bg-white px-2 py-0.5 rounded-md shadow-xs">
+                          1080x1080 px (1:1)
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface-variant mb-2">
+                        Portada utilizada para las tarjetas de cartelera, carruseles de la home y visualización en celulares.
+                      </p>
+                    </div>
+
+                    <ImageUploader
+                      aspectRatio="square"
+                      folder="banners"
+                      value={flyerUrl}
+                      onChange={setFlyerUrl}
+                      helpText="Resolución óptima: 1080x1080 px (1:1) o 1080x1350 px (4:5) (JPG, PNG o WebP, máx. 5 MB)"
                     />
                   </div>
 

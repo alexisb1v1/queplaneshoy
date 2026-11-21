@@ -116,7 +116,10 @@ export function LandingPageContainer({
           <span>Modo Vista Previa Temporal — Evento no publicado aún</span>
         </div>
       )}
-      <EventLandingView event={event} />
+      <EventLandingView
+        event={event}
+        isPreview={Boolean(previewTemp || event.isPreview)}
+      />
     </>
   );
 }

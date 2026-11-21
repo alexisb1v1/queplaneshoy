@@ -161,14 +161,14 @@ export default function PaymentSuccessScreen({
 
           <div className="flex items-center gap-6">
             <Link
-              href="/checkout"
+              href="/profile/tickets"
               className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant hover:text-electric-indigo transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">
                 arrow_back
               </span>
               <span className="hidden sm:inline">
-                Volver a selección de entradas
+                Ir a Mis Entradas
               </span>
             </Link>
             <button
@@ -360,8 +360,7 @@ export default function PaymentSuccessScreen({
                           {ticketCount}x {zoneName}
                         </span>
                         <span className="block text-xs text-on-surface-variant">
-                          Acceso Front Stage VIP prioritario + Barra Libre de
-                          cortesía
+                          Acceso oficial garantizado al recinto con validación QR digital única
                         </span>
                       </div>
                     </div>
@@ -582,7 +581,7 @@ export default function PaymentSuccessScreen({
                       ¿Tienes alguna duda con tu pedido?
                     </h4>
                     <p className="text-xs text-on-surface-variant">
-                      Soporte prioritario 24/7 para titulares VIP.
+                      Soporte prioritario y atención al comprador 24/7.
                     </p>
                   </div>
                 </div>
@@ -700,39 +699,28 @@ export default function PaymentSuccessScreen({
                 </div>
               </div>
 
-              {/* Card 3: Pulsera Cashless y Barra */}
+              {/* Card 3: Servicios en el Evento */}
               <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between hover:-translate-y-1 transition-all duration-300 border border-surface-variant">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800 mb-4 shadow-sm">
                     <span className="material-symbols-outlined text-[24px]">
-                      local_bar
+                      storefront
                     </span>
                   </div>
                   <h4 className="font-bold text-deep-slate text-base sm:text-lg mb-2">
-                    Pulsera Cashless y Barra
+                    Servicios en el Evento
                   </h4>
                   <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                    Tu entrada Platinum incluye barra libre y acreditación de
-                    tela conmemorativa que podrás recoger directamente en la
-                    carpa de bienvenida VIP.
+                    El recinto cuenta con zonas de consumo y atención habilitadas por la organización. Recuerda tener tu entrada digital a la mano en todo momento.
                   </p>
                 </div>
                 <div className="mt-6 pt-4 border-t border-surface-variant/40">
-                  <a
-                    className="inline-flex items-center gap-1 font-bold text-primary hover:underline text-xs"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert(
-                        "Tu pulsera NFC se vinculará en el mostrador VIP para accesos y consumiciones.",
-                      );
-                    }}
-                  >
-                    <span>Beneficios de tu entrada</span>
+                  <span className="inline-flex items-center gap-1 font-bold text-emerald-600 text-xs">
                     <span className="material-symbols-outlined text-[16px]">
-                      chevron_right
+                      check_circle
                     </span>
-                  </a>
+                    <span>Zonas habilitadas por la organización</span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -754,7 +742,7 @@ export default function PaymentSuccessScreen({
                 </h4>
                 <p className="text-xs sm:text-sm text-on-surface-variant">
                   Descubre los festivales, conciertos y obras más exclusivos en
-                  Madrid.
+                  todo el Perú.
                 </p>
               </div>
             </div>

@@ -154,67 +154,49 @@ export function GlobalFooter() {
             <li>
               <Link
                 href="/events"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-electric-indigo">
-                  explore
-                </span>
-                <span>Todas las Categorías</span>
+                Todas las Categorías
               </Link>
             </li>
             <li>
               <Link
                 href="/events?category=CONCERTS"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-electric-indigo">
-                  music_note
-                </span>
-                <span>Conciertos en Vivo</span>
+                Conciertos en Vivo
               </Link>
             </li>
             <li>
               <Link
                 href="/events?category=FESTIVALS"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-electric-indigo">
-                  festival
-                </span>
-                <span>Festivales &amp; Fiestas</span>
+                Festivales &amp; Fiestas
               </Link>
             </li>
             <li>
               <Link
                 href="/events?category=THEATER"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-electric-indigo">
-                  theater_comedy
-                </span>
-                <span>Teatro &amp; Comedia</span>
+                Teatro &amp; Comedia
               </Link>
             </li>
             <li>
               <Link
                 href="/events?date=today"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-emerald-400">
-                  today
-                </span>
-                <span>Eventos de Hoy</span>
+                Eventos de Hoy
               </Link>
             </li>
             <li>
               <Link
                 href="/events?date=weekend"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-amber-400">
-                  event_available
-                </span>
-                <span>Este Fin de Semana</span>
+                Este Fin de Semana
               </Link>
             </li>
             <li>
@@ -222,12 +204,9 @@ export function GlobalFooter() {
                 type="button"
                 onClick={handleNearMeClick}
                 disabled={isLocating}
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform cursor-pointer text-left"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform cursor-pointer text-left w-full"
               >
-                <span className="material-symbols-outlined text-sm text-rose-400">
-                  near_me
-                </span>
-                <span>{isLocating ? "Localizando..." : "Cerca de ti"}</span>
+                {isLocating ? "Localizando..." : "Cerca de ti"}
               </button>
             </li>
           </ul>
@@ -242,23 +221,17 @@ export function GlobalFooter() {
             <li>
               <Link
                 href="/centro-de-ayuda"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-electric-indigo">
-                  help_center
-                </span>
-                <span>Centro de Ayuda (Preguntas Frecuentes)</span>
+                Centro de Ayuda (Preguntas Frecuentes)
               </Link>
             </li>
             <li>
               <a
                 href="mailto:soporte@queplanhoy.com"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-electric-indigo">
-                  mail
-                </span>
-                <span>soporte@queplanhoy.com</span>
+                soporte@queplanhoy.com
               </a>
             </li>
 
@@ -284,12 +257,9 @@ export function GlobalFooter() {
             <li>
               <Link
                 href="/organizer/events/new"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-electric-indigo">
-                  add_business
-                </span>
-                <span>Publicar como Promotor</span>
+                Publicar como Promotor
               </Link>
             </li>
           </ul>
@@ -304,34 +274,25 @@ export function GlobalFooter() {
             <li>
               <Link
                 href="/terminos-y-condiciones"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-slate-400">
-                  gavel
-                </span>
-                <span>Términos y Condiciones</span>
+                Términos y Condiciones
               </Link>
             </li>
             <li>
               <Link
                 href="/politicas-de-privacidad"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-slate-400">
-                  shield
-                </span>
-                <span>Políticas de Privacidad</span>
+                Políticas de Privacidad
               </Link>
             </li>
             <li>
               <Link
                 href="/politica-de-cookies"
-                className="text-platinum-silver hover:text-white transition-colors duration-200 flex items-center gap-1.5 hover:translate-x-1 transition-transform"
+                className="text-platinum-silver hover:text-white transition-colors duration-200 block hover:translate-x-1 transition-transform"
               >
-                <span className="material-symbols-outlined text-sm text-slate-400">
-                  cookie
-                </span>
-                <span>Políticas de Cookies</span>
+                Políticas de Cookies
               </Link>
             </li>
             <li>

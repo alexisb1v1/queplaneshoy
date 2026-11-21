@@ -10,6 +10,7 @@ import React, {
 import Link from "next/link";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useFavorites } from "../../../common/hooks/use-favorites";
+import { EventCard } from "./components/event-card";
 import {
   searchEventsUseCase,
   getPublishedCitiesUseCase,
@@ -95,6 +96,7 @@ export default function ExploreEventsPageComponent() {
   const [events, setEvents] = useState<SearchEventItem[]>([]);
   const [publishedCities, setPublishedCities] = useState<PublishedCity[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [visibleCount, setVisibleCount] = useState<number>(16);
 
   const toggleFavorite = async (
     eventId: string,
@@ -314,10 +316,12 @@ export default function ExploreEventsPageComponent() {
     res.match(
       (data) => {
         setEvents(data.hits || []);
+        setVisibleCount(16);
         setIsLoading(false);
       },
       () => {
         setEvents([]);
+        setVisibleCount(16);
         setIsLoading(false);
       },
     );
@@ -500,6 +504,7 @@ export default function ExploreEventsPageComponent() {
     setCustomStartDate("");
     setCustomEndDate("");
     setSortBy("date_asc");
+    setVisibleCount(16);
     setActiveDropdown(null);
     syncUrlParams({});
   };
@@ -821,7 +826,7 @@ export default function ExploreEventsPageComponent() {
          ========================================================================= */}
       <div
         ref={filterBarRef}
-        className="sticky top-16 md:top-20 z-40 bg-white/95 backdrop-blur-md border-b border-surface-variant/80 py-2.5 sm:py-3 shadow-xs"
+        className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-surface-variant/80 py-2.5 sm:py-3 shadow-xs"
       >
         <div className="max-w-container-max mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 overflow-x-auto md:overflow-visible qph-hide-scrollbar">
           {/* Grupo de Filtros Desplegables (Pills en 1 fila horizontal deslizable en móvil) */}
@@ -1159,224 +1164,49 @@ export default function ExploreEventsPageComponent() {
           </>
         ) : filteredAndSortedEvents.length > 0 ? (
           <>
-            {/* VISTA MÓVIL: GRID DE 2 COLUMNAS (ESTILO EVENTOS PRÓXIMOS DE STITCH) */}
-            <div className="grid grid-cols-2 gap-3.5 sm:hidden mb-8">
-              {filteredAndSortedEvents.map((ev) => {
-                const isFav =
-                  checkFavorite(ev.id) ||
-                  (ev.publicUuid ? checkFavorite(ev.publicUuid) : false);
-                const secureId = ev.publicUuid || ev.slug || ev.id;
-                const ctaHref =
-                  ev.hasLandingPage && ev.slug
-                    ? `/e/${ev.slug}`
-                    : `/events/${secureId}`;
-                const fallbackImage =
-                  "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=800&q=80";
-
-                return (
-                  <article
-                    key={`mob-grid-${ev.id}`}
-                    className="group cursor-pointer active:scale-[0.98] transition-transform"
-                  >
-                    <Link href={ctaHref} className="block">
-                      <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-surface-gray shadow-sm mb-2">
-                        <img
-                          src={ev.bannerUrl || fallbackImage}
-                          alt={ev.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = fallbackImage;
-                          }}
-                        />
-                        {/* Badge de Categoría */}
-                        <span className="absolute top-2 left-2 bg-deep-slate/85 backdrop-blur-sm text-white text-[9px] qph-label-bold uppercase px-2 py-0.5 rounded-full shadow-xs">
-                          {ev.category || "EVENTO"}
-                        </span>
-
-                        {/* Botón Favorito Flotante */}
-                        <button
-                          type="button"
-                          onClick={(e) =>
-                            toggleFavorite(ev.id, e, ev.publicUuid)
-                          }
-                          aria-label={
-                            isFav
-                              ? "Quitar de favoritos"
-                              : "Guardar en favoritos"
-                          }
-                          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-deep-slate/60 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
-                        >
-                          <span
-                            className="material-symbols-outlined text-[15px]"
-                            style={{
-                              fontVariationSettings: isFav
-                                ? "'FILL' 1"
-                                : "'FILL' 0",
-                              color: isFav ? "#e11d48" : "white",
-                            }}
-                          >
-                            favorite
-                          </span>
-                        </button>
-
-                        {/* Chip de Precio inferior */}
-                        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-[11px]">
-                          <span className="bg-deep-slate/80 backdrop-blur-sm px-1.5 py-0.5 rounded qph-label-bold text-electric-indigo">
-                            {ev.minPrice > 0
-                              ? `Desde S/ ${ev.minPrice.toFixed(2)}`
-                              : "Entrada Libre"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Fecha del Evento */}
-                      {ev.date && (
-                        <span className="text-[10px] qph-label-bold text-electric-indigo uppercase tracking-wider block mb-0.5">
-                          {formatEventDate(ev.date)}
-                        </span>
-                      )}
-
-                      {/* Título en hasta 2 líneas */}
-                      <h4 className="text-xs font-bold text-on-surface leading-tight line-clamp-2 group-hover:text-electric-indigo transition-colors">
-                        {ev.title}
-                      </h4>
-
-                      {/* Ubicación con pin */}
-                      <p className="text-[11px] text-on-surface-variant flex items-center gap-1 mt-0.5 truncate">
-                        <span className="material-symbols-outlined text-[13px] text-platinum-silver">
-                          location_on
-                        </span>
-                        <span className="truncate">
-                          {ev.venue || "Recinto Oficial"}
-                        </span>
-                      </p>
-                    </Link>
-                  </article>
-                );
-              })}
-            </div>
-
-            {/* VISTA ESCRITORIO Y TABLET: GRID MULTI-COLUMNAS (sm:grid) */}
-            <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredAndSortedEvents.map((ev) => {
-                const isFav =
-                  checkFavorite(ev.id) ||
-                  (ev.publicUuid ? checkFavorite(ev.publicUuid) : false);
-                const secureId = ev.publicUuid || ev.slug || ev.id;
-                const ctaHref =
-                  ev.hasLandingPage && ev.slug
-                    ? `/e/${ev.slug}`
-                    : `/events/${secureId}`;
-                const ctaText =
-                  ev.hasLandingPage && ev.slug ? "Ver Experiencia" : "Comprar";
+            {/* GRID UNIFICADO Y RESPONSIVE (Móvil 2 cols, Tablet 2 cols, Desktop 3-4 cols) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {filteredAndSortedEvents.slice(0, visibleCount).map((ev) => {
                 const fallbackImage =
                   "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=80";
 
                 return (
-                  <article
+                  <EventCard
                     key={ev.id}
-                    className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between border border-surface-variant"
-                  >
-                    {/* Media Area / Póster del Evento */}
-                    <div className="aspect-16/10 relative overflow-hidden bg-slate-900">
-                      <Link href={ctaHref} className="block w-full h-full">
-                        <img
-                          src={ev.bannerUrl || fallbackImage}
-                          alt={ev.title}
-                          className="w-full h-full object-cover transition-transform group-hover:scale-108 duration-500 cursor-pointer"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = fallbackImage;
-                          }}
-                        />
-                      </Link>
-
-                      {/* Badge de Categoría y Destacado */}
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none">
-                        <span className="px-2.5 py-1 bg-white/95 backdrop-blur-md rounded-full text-[10px] font-label-bold text-deep-slate border border-surface-variant/40 shadow-xs uppercase">
-                          {ev.category}
-                        </span>
-                        {ev.isFeatured && (
-                          <span className="px-2 py-0.5 bg-vip-gold text-white rounded-full text-[10px] font-label-bold uppercase shadow-xs">
-                            Destacado
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Botón Favorito Flotante */}
-                      <button
-                        type="button"
-                        onClick={(e) => toggleFavorite(ev.id, e, ev.publicUuid)}
-                        aria-label={
-                          isFav ? "Quitar de favoritos" : "Guardar en favoritos"
-                        }
-                        className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-600 transition-all cursor-pointer shadow-xs active:scale-95"
-                      >
-                        <span
-                          className="material-symbols-outlined text-[18px]"
-                          style={{
-                            fontVariationSettings: isFav
-                              ? "'FILL' 1"
-                              : "'FILL' 0",
-                            color: isFav ? "#e11d48" : "inherit",
-                          }}
-                        >
-                          favorite
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* Cuerpo de la Tarjeta */}
-                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
-                      <div>
-                        {/* Fecha y Lugar */}
-                        <p className="font-label-bold text-[11px] text-electric-indigo mb-1 uppercase tracking-wide flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px]">
-                            calendar_today
-                          </span>
-                          <span>{formatEventDate(ev.date)}</span>
-                          <span>•</span>
-                          <span className="truncate">
-                            {ev.venue || "Recinto Oficial"}
-                          </span>
-                        </p>
-
-                        <Link href={ctaHref} className="block">
-                          <h3 className="font-headline-md text-base sm:text-lg font-bold text-deep-slate group-hover:text-electric-indigo transition-colors leading-tight mb-2 line-clamp-1 cursor-pointer">
-                            {ev.title}
-                          </h3>
-                        </Link>
-
-                        <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-3 leading-relaxed">
-                          {ev.description ||
-                            "Acceso digital garantizado con control de seguridad oficial."}
-                        </p>
-                      </div>
-
-                      {/* Footer de Tarjeta con Precio y CTA */}
-                      <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-on-surface-variant uppercase font-label-bold">
-                            Precio
-                          </span>
-                          <span className="font-headline-md font-black text-sm sm:text-base text-deep-slate">
-                            {ev.minPrice > 0
-                              ? `Desde S/. ${ev.minPrice.toFixed(2)}`
-                              : "Entrada Libre"}
-                          </span>
-                        </div>
-
-                        <Link
-                          href={ctaHref}
-                          className="px-3.5 py-2 bg-electric-indigo hover:bg-primary text-white rounded-xl font-label-bold text-xs shadow-xs hover:shadow-md hover:shadow-electric-indigo/20 active:scale-95 transition-all"
-                        >
-                          {ctaText}
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
+                    id={ev.id}
+                    publicUuid={ev.publicUuid}
+                    slug={ev.slug}
+                    hasLandingPage={ev.hasLandingPage}
+                    title={ev.title}
+                    category={ev.category || "EVENTO"}
+                    imageUrl={ev.bannerUrl || fallbackImage}
+                    altText={ev.title}
+                    date={formatEventDate(ev.date)}
+                    location={ev.venue || ev.city || "Recinto Oficial"}
+                    price={ev.minPrice}
+                  />
                 );
               })}
             </div>
+
+            {/* CONTROL DE PAGINACIÓN / CARGAR MÁS */}
+            {filteredAndSortedEvents.length > visibleCount && (
+              <div className="mt-12 flex flex-col items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((prev) => prev + 16)}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-surface-gray text-deep-slate font-bold text-xs sm:text-sm border border-surface-variant shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-95"
+                >
+                  <span>Cargar más eventos</span>
+                  <span className="material-symbols-outlined text-base text-electric-indigo">
+                    expand_more
+                  </span>
+                </button>
+                <p className="text-[11px] text-on-surface-variant font-medium">
+                  Mostrando {Math.min(visibleCount, filteredAndSortedEvents.length)} de {filteredAndSortedEvents.length} eventos
+                </p>
+              </div>
+            )}
           </>
         ) : (
           /* ESTADO VACÍO (EMPTY STATE) */

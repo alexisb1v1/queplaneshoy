@@ -21,8 +21,6 @@ interface CategoryChip {
   id: string;
   name: string;
   icon: string;
-  bgClass: string;
-  textClass: string;
 }
 
 const CATEGORY_CHIPS: CategoryChip[] = [
@@ -30,43 +28,31 @@ const CATEGORY_CHIPS: CategoryChip[] = [
     id: "CONCERTS",
     name: "Conciertos",
     icon: "music_note",
-    bgClass: "bg-purple-500/10",
-    textClass: "text-purple-600",
   },
   {
     id: "THEATER",
     name: "Teatro & Musicales",
     icon: "theater_comedy",
-    bgClass: "bg-orange-500/10",
-    textClass: "text-orange-600",
   },
   {
     id: "SPORTS",
     name: "Deportes",
     icon: "sports_soccer",
-    bgClass: "bg-blue-500/10",
-    textClass: "text-blue-600",
   },
   {
     id: "FESTIVALS",
     name: "Festivales",
     icon: "festival",
-    bgClass: "bg-pink-500/10",
-    textClass: "text-pink-600",
   },
   {
     id: "COMEDY",
     name: "Comedia & Stand Up",
     icon: "sentiment_very_satisfied",
-    bgClass: "bg-yellow-500/10",
-    textClass: "text-amber-600",
   },
   {
     id: "GASTRONOMY",
     name: "Gastronomía",
     icon: "restaurant",
-    bgClass: "bg-emerald-500/10",
-    textClass: "text-emerald-600",
   },
 ];
 
@@ -97,7 +83,10 @@ function homeCardToEventCardProps(item: HomeEventCardItem): EventCardProps {
     category: cat?.label || item.category,
     imageUrl:
       item.imageUrl ||
+      (item as any).bannerUrl ||
       "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop",
+    bannerUrl: (item as any).bannerUrl || item.imageUrl || undefined,
+    hasBannerText: (item as any).hasBannerText || false,
     altText: item.title,
     date: formatEventDate(item.date),
     location: item.city || item.venue || "PERÚ",
@@ -119,23 +108,20 @@ function homeCardToEventCardProps(item: HomeEventCardItem): EventCardProps {
 function EventCardSkeleton() {
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-xs border border-surface-variant flex flex-col justify-between animate-pulse">
-      <div className="aspect-video bg-surface-gray w-full relative">
+      <div className="aspect-[16/10] bg-surface-gray w-full relative">
         <div className="absolute top-3 left-3 flex gap-2">
           <div className="h-5 w-16 bg-slate-200 rounded-full" />
-          <div className="h-5 w-12 bg-slate-200 rounded-full" />
         </div>
       </div>
-      <div className="p-5 flex-1 flex flex-col justify-between">
+      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
         <div>
-          <div className="h-3 w-32 bg-slate-200 rounded mb-2" />
-          <div className="h-5 w-3/4 bg-slate-200 rounded mb-2" />
-          <div className="h-3 w-full bg-slate-100 rounded mb-1" />
-          <div className="h-3 w-4/5 bg-slate-100 rounded mb-3" />
           <div className="h-3 w-28 bg-slate-200 rounded mb-2" />
+          <div className="h-5 w-4/5 bg-slate-200 rounded mb-2" />
+          <div className="h-4 w-3/5 bg-slate-200 rounded mb-4" />
         </div>
-        <div className="flex justify-between items-center pt-3 border-t border-surface-variant">
-          <div className="h-4 w-20 bg-slate-200 rounded" />
-          <div className="h-8 w-24 bg-slate-200 rounded-xl" />
+        <div className="flex justify-between items-baseline pt-3 border-t border-surface-variant/70">
+          <div className="h-3 w-10 bg-slate-200 rounded" />
+          <div className="h-5 w-20 bg-slate-200 rounded" />
         </div>
       </div>
     </div>
@@ -144,7 +130,7 @@ function EventCardSkeleton() {
 
 function MobileCarouselSkeleton() {
   return (
-    <div className="flex gap-3.5 overflow-hidden animate-pulse">
+    <div className="flex gap-4 overflow-hidden -mx-4 px-5 animate-pulse">
       {[1, 2, 3].map((i) => (
         <div key={i} className="w-[75vw] max-w-[280px] flex-shrink-0">
           <div className="aspect-[4/5] rounded-2xl bg-slate-200 mb-2.5" />
@@ -207,6 +193,7 @@ export default function HomePage() {
   const [isLoadingWeekend, setIsLoadingWeekend] = useState(true);
 
   const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -270,6 +257,16 @@ export default function HomePage() {
     }
   };
 
+  const scrollFeatured = (direction: "left" | "right") => {
+    if (featuredScrollRef.current) {
+      const scrollAmount = 340;
+      featuredScrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   const handleCategoryWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
     if (categoryScrollRef.current) {
@@ -297,10 +294,10 @@ export default function HomePage() {
     );
   });
 
-  // Eventos para carrusel móvil (destacados o fallback a próximos)
-  const mobileFeaturedList =
+  // Eventos estelares para el Hero (mismo set de máximo 5 destacados tanto en Desktop como en Mobile)
+  const heroFeaturedList =
     weeklyFeaturedEvents.length > 0
-      ? weeklyFeaturedEvents
+      ? weeklyFeaturedEvents.slice(0, 5)
       : upcomingEvents.slice(0, 5);
 
   const mobileHeroRef = useRef<HTMLDivElement>(null);
@@ -318,10 +315,10 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    if (mobileFeaturedList.length <= 1) return;
+    if (heroFeaturedList.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentMobileSlide((prev) => {
-        const next = (prev + 1) % mobileFeaturedList.length;
+        const next = (prev + 1) % heroFeaturedList.length;
         if (mobileHeroRef.current) {
           const width = mobileHeroRef.current.offsetWidth;
           mobileHeroRef.current.scrollTo({
@@ -333,7 +330,7 @@ export default function HomePage() {
       });
     }, 6000);
     return () => clearInterval(timer);
-  }, [mobileFeaturedList.length]);
+  }, [heroFeaturedList.length]);
 
   return (
     <>
@@ -352,7 +349,7 @@ export default function HomePage() {
               <div className="h-11 w-full bg-electric-indigo/40 rounded-xl" />
             </div>
           </section>
-        ) : mobileFeaturedList.length > 0 ? (
+        ) : heroFeaturedList.length > 0 ? (
           <section className="relative w-full h-[380px] overflow-hidden mb-6 group">
             {/* Contenedor de slides de ancho completo */}
             <div
@@ -365,14 +362,14 @@ export default function HomePage() {
                 if (
                   index !== currentMobileSlide &&
                   index >= 0 &&
-                  index < mobileFeaturedList.length
+                  index < heroFeaturedList.length
                 ) {
                   setCurrentMobileSlide(index);
                 }
               }}
               className="flex w-full h-full overflow-x-auto snap-x snap-mandatory qph-hide-scrollbar"
             >
-              {mobileFeaturedList.map((event) => {
+              {heroFeaturedList.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
                 const ctaHref =
                   event.hasLandingPage && event.slug
@@ -396,7 +393,7 @@ export default function HomePage() {
                     <div className="absolute top-4 left-4 z-10">
                       <span className="px-2.5 py-1 bg-electric-indigo/90 backdrop-blur-md text-white text-[11px] qph-label-bold rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        EN VIVO ESTE FIN DE SEMANA
+                        DESTACADO
                       </span>
                     </div>
 
@@ -422,7 +419,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-2.5">
                         <Link
                           href={ctaHref}
-                          className="flex-1 h-11 bg-electric-indigo hover:bg-primary text-white text-sm qph-label-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-electric-indigo/30 active:scale-[0.98] transition-all cursor-pointer"
+                          className="flex-1 h-11 bg-electric-indigo hover:bg-primary text-white text-sm qph-label-bold rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                         >
                           <span>
                             {event.hasLandingPage
@@ -447,9 +444,9 @@ export default function HomePage() {
             </div>
 
             {/* Puntos de navegación horizontales (Dots de Stitch) */}
-            {mobileFeaturedList.length > 1 && (
+            {heroFeaturedList.length > 1 && (
               <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-1.5 z-30 pointer-events-none">
-                {mobileFeaturedList.map((_, dotIdx) => (
+                {heroFeaturedList.map((_, dotIdx) => (
                   <button
                     key={dotIdx}
                     type="button"
@@ -513,56 +510,38 @@ export default function HomePage() {
           </form>
         </section>
 
-        {/* 3. Chips de Categorías Móvil (Horizontal Chips) */}
+        {/* 3. Chips de Categorías Móvil (Horizontal Chips con Navegación Directa) */}
         <section className="mb-6 px-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">
               Explora por Categoría
             </h3>
-            <button
-              type="button"
-              onClick={() =>
-                window.dispatchEvent(new Event("open-mobile-search"))
-              }
-              className="text-xs text-electric-indigo qph-label-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+            <Link
+              href="/events"
+              className="text-xs text-electric-indigo font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
             >
               Ver filtros
-            </button>
+            </Link>
           </div>
-          <div className="flex overflow-x-auto qph-hide-scrollbar gap-2 pb-1 -mx-4 px-4 scroll-smooth">
-            <button
-              onClick={() => setActiveMobileFilter("Todo")}
-              className={`whitespace-nowrap px-4 py-2 rounded-full qph-label-bold text-xs shadow-xs transition-colors flex-none cursor-pointer ${
-                activeMobileFilter === "Todo"
-                  ? "bg-deep-slate text-white"
-                  : "bg-surface-container-lowest text-on-surface-variant border border-surface-variant hover:bg-surface-gray"
-              }`}
+          <div className="flex overflow-x-auto qph-hide-scrollbar gap-2 pb-1 -mx-4 px-5 scroll-pl-5 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <Link
+              href="/events"
+              className="whitespace-nowrap px-4 py-2 rounded-full font-bold text-xs shadow-xs transition-colors flex-none cursor-pointer bg-white text-slate-700 border border-surface-variant hover:bg-slate-50"
             >
               Todos
-            </button>
-            {CATEGORY_CHIPS.map((cat) => {
-              const isSelected = activeMobileFilter === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() =>
-                    setActiveMobileFilter(isSelected ? "Todo" : cat.id)
-                  }
-                  className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full qph-label-bold text-xs shadow-xs transition-colors flex-none cursor-pointer ${
-                    isSelected
-                      ? "bg-electric-indigo text-white border border-electric-indigo"
-                      : "bg-surface-container-lowest text-on-surface-variant border border-surface-variant hover:bg-surface-gray"
-                  }`}
-                >
-                  <span
-                    className={`material-symbols-outlined text-[15px] ${isSelected ? "text-white" : cat.textClass}`}
-                  >
-                    {cat.icon}
-                  </span>
-                  <span>{cat.name}</span>
-                </button>
-              );
-            })}
+            </Link>
+            {CATEGORY_CHIPS.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/events?category=${cat.id.toLowerCase()}`}
+                className="flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full font-bold text-xs shadow-xs transition-all flex-none cursor-pointer bg-white text-slate-700 border border-surface-variant hover:bg-slate-50 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[16px] text-slate-500">
+                  {cat.icon}
+                </span>
+                <span>{cat.name}</span>
+              </Link>
+            ))}
           </div>
         </section>
 
@@ -570,10 +549,7 @@ export default function HomePage() {
         <section className="mb-8 px-4">
           <div className="flex items-center justify-between mb-3.5">
             <div>
-              <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-vip-gold text-[20px]">
-                  star
-                </span>
+              <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">
                 Destacados de la Semana
               </h3>
               <p className="text-xs text-on-surface-variant">
@@ -591,7 +567,7 @@ export default function HomePage() {
           {isLoadingWeekly ? (
             <MobileCarouselSkeleton />
           ) : weeklyFeaturedEvents.length > 0 ? (
-            <div className="flex overflow-x-auto qph-hide-scrollbar gap-3.5 pb-2 -mx-4 px-4 snap-x snap-mandatory">
+            <div className="flex overflow-x-auto qph-hide-scrollbar gap-4 pb-2 -mx-4 px-5 scroll-pl-5 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {weeklyFeaturedEvents.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
                 const ctaHref =
@@ -737,10 +713,7 @@ export default function HomePage() {
           <section className="mb-8 px-4">
             <div className="flex items-center justify-between mb-3.5">
               <div>
-                <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-emerald-500 text-[20px]">
-                    weekend
-                  </span>
+                <h3 className="qph-headline-md text-[18px] text-on-surface font-bold tracking-tight">
                   Planes de Fin de Semana
                 </h3>
                 <p className="text-xs text-on-surface-variant">
@@ -755,7 +728,7 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="flex overflow-x-auto qph-hide-scrollbar gap-3.5 pb-2 -mx-4 px-4 snap-x snap-mandatory">
+            <div className="flex overflow-x-auto qph-hide-scrollbar gap-4 pb-2 -mx-4 px-5 scroll-pl-5 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {weekendPlans.map((event) => {
                 const secureId = event.publicUuid || event.slug || event.id;
                 const ctaHref =
@@ -837,7 +810,10 @@ export default function HomePage() {
       <div className="hidden md:block flex-1 w-full bg-background">
         {/* 1. Hero Section con Carrusel & Search Overlay */}
         <div className="relative w-full">
-          <HeroCarousel />
+          <HeroCarousel
+            items={heroFeaturedList}
+            isLoading={isLoadingWeekly && isLoadingUpcoming}
+          />
           <SearchBar />
         </div>
 
@@ -887,16 +863,14 @@ export default function HomePage() {
               <Link
                 key={chip.id}
                 href={`/events?category=${chip.id.toLowerCase()}`}
-                className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-surface-variant hover:border-electric-indigo shadow-xs hover:shadow-sm transition-all group flex-none cursor-pointer active:scale-[0.98]"
+                className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-surface-variant hover:border-slate-300 shadow-xs hover:shadow-sm transition-all group flex-none cursor-pointer active:scale-[0.98]"
               >
-                <span
-                  className={`w-9 h-9 rounded-xl ${chip.bgClass} ${chip.textClass} flex items-center justify-center group-hover:bg-electric-indigo group-hover:text-white transition-colors`}
-                >
+                <span className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:bg-electric-indigo group-hover:text-white transition-colors duration-200">
                   <span className="material-symbols-outlined text-lg">
                     {chip.icon}
                   </span>
                 </span>
-                <span className="font-label-bold text-label-bold text-on-surface group-hover:text-electric-indigo transition-colors whitespace-nowrap">
+                <span className="font-semibold text-sm text-deep-slate group-hover:text-electric-indigo transition-colors whitespace-nowrap">
                   {chip.name}
                 </span>
               </Link>
@@ -944,19 +918,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 4. Eventos Destacados de la Semana (SELECCIÓN EDITORIAL) */}
+        {/* 4. Eventos Destacados de la Semana (CARRUSEL HORIZONTAL DE 1 FILA CON CONTROLES) */}
         <section className="max-w-container-max mx-auto px-margin-x pt-4 pb-6">
           <div className="flex justify-between items-end mb-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-electric-indigo text-lg">
-                  bolt
-                </span>
-                <span className="font-label-bold text-[12px] text-electric-indigo uppercase tracking-wider">
-                  Selección Editorial
-                </span>
-              </div>
-              <h2 className="qph-headline-lg text-deep-slate">
+              <h2 className="qph-headline-lg text-deep-slate mb-1">
                 Eventos Destacados de la Semana
               </h2>
               <p className="qph-body-md text-on-surface-variant">
@@ -964,48 +930,73 @@ export default function HomePage() {
                 ciudad.
               </p>
             </div>
-            <Link
-              href="/events"
-              className="text-electric-indigo qph-label-bold flex items-center gap-1 hover:underline transition-all cursor-pointer"
-            >
-              Ver cartelera completa{" "}
-              <span className="material-symbols-outlined text-sm">
-                arrow_forward
-              </span>
-            </Link>
+
+            {/* Controles de navegación y enlace a cartelera */}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/events"
+                className="text-electric-indigo font-bold text-xs sm:text-sm hover:underline transition-all cursor-pointer mr-2"
+              >
+                Ver cartelera completa
+              </Link>
+
+              <div className="hidden sm:flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => scrollFeatured("left")}
+                  aria-label="Desplazar eventos destacados a la izquierda"
+                  className="w-9 h-9 rounded-full border border-surface-variant bg-white hover:bg-slate-50 text-deep-slate shadow-xs flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    chevron_left
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollFeatured("right")}
+                  aria-label="Desplazar eventos destacados a la derecha"
+                  className="w-9 h-9 rounded-full border border-surface-variant bg-white hover:bg-slate-50 text-deep-slate shadow-xs flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    chevron_right
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-            {isLoadingWeekly ? (
-              <>
-                <EventCardSkeleton />
-                <EventCardSkeleton />
-                <EventCardSkeleton />
-                <EventCardSkeleton />
-              </>
-            ) : weeklyFeaturedEvents.length > 0 ? (
-              weeklyFeaturedEvents.map((ev) => (
-                <EventCard key={ev.id} {...ev} />
-              ))
-            ) : (
-              <EmptySectionMessage message="Próximamente publicaremos nuevos eventos destacados de la semana." />
-            )}
-          </div>
+          {isLoadingWeekly ? (
+            <div className="flex gap-5 overflow-hidden">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="w-[280px] sm:w-[320px] shrink-0">
+                  <EventCardSkeleton />
+                </div>
+              ))}
+            </div>
+          ) : weeklyFeaturedEvents.length > 0 ? (
+            <div
+              ref={featuredScrollRef}
+              className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-3 scroll-smooth select-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            >
+              {weeklyFeaturedEvents.map((ev) => (
+                <div
+                  key={ev.id}
+                  className="w-[280px] sm:w-[320px] shrink-0 snap-start"
+                >
+                  <EventCard {...ev} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptySectionMessage message="Próximamente publicaremos nuevos eventos destacados de la semana." />
+          )}
         </section>
 
         {/* 5. Planes para Este Fin de Semana (TENDENCIAS Y MÁS POPULARES) */}
         <section className="max-w-container-max mx-auto px-margin-x pt-4 pb-12 mb-8">
           <div className="flex justify-between items-end mb-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-vip-gold text-lg">
-                  trending_up
-                </span>
-                <span className="font-label-bold text-[12px] text-vip-gold uppercase tracking-wider">
-                  Tendencias &amp; Más Populares
-                </span>
-              </div>
-              <h2 className="qph-headline-lg text-deep-slate">
+              <h2 className="qph-headline-lg text-deep-slate mb-1">
                 Planes para Este Fin de Semana
               </h2>
               <p className="qph-body-md text-on-surface-variant">

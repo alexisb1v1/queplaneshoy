@@ -72,6 +72,8 @@ export interface EventLandingModel {
   city: string;
   hasLandingPage: boolean;
   bannerUrl: string | null;
+  flyerUrl?: string | null;
+  hasBannerText?: boolean;
   zoneMapUrl?: string | null;
   termsAndConditionsUrl: string | null;
   ageRestriction: string;

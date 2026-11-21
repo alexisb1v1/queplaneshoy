@@ -11,16 +11,19 @@ import { trackUmamiEvent } from "@/app/common/utils/analytics";
 
 interface EventLandingViewProps {
   event: EventLandingModel;
+  isPreview?: boolean;
 }
 
-export function EventLandingView({ event }: EventLandingViewProps) {
+export function EventLandingView({ event, isPreview = false }: EventLandingViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
-  // Registro de vista de Landing en Umami Analytics con el UID universal
+  // Registro de vista de Landing en Umami Analytics con el UID universal (Excluyendo previews)
   useEffect(() => {
+    if (isPreview || event.isPreview) return;
+
     trackUmamiEvent("event_landing_view", {
       event_uuid: event.publicUuid || event.id,
       event_slug: event.slug,
@@ -30,6 +33,8 @@ export function EventLandingView({ event }: EventLandingViewProps) {
       city: event.city,
     });
   }, [
+    isPreview,
+    event.isPreview,
     event.publicUuid,
     event.id,
     event.slug,
@@ -109,6 +114,7 @@ export function EventLandingView({ event }: EventLandingViewProps) {
     null;
 
   const heroImage = header.headerImageUrl || event.bannerUrl || null;
+  const mobileHeroImage = event.flyerUrl || heroImage;
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -183,22 +189,39 @@ export function EventLandingView({ event }: EventLandingViewProps) {
         className="min-h-screen text-white pt-16 flex flex-col font-sans transition-colors duration-500"
       >
         {/* ==============================================================
-            SECCIÓN 1: HERO CINEMÁTICO FULL-WIDTH LIMPIO (Sin fondo negro forzado)
-            Permite transparencias PNG para resaltar el fondo personalizado
+            SECCIÓN 1: HERO CINEMÁTICO RESPONSIVE LIMPIO
+            Desktop: Banner panorámico full-width
+            Móvil: Flyer cuadrado / vertical optimizado sin franjas vacías
            ============================================================== */}
         <section
           id="landing-inicio"
-          className="relative w-full overflow-hidden bg-transparent flex flex-col justify-end min-h-[50vh] sm:min-h-[65vh] lg:min-h-[75vh]"
+          className="relative w-full overflow-hidden bg-transparent flex flex-col justify-end min-h-[42vh] sm:min-h-[65vh] lg:min-h-[75vh]"
         >
-          {heroImage ? (
-            <div className="relative w-full h-full min-h-[50vh] sm:min-h-[65vh] lg:min-h-[75vh] flex items-center justify-center">
-              {/* Imagen Oficial (Soporta transparencias PNG sobre el background) */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={heroImage}
-                alt={event.name}
-                className="w-full h-full object-contain object-center max-h-[85vh]"
-              />
+          {heroImage || mobileHeroImage ? (
+            <div className="relative w-full h-full flex items-center justify-center">
+              {/* Imagen Móvil (Prioriza Flyer 1:1 o 4:5 para llenar pantalla móvil con impacto) */}
+              {mobileHeroImage && (
+                <div className="sm:hidden w-full px-4 pt-4 pb-12 flex justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={mobileHeroImage}
+                    alt={event.name}
+                    className="w-full max-w-[420px] aspect-square object-contain rounded-2xl shadow-2xl drop-shadow-2xl border border-white/10"
+                  />
+                </div>
+              )}
+
+              {/* Imagen Desktop / Tablet (Banner Panorámico 1920x600 o similar) */}
+              {heroImage && (
+                <div className="hidden sm:flex relative w-full h-full min-h-[65vh] lg:min-h-[75vh] items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroImage}
+                    alt={event.name}
+                    className="w-full h-full object-contain object-center max-h-[85vh]"
+                  />
+                </div>
+              )}
 
               {/* Botón Flotante para Teaser / Video si existe */}
               {header.videoTeaserUrl && (
@@ -552,6 +575,18 @@ export function EventLandingView({ event }: EventLandingViewProps) {
                           className="px-6 py-3 rounded-xl bg-zinc-800 text-zinc-500 font-extrabold text-xs uppercase tracking-wide cursor-not-allowed border border-white/5"
                         >
                           Agotado
+                        </button>
+                      ) : isPreview || event.isPreview ? (
+                        <button
+                          type="button"
+                          disabled
+                          title="Botón inhabilitado en modo vista previa"
+                          className="px-6 py-3 rounded-xl bg-zinc-800/80 text-zinc-400 font-extrabold text-xs uppercase tracking-wide cursor-not-allowed border border-white/10 flex items-center gap-1.5 opacity-80"
+                        >
+                          <span className="material-symbols-outlined text-sm text-amber-400">
+                            visibility
+                          </span>
+                          <span>Vista Previa</span>
                         </button>
                       ) : (
                         <Link
